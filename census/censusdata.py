@@ -4,7 +4,7 @@ from ast import literal_eval
 from database import mongoclient
 import sys
 from enums import GeoLevels
-from census import censusgroupslookups
+from census import censuslookups
 from enums import DefaultGeoIds
 import time
 
@@ -23,7 +23,7 @@ STATES = [
 ]
 
 def run_census_data_import(geo_level, prod_env):
-    lookups = censusgroupslookups.get_census_lookup()
+    lookups = censuslookups.get_census_lookup()
     all_categories = lookups['Category'].drop_duplicates()
 
     finished_runs = mongoclient.get_finished_runs(geo_level, SCOPEOUT_YEAR)

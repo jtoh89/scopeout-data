@@ -267,6 +267,16 @@ def delete_temp_backup(key):
         print("!!! ERROR could not delete backup Mongo!!!")
         sys.exit()
 
+def store_county_cbsa_lookup(counties_to_cbsa):
+    client = connect_to_client(prod_env=ProductionEnvironment.QA)
+    db = client['CensusDataInfo']
+
+    try:
+        collection = db['CountyToCbsa']
+        collection.insert_many(counties_to_cbsa)
+    except:
+        print("!!! ERROR could not store backup to Mongo!!!")
+        sys.exit()
 
 def test_mongo(data_dict):
     client = connect_to_client(prod_env=ProductionEnvironment.PRODUCTION)
