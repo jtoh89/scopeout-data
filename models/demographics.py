@@ -6,7 +6,7 @@ class Demographics:
         self.race = Race()
         self.agegroups = AgeGroups()
         self.populationtrends = PopulationTrends()
-        self.fiveyeargrowth = FiveYearGrowth()
+        self.oneyeargrowth = OneYearGrowth()
         self.familytype = FamilyType()
 
 
@@ -60,10 +60,10 @@ class PopulationTrends:
         self.data2 = []
         self.labels2 = []
 
-class FiveYearGrowth:
+class OneYearGrowth:
     def __init__(self):
         self.hascolors = True
-        self.title = "5 Year Population Growth"
+        self.title = "1 Year Population Growth"
         self.charttype = "horizontalbar"
         self.labels = []
         self.data = []

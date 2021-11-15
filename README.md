@@ -5,3 +5,4 @@ libs
 -pymongo
 -dnspython
 -python-dotenv
+-requests

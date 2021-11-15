@@ -52,10 +52,11 @@ class HousingUnitGrowth:
     def __init__(self):
         self.title = "Housing Unit Growth"
         self.charttype = "line"
-        self.labels = []
         self.data1Name = "# of Housing Units"
+        self.labels1 = []
         self.data1 = []
         self.data2name = "Growth Rate"
+        self.labels2 = []
         self.data2 = []
 
 

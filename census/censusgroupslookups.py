@@ -4,7 +4,7 @@ import pandas as pd
 
 def get_census_lookup():
     '''
-    Get census variable mappings. Mapping originally from google sheets.
+    Get census2 variable mappings. Mapping originally from google sheets.
     :return: dataframe
     '''
     currpath = os.path.dirname(os.path.abspath(__file__))

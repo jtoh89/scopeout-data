@@ -1,25 +1,30 @@
 
 class Economy:
     def __init__(self):
-        self.medianincome = MedianIncome()
+        self.medianhouseholdincome = MedianHouseholdIncome()
         self.unemploymentrate = UnemploymentRate()
         self.householdincomerange = HouseholdIncomeRange()
         self.employmentindustries = EmploymentIndustries()
-        self.topemploymentindustries = TopEmploymentIndustries
+        self.topemploymentindustries = TopEmploymentIndustries()
         self.vehiclesowned = VehiclesOwned()
         self.meansoftransportation = MeansOfTransportation()
         self.commutetowork = CommuteToWork()
 
 
-class MedianIncome:
+class MedianHouseholdIncome:
     def __init__(self):
         self.hascolors = True
         self.title = "Median Household Income"
-        self.charttype = "horizontalbar"
+        self.charttype = "verticalbartoggle"
         self.labels = []
-        self.data = []
-        self.colors = []
+        self.data1Name = "All"
+        self.data1 = []
+        self.data2name = "Owners"
+        self.data2 = []
+        self.data3name = "Renters"
+        self.data3 = []
         self.datatype = "DOLLAR"
+
 
 
 class UnemploymentRate:
@@ -83,18 +88,13 @@ class VehiclesOwned:
 
 class MeansOfTransportation:
     def __init__(self):
+        self.hascolors = True,
         self.title = "Means of Transportation"
-        self.charttype = "piecharttoggle"
+        self.charttype = "donut"
         self.labels = []
+        self.data = []
         self.colors = []
-        self.data1Name = "All"
-        self.data1 = []
-        self.data2name = "Owners"
-        self.data2 = []
-        self.data3name = "Renters"
-        self.data3 = []
         self.datatype = "PERCENT"
-
 
 class CommuteToWork:
     def __init__(self):

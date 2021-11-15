@@ -18,10 +18,11 @@ class NeighborhoodProfile:
         self.demographics.race = json.loads(json.dumps(self.demographics.race, default=lambda o: o.__dict__))
         self.demographics.agegroups = json.loads(json.dumps( self.demographics.agegroups, default=lambda o: o.__dict__))
         self.demographics.populationtrends = json.loads(json.dumps(self.demographics.populationtrends, default=lambda o: o.__dict__))
-        self.demographics.fiveyeargrowth = json.loads(json.dumps(self.demographics.fiveyeargrowth, default=lambda o: o.__dict__))
+        self.demographics.oneyeargrowth = json.loads(json.dumps(self.demographics.oneyeargrowth, default=lambda o: o.__dict__))
         self.demographics.familytype = json.loads(json.dumps(self.demographics.familytype, default=lambda o: o.__dict__))
 
-        self.economy.medianincome = json.loads(json.dumps(self.economy.medianincome, default=lambda o: o.__dict__))
+        self.economy.medianhouseholdincome = json.loads(json.dumps(self.economy.medianhouseholdincome, default=lambda o: o.__dict__))
+
         self.economy.unemploymentrate = json.loads(json.dumps(self.economy.unemploymentrate, default=lambda o: o.__dict__))
         self.economy.householdincomerange = json.loads(json.dumps(self.economy.householdincomerange, default=lambda o: o.__dict__))
         self.economy.employmentindustries = json.loads(json.dumps(self.economy.employmentindustries, default=lambda o: o.__dict__))

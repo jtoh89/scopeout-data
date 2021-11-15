@@ -5,76 +5,75 @@ from database import mongoclient
 import sys
 from enums import GeoLevels
 from census import censusgroupslookups
+from enums import DefaultGeoIds
 import time
 
 CENSUS_LATEST_YEAR = 2019
 CENSUS_YEARS = [2012, 2013, 2014, 2015, 2016, 2017, 2018, CENSUS_LATEST_YEAR]
 
-# CENSUS_END_YEAR = 2013
-# CENSUS_YEARS = [2012, CENSUS_END_YEAR]
+# CENSUS_LATEST_YEAR = 2014
+# CENSUS_YEARS = [2013, CENSUS_LATEST_YEAR]
 
 SCOPEOUT_YEAR = 2021
 
 STATES = [
     '01','02','04','05','06','08','09','10','11','12','13','15','16','17','18','19','20','21','22','23','24',
-    '25','26','27','28','29','30','31','32','33','34','35','36', '37','38','39','40','41','42','44','45','46',
+    '25','26','27','28','29','30','31','32','33','34','35','36','37','38','39','40','41','42','44','45','46',
     '47','48','49','50','51','53','54','55','56'
 ]
 
-def run_census_data_import(geo_level):
+def run_census_data_import(geo_level, prod_env):
     lookups = censusgroupslookups.get_census_lookup()
     all_categories = lookups['Category'].drop_duplicates()
 
-    if geo_level == GeoLevels.USA:
+    finished_runs = mongoclient.get_finished_runs(geo_level, SCOPEOUT_YEAR)
+
+    for i, stateid in enumerate(STATES):
+        #usa and cbsa data does not need more than 1 iteration
+        if geo_level in [GeoLevels.CBSA, GeoLevels.USA] and i > 0:
+            break
+
+        if geo_level == GeoLevels.USA:
+            stateid = DefaultGeoIds.USA.value
+        elif geo_level == GeoLevels.CBSA:
+            stateid = DefaultGeoIds.CBSA.value
+
+        geographies_df = mongoclient.query_geography(geo_level=geo_level, stateid=stateid)
+
+        print('Starting import for stateid: ', stateid)
+
+        finished_cats = []
+        if len(finished_runs) > 0:
+            finished_cats = finished_runs[finished_runs['state_id'] == stateid]['category'].values
+
         for i, category in all_categories.items():
+            if category in finished_cats:
+                print("Skipping category: " + category + ". State: ", stateid)
+                continue
+
             # Filter look ups for current category
             variables_df = lookups[lookups['Category'] == category]
-            # variables_df = lookups[lookups['Category'] == "Population Growth"]
+            # variables_df = lookups[lookups['Category'] == 'Housing Unit Growth']
 
-            success = get_and_store_census_data_USA(geo_level=geo_level, variables_df=variables_df)
+            print("Starting import for category: " + category + ". State: ", stateid)
+            success = get_and_store_census_data(geo_level=geo_level,
+                                                state_id=stateid,
+                                                variables_df=variables_df,
+                                                geographies_df=geographies_df,
+                                                prod_env=prod_env)
 
             if not success:
                 print("*** END RUN - get_and_store_census_data Failed ***")
                 sys.exit()
-    else:
-        finished_runs = mongoclient.get_finished_runs(geo_level, SCOPEOUT_YEAR)
-        geographies_df = mongoclient.query_geography(geo_level=geo_level)
 
-        for stateid in STATES:
-            # if stateid in finished_runs['state_id'].values:
-            #     print("Skipping because finished run record found. Stateid: ", stateid)
-            #     continue
-
-            print('Starting import for stateid: ', stateid)
-
-            # Wait 3 seconds because Census API tends to fail with too many consecutive requests
-            # print("Waiting 3 seconds before starting import")
-            # time.sleep(3)
-
-            finished_cats = finished_runs[finished_runs['state_id'] == stateid]['category'].values
-
-            for i, category in all_categories.items():
-                if category in finished_cats:
-                    print("Skipping category: " + category + ". State: ", stateid)
-                    continue
-                # Filter look ups for current category
-                variables_df = lookups[lookups['Category'] == category]
-                # variables_df = lookups[lookups['Category'] == "Population Growth"]
-
-                success = get_and_store_census_data(geo_level=geo_level, state_id=stateid, variables_df=variables_df, geographies_df=geographies_df)
-
-                if not success:
-                    print("*** END RUN - get_and_store_census_data Failed ***")
-                    sys.exit()
-
-                mongoclient.add_finished_run(geo_level, stateid, SCOPEOUT_YEAR, category)
+            mongoclient.add_finished_run(geo_level, stateid, SCOPEOUT_YEAR, category)
 
 
 
 
-def get_and_store_census_data(geo_level, state_id, variables_df, geographies_df):
+def get_and_store_census_data(geo_level, state_id, variables_df, geographies_df, prod_env):
     '''
-    Stores CensusData object into Mongo. state_id is required to use census api. All geolevels for the state will be stored.
+    Stores CensusData object into Mongo. state_id is required to use census2 api. All geolevels for the state will be stored.
     If mongo inserts are successfull, function will return true. If not, it will return false.
     :param geo_level:
     :param state_id:
@@ -87,18 +86,9 @@ def get_and_store_census_data(geo_level, state_id, variables_df, geographies_df)
     historical = variables_df['Historical'].iloc[0]
     variable_list = list(variables_df['VariableID'])
 
-    state_and_category_exists = check_state_category(geo_level, category, state_id)
-    if state_and_category_exists:
-        print("!!! Already have category: {} for state: {}".format(category, state_id))
-        return
-    else:
-        print("Starting download for geo_level: {}, state_id: {}, category: {}".format(geo_level.value, state_id, category))
-
-    # geographies_df = mongoclient.query_geography(geo_level=geo_level)
-
     results_dict = {}
     geo_id = None
-
+    missing_geo = []
     for year in CENSUS_YEARS:
         # if we don't need historical then skip until we reach CENSUS_END_YEAR
         if not historical and year != CENSUS_LATEST_YEAR:
@@ -106,6 +96,35 @@ def get_and_store_census_data(geo_level, state_id, variables_df, geographies_df)
 
         query_url = build_query(year, geo_level, state_id, variable_list)
         df = census_api(query_url)
+
+        if geo_level == GeoLevels.CBSA:
+            df = df.rename(columns={'metropolitan statistical area/micropolitan statistical area':'cbsa'})
+            remap_cbsa_code = {
+                '19430':'19380',
+                '39150':'39140',
+                '30100':'30060',
+                '49060':'11680',
+            }
+            remap_old_cbsa_code = {
+                '42060': '42200',
+                '43860': '38240',
+                '44600': '48260',
+                '32270': '49220',
+                '20620': '41400',
+                '29140': '29200',
+                '30500': '15680',
+                '14060': '14010',
+                '31100': '31080',
+                '37820': '25840',
+                '26100': '26090',
+                '26180': '46520',
+            }
+            df['cbsa'] = df['cbsa'].replace(remap_cbsa_code)
+            df['cbsa'] = df['cbsa'].replace(remap_old_cbsa_code)
+
+        census_geoname_lookup = df[['NAME', geo_level.value]]
+
+        df = df.drop(columns=['NAME'])
 
         if len(df) == 0:
             if year == CENSUS_LATEST_YEAR:
@@ -115,16 +134,13 @@ def get_and_store_census_data(geo_level, state_id, variables_df, geographies_df)
 
         year_string = '{}'.format(year)
 
-        if year == CENSUS_LATEST_YEAR:
-            year_string = 'LatestYear'
-
         for i, row in df.iterrows():
             if aggregate_type in ['Percentage']:
                 category_sum_dict = sum_categories(variable_data_dict=row.to_dict(), variables_df=variables_df)
-                aggregate_dict = calculate_percentage(category_sum_dict)
+                aggregate_dict = calculate_category_percentage(category_sum_dict)
             elif aggregate_type in ['PercentageWithSubCategories']:
                 category_sum_dict = sum_categories(variable_data_dict=row.to_dict(), variables_df=variables_df)
-                aggregate_dict = calculate_percentage(category_sum_dict)
+                aggregate_dict = calculate_category_percentage(category_sum_dict)
                 check_percentages(aggregate_dict)
             elif aggregate_type == 'PercentageWithSubCategoriesWithOwnerRenter':
                 aggregate_dict = sum_categories_with_owner_renter(variable_data_dict=row.to_dict(), variables_df=variables_df)
@@ -132,31 +148,54 @@ def get_and_store_census_data(geo_level, state_id, variables_df, geographies_df)
                     check_percentages(aggregate_dict, True)
             elif aggregate_type == 'PercentageNoTotal':
                 category_sum_dict = sum_categories_and_total(variable_data_dict=row.to_dict(), variables_df=variables_df)
-                aggregate_dict = calculate_percentage(category_sum_dict)
+                aggregate_dict = calculate_category_percentage(category_sum_dict)
                 check_percentages(aggregate_dict)
             else:
                 # path for aggregate_type None
                 aggregate_dict = sum_categories(variable_data_dict=row.to_dict(), variables_df=variables_df)
 
-
             if geo_level == GeoLevels.STATE:
                 geo_info = geographies_df.loc[geographies_df['fipsstatecode'] == state_id]
                 geo_id = state_id
+            elif geo_level == GeoLevels.CBSA:
+                geo_id = row.cbsa
+                geo_info = geographies_df.loc[geographies_df['cbsacode'] == geo_id]
             elif geo_level == GeoLevels.COUNTY:
                 geo_id = row.state + row.county
                 geo_info = geographies_df.loc[geographies_df['countyfullcode'] == geo_id]
             elif geo_level == GeoLevels.TRACT:
                 geo_id = row.state + row.county + row.tract
                 geo_info = geographies_df.loc[geographies_df['tractcode'] == geo_id]
+            elif geo_level == GeoLevels.USA:
+                geo_id = DefaultGeoIds.USA.value
+                geo_info = geographies_df
 
             if len(geo_info) < 1:
-                mongoclient.store_missing_geo(geo_id=geo_id, geo_level=geo_level, category=category)
+                if geo_level == GeoLevels.COUNTY:
+                    geo_id = row.county
+                elif geo_level == GeoLevels.TRACT:
+                    geo_id = row.tract
+
+                missing_geo_name = census_geoname_lookup[census_geoname_lookup[geo_level.value] == geo_id]['NAME'].iloc[0]
+                #Skip Puerto Rico metros
+                if 'PR Metro' in missing_geo_name or 'PR Micro' in missing_geo_name:
+                    continue
+
+                missing_geo.append({'geo_id': geo_id,
+                                    'geo_level': geo_level.value,
+                                    'geo_name': missing_geo_name,
+                                    'category': category,
+                                    'year': year})
                 continue
 
             data_dict = {}
-            data_dict[year_string] = {
-                '{}'.format(category): aggregate_dict
-            }
+            if historical:
+                for k, v in aggregate_dict.items():
+                    data_dict[k] = [v]
+
+                data_dict['years'] = [year_string]
+            else:
+                data_dict[category] = aggregate_dict
 
             census_result_object = {}
             census_result_object['scopeoutyear'] = SCOPEOUT_YEAR
@@ -166,96 +205,79 @@ def get_and_store_census_data(geo_level, state_id, variables_df, geographies_df)
             census_result_object['geolevel'] = geo_level.value
             census_result_object['data'] = data_dict
 
-            if geo_id in results_dict.keys():
-                results_dict[geo_id]['data'][year_string] = census_result_object['data'][year_string]
-            else:
-                results_dict[geo_id] = census_result_object
-
-    return mongoclient.store_census_data(results_dict)
-
-
-def get_and_store_census_data_USA(geo_level, variables_df):
-    '''
-    Stores CensusData object into Mongo. This only stores USA.
-    If mongo inserts are successfull, function will return true. If not, it will return false.
-    :param geo_level:
-    :param state_id:
-    :param variables_df:
-    :return: bool
-    '''
-
-    category = variables_df['Category'].iloc[0]
-    aggregate_type = variables_df['AggregateType'].iloc[0]
-    historical = variables_df['Historical'].iloc[0]
-    variable_list = list(variables_df['VariableID'])
-
-    results_dict = {}
-
-    for year in CENSUS_YEARS:
-        # if we don't need historical then skip until we reach CENSUS_END_YEAR
-        if not historical and year != CENSUS_LATEST_YEAR:
-            continue
-
-        query_url = build_query(year, geo_level, None, variable_list)
-        df = census_api(query_url)
-
-        if len(df) == 0:
-            if year == CENSUS_LATEST_YEAR:
-                print("!!! DATA DOES NOT EXIST FOR CENSUS_END_YEAR")
-                sys.exit()
-            continue
-
-        year_string = '{}'.format(year)
-
-        if year == CENSUS_LATEST_YEAR:
-            year_string = 'LatestYear'
-
-        for i, row in df.iterrows():
-            if aggregate_type in ['Percentage']:
-                category_sum_dict = sum_categories(variable_data_dict=row.to_dict(), variables_df=variables_df)
-                aggregate_dict = calculate_percentage(category_sum_dict)
-            elif aggregate_type in ['PercentageWithSubCategories']:
-                category_sum_dict = sum_categories(variable_data_dict=row.to_dict(), variables_df=variables_df)
-                aggregate_dict = calculate_percentage(category_sum_dict)
-                check_percentages(aggregate_dict)
-            elif aggregate_type == 'PercentageWithSubCategoriesWithOwnerRenter':
-                aggregate_dict = sum_categories_with_owner_renter(variable_data_dict=row.to_dict(), variables_df=variables_df)
-                if category != '% Income on Housing Costs':
-                    check_percentages(aggregate_dict, True)
-            elif aggregate_type == 'PercentageNoTotal':
-                category_sum_dict = sum_categories_and_total(variable_data_dict=row.to_dict(), variables_df=variables_df)
-                aggregate_dict = calculate_percentage(category_sum_dict)
-                check_percentages(aggregate_dict)
-            else:
-                # path for aggregate_type None
-                aggregate_dict = sum_categories(variable_data_dict=row.to_dict(), variables_df=variables_df)
-
-            geo_id = '99999'
-
-            data_dict = {}
-            data_dict[year_string] = {
-                '{}'.format(category): aggregate_dict
-            }
-
-            census_result_object = {}
-            census_result_object['scopeoutyear'] = SCOPEOUT_YEAR
-            census_result_object['geoinfo'] = { 'name': 'United States' }
-            census_result_object['geoid'] = "99999"
-            census_result_object['stateid'] = "99999"
-            census_result_object['geolevel'] = geo_level.value
-            census_result_object['data'] = data_dict
+            if historical:
+                census_result_object['data'] = {category: data_dict}
 
             if geo_id in results_dict.keys():
-                results_dict[geo_id]['data'][year_string] = census_result_object['data'][year_string]
+                if historical:
+                    for k, v in results_dict[geo_id]['data'][category].items():
+                        v.append(data_dict[k][0])
+                else:
+                    results_dict[geo_id]['data'] = census_result_object['data']
             else:
-                results_dict[geo_id] = census_result_object
+                if historical:
+                    results_dict[geo_id] = census_result_object
+                else:
+                    results_dict[geo_id] = census_result_object
 
-    return mongoclient.store_census_data(results_dict)
+
+    mongoclient.store_missing_geo(missing_geo, geo_level, state_id, category)
+    filtered_dict = filter_existing_data(results_dict, geo_level, category, prod_env, state_id)
+
+    if len(filtered_dict) < 1:
+        print("ENDING RUN, NO MORE GEOGRAPHIES TO RUN")
+        return True
+
+    return mongoclient.store_census_data(geo_level=geo_level,
+                                         state_id=state_id,
+                                         filtered_dict=filtered_dict,
+                                         prod_env=prod_env)
+
+
+
+
+
+
+
+def filter_existing_data(results_dict, geo_level, category, prod_env, state_id=None):
+    mongo_info = mongoclient.get_mongo_info_from_environment(prod_env)
+
+    collection_filter = {
+        'scopeoutyear': {'$eq': SCOPEOUT_YEAR},
+        'geolevel': {'$eq': geo_level.value},
+        'stateid': {'$eq': state_id},
+    }
+
+    existing_data_df = mongoclient.query_collection(database_name=mongo_info['dbname'],
+                                                    collection_name=mongo_info['collectionname'],
+                                                    collection_filter=collection_filter,
+                                                    prod_env=prod_env)
+    existing_geoids = []
+
+    for i, row in existing_data_df.iterrows():
+        existing_cats = list(row.data.keys())
+        if category in existing_cats:
+            existing_geoids.append(row.geoid)
+
+
+
+    filtered_geoids = []
+    for k, results in results_dict.items():
+        if k in existing_geoids:
+            filtered_geoids.append(k)
+
+
+    for existing_geoid in filtered_geoids:
+        del results_dict[existing_geoid]
+
+    return results_dict
+
+
 
 
 def build_query(year, geo_level, state_id, variable_list):
     '''
-    Builds query for census api based on geolevel, stateid.
+    Builds query for census2 api based on geolevel, stateid.
     State will request state data for state_id.
     County will request all counties in state_id.
     Tract will request all tracts in all counties in state_id
@@ -276,18 +298,18 @@ def build_query(year, geo_level, state_id, variable_list):
     query_variables = query_variables[:-1]
 
     if geo_level == GeoLevels.STATE:
-        query_url = 'https://api.census.gov/data/{}/acs/acs5?get={}&for=state:{}' \
+        query_url = 'https://api.census.gov/data/{}/acs/acs5?get=NAME,{}&for=state:{}' \
             .format(str(year), query_variables, state_id)
     elif geo_level == GeoLevels.CBSA:
-        query_url = 'https://api.census.gov/data/{}/acs/acs5?get={}&for=metropolitan%20statistical%20area/micropolitan%20statistical%20area:*'.format(str(year), query_variables)
+        query_url = 'https://api.census.gov/data/{}/acs/acs5?get=NAME,{}&for=metropolitan%20statistical%20area/micropolitan%20statistical%20area:*'.format(str(year), query_variables)
     elif geo_level == GeoLevels.COUNTY:
-        query_url = 'https://api.census.gov/data/{}/acs/acs5?get={}&for=county:*&in=state:{}' \
+        query_url = 'https://api.census.gov/data/{}/acs/acs5?get=NAME,{}&for=county:*&in=state:{}' \
             .format(str(year), query_variables, state_id)
     elif geo_level == GeoLevels.TRACT:
-        query_url = 'https://api.census.gov/data/{}/acs/acs5?get={}&for=tract:*&in=state:{}%20county:*' \
+        query_url = 'https://api.census.gov/data/{}/acs/acs5?get=NAME,{}&for=tract:*&in=state:{}%20county:*' \
             .format(str(year), query_variables, state_id)
     elif geo_level == GeoLevels.USA:
-        query_url = 'https://api.census.gov/data/{}/acs/acs5?get={}&for=us:1'\
+        query_url = 'https://api.census.gov/data/{}/acs/acs5?get=NAME,{}&for=us:1' \
             .format(str(year), query_variables)
 
     query_url = query_url + '&key=32e910ae670ecaa2d3bb41d33bebf6e9131a500d'
@@ -315,7 +337,7 @@ def census_api(query_url):
             data = r.get(query_url)
         except:
             print("Error making GET request. Trying again")
-            print("Sleep 5 seconds before retrying census api calls")
+            print("Sleep 5 seconds before retrying census2 api calls")
             time.sleep(5)
             retry_count += 1
             continue
@@ -323,7 +345,7 @@ def census_api(query_url):
         if data.status_code != 200:
             retry_count += 1
             print("ERROR - bad request: {}".format(data.text))
-            print("Sleep 5 seconds before retrying census api calls")
+            print("Sleep 5 seconds before retrying census2 api calls")
             time.sleep(5)
             continue
 
@@ -359,41 +381,9 @@ def census_api(query_url):
 
         return df
 
-def check_state_category(geo_level, category, state_id=None):
-    '''
-    Checks if census data already exists for geo level and category for the state.
-    Function will check if data exists for the CENSUS_END_YEAR. If a record is found with the
-    end year, function will return true.
-
-    :param geo_level:
-    :param category:
-    :param state_id:
-    :return: bool
-    '''
-
-    collection_filter = {
-        'scopeoutyear': {'$eq': SCOPEOUT_YEAR},
-        'geolevel': {'$eq': geo_level.value},
-        'stateid': {'$eq': state_id},
-    }
 
 
-    existing_data_df = mongoclient.query_collection(database_name='scopeout',
-                                                    collection_name='CensusData',
-                                                    collection_filter=collection_filter,
-                                                    prod_env="prod")
-    census_end_year = str(CENSUS_LATEST_YEAR)
-    if len(existing_data_df) == 0:
-        return False
-    else:
-        existing_data_df = existing_data_df[existing_data_df['stateid'] == state_id]
-        first_record = existing_data_df.iloc[0]['data']
-        if census_end_year in first_record.keys():
-            if category in existing_data_df.iloc[0]['data'][census_end_year].keys():
-                return True
-        return False
-
-def calculate_percentage(category_sum_dict):
+def calculate_category_percentage(category_sum_dict):
     '''
     Function iterates through categories and gets percentage by dividing each sum with total value.
     :param category_sum_dict: dictionary
@@ -440,7 +430,8 @@ def sum_categories(variable_data_dict, variables_df):
 
     category_sum_dict = {}
     for k, data in variable_data_dict.items():
-        # Skip Geography info that is returned from census api
+
+        # Skip Geography info that is returned from census2 api
         if k in [GeoLevels.CBSA.value, GeoLevels.STATE.value, GeoLevels.COUNTY.value, GeoLevels.TRACT.value, GeoLevels.USA.value]:
             continue
 
@@ -529,9 +520,9 @@ def sum_categories_with_owner_renter(variable_data_dict, variables_df):
     renters_sum_dict['Total'] = renters_total
 
     aggregate_dict = {}
-    aggregate_dict['All'] = calculate_percentage(category_sum_dict)
-    aggregate_dict['Owners'] = calculate_percentage(owners_sum_dict)
-    aggregate_dict['Renters'] = calculate_percentage(renters_sum_dict)
+    aggregate_dict['All'] = calculate_category_percentage(category_sum_dict)
+    aggregate_dict['Owners'] = calculate_category_percentage(owners_sum_dict)
+    aggregate_dict['Renters'] = calculate_category_percentage(renters_sum_dict)
 
     return aggregate_dict
 
