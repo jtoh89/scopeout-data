@@ -103,6 +103,31 @@ def query_geography(geo_level, stateid):
     return df
 
 
+def store_neighborhood_data(state_id, neighborhood_profile_list):
+    prod_env=ProductionEnvironment.PRODUCTION
+    client = connect_to_client(prod_env=prod_env)
+    dbname = 'ScopeoutMainApp'
+
+    db = client[dbname]
+    collection = db['NeighborhoodProfiles']
+
+    try:
+        tempkey = 'store_neighborhood_data. state_id: {}'.format(state_id)
+        store_temp_backup(key=tempkey,insert_list=neighborhood_profile_list)
+
+        collection.delete_many({'stateid': state_id})
+        collection.insert_many(neighborhood_profile_list)
+
+        delete_temp_backup(key=tempkey)
+    except:
+        print("!!! ERROR storing data to Mongo!!!")
+        return False
+
+    print("Successfully stored store_neighborhood_data into Mongo. Rows inserted: ", len(neighborhood_profile_list))
+
+    return True
+
+
 def store_census_data(geo_level, state_id, filtered_dict, prod_env=ProductionEnvironment.PRODUCTION):
     client = connect_to_client(prod_env=prod_env)
 
@@ -162,7 +187,6 @@ def store_census_data(geo_level, state_id, filtered_dict, prod_env=ProductionEnv
     print("Successfully stored batch into Mongo. Rows inserted: ", len(insert_list))
 
     return True
-
 
 def add_finished_run(geo_level, state_id, scopeout_year, category):
     client = connect_to_client(prod_env=ProductionEnvironment.QA)

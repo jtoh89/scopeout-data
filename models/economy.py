@@ -5,7 +5,7 @@ class Economy:
         self.unemploymentrate = UnemploymentRate()
         self.householdincomerange = HouseholdIncomeRange()
         self.employmentindustries = EmploymentIndustries()
-        self.topemploymentindustries = TopEmploymentIndustries()
+        self.leadingemploymentindustries = LeadingEmploymentIndustries()
         self.vehiclesowned = VehiclesOwned()
         self.meansoftransportation = MeansOfTransportation()
         self.commutetowork = CommuteToWork()
@@ -63,7 +63,7 @@ class EmploymentIndustries:
         self.datatype = "PERCENT"
 
 
-class TopEmploymentIndustries:
+class LeadingEmploymentIndustries:
     def __init__(self):
         self.title = "Leading Employment Industries"
         self.charttype = "table"
