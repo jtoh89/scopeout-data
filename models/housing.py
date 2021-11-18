@@ -55,7 +55,7 @@ class HousingUnitGrowth:
         self.data1Name = "# of Housing Units"
         self.labels1 = []
         self.data1 = []
-        self.data2name = "Growth Rate"
+        self.data2Name = "Growth Rate"
         self.labels2 = []
         self.data2 = []
 
@@ -68,9 +68,9 @@ class PropertyTypes:
         self.colors = []
         self.data1Name = "All"
         self.data1 = []
-        self.data2name = "Owners"
+        self.data2Name = "Owners"
         self.data2 = []
-        self.data3name = "Renters"
+        self.data3Name = "Renters"
         self.data3 = []
         self.datatype = "PERCENT"
 
@@ -92,9 +92,9 @@ class NumberOfBedrooms:
         self.colors = []
         self.data1Name = "All"
         self.data1 = []
-        self.data2name = "Owners"
+        self.data2Name = "Owners"
         self.data2 = []
-        self.data3name = "Renters"
+        self.data3Name = "Renters"
         self.data3 = []
         self.datatype = "PERCENT"
 
@@ -108,9 +108,9 @@ class YearMovedIn:
         self.colors = []
         self.data1Name = "All"
         self.data1 = []
-        self.data2name = "Owners"
+        self.data2Name = "Owners"
         self.data2 = []
-        self.data3name = "Renters"
+        self.data3Name = "Renters"
         self.data3 = []
         self.datatype = "PERCENT"
 
@@ -124,9 +124,9 @@ class IncomeHousingCost:
         self.colors = []
         self.data1Name = "All"
         self.data1 = []
-        self.data2name = "Owners"
+        self.data2Name = "Owners"
         self.data2 = []
-        self.data3name = "Renters"
+        self.data3Name = "Renters"
         self.data3 = []
         self.datatype = "PERCENT"
 

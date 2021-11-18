@@ -6,6 +6,7 @@ import json
 class NeighborhoodProfile:
     def __init__(self):
         self.geoid = ""
+        self.stateid = ""
         self.geoshapecoordinates = []
         self.demographics = demographics.Demographics()
         self.economy = economy.Economy()

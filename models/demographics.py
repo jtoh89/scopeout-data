@@ -56,7 +56,7 @@ class PopulationTrends:
         self.data1Name = "Population"
         self.data1 = []
         self.labels1 = []
-        self.data2name = "Growth Rate"
+        self.data2Name = "Growth Rate"
         self.data2 = []
         self.labels2 = []
 

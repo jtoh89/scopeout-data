@@ -121,7 +121,7 @@ def process_tracts():
         neighborhood_profile = set_economy_section(tract_profile, neighborhood_profile, cbsa_profile, county_profile, usa_profile)
         neighborhood_profile = set_housing_section(tract_profile, neighborhood_profile, cbsa_profile, county_profile, usa_profile)
 
-        add_dict = neighborhood_profile_to_dict(neighborhood_profile)
+        add_dict = neighborhood_profile_to_dict(neighborhood_profile, state_id)
         neighborhood_profile_list.append(add_dict)
 
     mongoclient.store_neighborhood_data(state_id, neighborhood_profile_list)
@@ -133,9 +133,9 @@ def get_neighborhood_map_shape(geoinfo):
 
     return coordinate_list
 
-def neighborhood_profile_to_dict(neighborhood_profile):
+def neighborhood_profile_to_dict(neighborhood_profile, state_id):
     neighborhood_profile = neighborhood_profile.convert_to_dict()
-
+    neighborhood_profile.stateid = state_id
     return neighborhood_profile.__dict__
 
 
@@ -172,7 +172,7 @@ def set_demographic_section(tract_profile, neighborhood_profile, cbsa_profile, c
     county_name = county_profile.geoinfo['countyname']
 
     tract_population_oneyeargrowth = calculate_percent_change(tract_profile.data['Population Growth']['Total Population'][-2], tract_profile.data['Population Growth']['Total Population'][-1])
-    county_population_oneyeargrowth = calculate_percent_change(county_profile.data['Population Growth']['Total Population'][-2], county_profile.data['Population Growth']['Total Population'][-1])
+    county_population_oneyeargrowth = calculate_percent_change(county_profile.data['Population Growth']['Total Population'][-2], county_profile.data['Population Growth']['Total Population'][-1],decimal_places=2)
     us_population_oneyeargrowth = calculate_percent_change(usa_profile.data['Population Growth']['Total Population'][-2], usa_profile.data['Population Growth']['Total Population'][-1])
 
     if cbsa_profile is not None:
@@ -183,8 +183,8 @@ def set_demographic_section(tract_profile, neighborhood_profile, cbsa_profile, c
         cbsa_population_oneyeargrowth = 0
 
     neighborhood_profile.demographics.oneyeargrowth.data = [tract_population_oneyeargrowth,
+                                                            county_population_oneyeargrowth,
                                                                 cbsa_population_oneyeargrowth,
-                                                                county_population_oneyeargrowth,
                                                                 us_population_oneyeargrowth]
 
     neighborhood_profile.demographics.oneyeargrowth.labels = [TRACT_LABEL_NAME, county_name, cbsa_name, US_Name]
@@ -193,7 +193,19 @@ def set_demographic_section(tract_profile, neighborhood_profile, cbsa_profile, c
     return neighborhood_profile
 
 def set_economy_section(tract_profile, neighborhood_profile, cbsa_profile, county_profile, usa_profile):
-    neighborhood_profile.economy.householdincomerange.labels = list(tract_profile.data['Household Income Range']['All'].keys())
+    pre_labels = list(tract_profile.data['Household Income Range']['All'].keys())
+
+    household_income_range_relabel = {
+        'Less than 25,000':'Less than $25,000',
+       '25,000-49,999':'$25,000-$49,999',
+       '50,000-74,999':'$50,000-$74,999',
+       '75,000-99,999':'$75,000-$99,999',
+       '100,000-149,999':'$100,000-$149,999',
+       '150,000 or more':'$150,000 or more'
+    }
+
+    new_labels = [household_income_range_relabel.get(item,item) for item in pre_labels]
+    neighborhood_profile.economy.householdincomerange.labels = new_labels
     neighborhood_profile.economy.householdincomerange.data1 = list(tract_profile.data['Household Income Range']['All'].values())
     neighborhood_profile.economy.householdincomerange.data2 = list(tract_profile.data['Household Income Range']['Owners'].values())
     neighborhood_profile.economy.householdincomerange.data3 = list(tract_profile.data['Household Income Range']['Renters'].values())
@@ -218,8 +230,8 @@ def set_economy_section(tract_profile, neighborhood_profile, cbsa_profile, count
     neighborhood_profile.economy.meansoftransportation.data = list(tract_profile.data['Means of Transportation'].values())
     neighborhood_profile.economy.meansoftransportation.colors = COLORS[:len(tract_profile.data['Means of Transportation'].values())]
 
-    top_industry_growth = calculate_top_industry_growth(tract_profile.data['Employment Industry Growth'])
-    neighborhood_profile.economy.leadingemploymentindustries.data = top_industry_growth
+    # top_industry_growth = calculate_top_industry_growth(tract_profile.data['Employment Industry Growth'])
+    # neighborhood_profile.economy.leadingemploymentindustries.data = top_industry_growth
 
     county_name = county_profile.geoinfo['countyname']
 
@@ -280,8 +292,25 @@ def set_economy_section(tract_profile, neighborhood_profile, cbsa_profile, count
     return neighborhood_profile
 
 def set_housing_section(tract_profile, neighborhood_profile, cbsa_profile, county_profile, usa_profile):
+    housingunit = tract_profile.data['Housing Unit Growth']['Total Housing Units']
+    housingunit_growth = calculate_historic_growth(housingunit)
+    housingunit_oneyeargrowth = calculate_percent_change(tract_profile.data['Housing Unit Growth']['Total Housing Units'][-2], tract_profile.data['Housing Unit Growth']['Total Housing Units'][-1])
+
+    homeowner_oneyeargrowth = calculate_percent_change(tract_profile.data['Homeowner Growth']['Owner'][-2], tract_profile.data['Homeowner Growth']['Owner'][-1])
+    renter_oneyeargrowth = calculate_percent_change(tract_profile.data['Renter Growth']['Renter'][-2], tract_profile.data['Renter Growth']['Renter'][-1])
+
+    neighborhood_profile.housing.housingunitgrowth.data1 = housingunit
+    neighborhood_profile.housing.housingunitgrowth.labels1 = CENSUS_YEARS
+    neighborhood_profile.housing.housingunitgrowth.data2 = housingunit_growth
+    neighborhood_profile.housing.housingunitgrowth.labels2 = GROWTH_YEAR_LABELS
+
     dominant_housing_type = sorted(tract_profile.data['Property Types']['All'].items(), key=lambda x: (x[1],x[0]), reverse=True)[0][0]
+
+    neighborhood_profile.housing.housingquickfacts.value1 = str(homeowner_oneyeargrowth) + '%'
+    neighborhood_profile.housing.housingquickfacts.value2 = str(renter_oneyeargrowth) + '%'
+    neighborhood_profile.housing.housingquickfacts.value3 = str(housingunit_oneyeargrowth) + '%'
     neighborhood_profile.housing.housingquickfacts.value4 = dominant_housing_type
+
 
     neighborhood_profile.housing.occupancyrate.labels = list(tract_profile.data['Occupancy rate'].keys())
     neighborhood_profile.housing.occupancyrate.data = list(tract_profile.data['Occupancy rate'].values())
@@ -318,22 +347,7 @@ def set_housing_section(tract_profile, neighborhood_profile, cbsa_profile, count
     neighborhood_profile.housing.incomehousingcost.data3 = list(tract_profile.data['% Income on Housing Costs']['Renters'].values())
     neighborhood_profile.housing.incomehousingcost.colors = COLORS[:len(tract_profile.data['% Income on Housing Costs']['All'].values())]
 
-    housingunit = tract_profile.data['Housing Unit Growth']['Total Housing Units']
-    housingunit_growth = calculate_historic_growth(housingunit)
-    housingunit_oneyeargrowth = calculate_percent_change(tract_profile.data['Housing Unit Growth']['Total Housing Units'][-2], tract_profile.data['Housing Unit Growth']['Total Housing Units'][-1])
 
-    homeowner_oneyeargrowth = calculate_percent_change(tract_profile.data['Homeowner Growth']['Owner'][-2], tract_profile.data['Homeowner Growth']['Owner'][-1])
-    renter_oneyeargrowth = calculate_percent_change(tract_profile.data['Renter Growth']['Renter'][-2], tract_profile.data['Renter Growth']['Renter'][-1])
-
-    neighborhood_profile.housing.housingunitgrowth.data1 = housingunit
-    neighborhood_profile.housing.housingunitgrowth.labels1 = CENSUS_YEARS
-    neighborhood_profile.housing.housingunitgrowth.data2 = housingunit_growth
-    neighborhood_profile.housing.housingunitgrowth.labels2 = GROWTH_YEAR_LABELS
-
-    neighborhood_profile.housing.housingquickfacts.value1 = homeowner_oneyeargrowth
-    neighborhood_profile.housing.housingquickfacts.value2 = renter_oneyeargrowth
-    neighborhood_profile.housing.housingquickfacts.value3 = housingunit_oneyeargrowth
-    neighborhood_profile.housing.housingquickfacts.value4 = housingunit_oneyeargrowth
 
     return neighborhood_profile
 

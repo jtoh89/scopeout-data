@@ -1,12 +1,19 @@
 import requests as r
 import pandas as pd
 from ast import literal_eval
+
+import utils.utils
 from database import mongoclient
 import sys
 from enums import GeoLevels
 from census import censuslookups
+from enums import ProductionEnvironment
 from enums import DefaultGeoIds
 import time
+import os
+from fredapi import Fred
+from dotenv import load_dotenv
+from datetime import datetime
 
 CENSUS_LATEST_YEAR = 2019
 CENSUS_YEARS = [2012, 2013, 2014, 2015, 2016, 2017, 2018, CENSUS_LATEST_YEAR]
@@ -21,6 +28,69 @@ STATES = [
     '25','26','27','28','29','30','31','32','33','34','35','36','37','38','39','40','41','42','44','45','46',
     '47','48','49','50','51','53','54','55','56'
 ]
+
+def update_us_median_income_fred(geo_level, prod_env):
+    load_dotenv()
+    fred_api = os.getenv("FRED_API")
+    fred = Fred(api_key=fred_api)
+    data = fred.get_series('MEHOINUSA672N')
+    s = pd.Series(data, name="MedianHouseholdIncome")
+    df = s.to_frame()
+    df['Date'] = df.index
+    df = df.reset_index(drop=True)
+
+    fred_income_array = []
+    for i, row in df.iterrows():
+        date_string = str(row['Date'])
+        year = int(date_string[:4])
+
+        if year < CENSUS_YEARS[0] or year > CENSUS_LATEST_YEAR:
+            continue
+
+        medianhouseholdincome = int(row['MedianHouseholdIncome'])
+        fred_income_array.append(medianhouseholdincome)
+
+
+        collection_filter = {
+            'scopeoutyear': {'$eq': SCOPEOUT_YEAR},
+            'geoid': DefaultGeoIds.USA.value,
+        }
+
+    us_med_income = mongoclient.query_collection(database_name="censusdata1",
+                                                 collection_name="CensusData",
+                                                 collection_filter=collection_filter,
+                                                 prod_env=ProductionEnvironment.CENSUS_DATA1)
+
+    us_med_income_data = us_med_income.data[0]['Median Household Income']
+
+    for i, row in enumerate(us_med_income_data['All']):
+        income_adjustment = utils.utils.calculate_percent_change(starting_data=row,
+                                                                 ending_data=fred_income_array[i],
+                                                                 move_decimal=False,
+                                                                 decimal_places=7)
+        adjustment = row * income_adjustment
+        us_med_income_data['All'][i] = int(round(row + adjustment,0))
+
+        us_med_income_data['Renters'][i] = int(round(us_med_income_data['Renters'][i] + adjustment, 0))
+        us_med_income_data['Owners'][i] = int(round(us_med_income_data['Owners'][i] + adjustment, 0))
+
+
+    final_data_dict = {}
+    final_data_dict[DefaultGeoIds.USA.value] = {
+        'data': {
+            'Median Household Income': us_med_income_data
+        }
+    }
+
+
+    success = mongoclient.store_census_data(geo_level=GeoLevels.USA,
+                                            state_id=DefaultGeoIds.USA.value,
+                                            filtered_dict=final_data_dict,
+                                            prod_env=ProductionEnvironment.CENSUS_DATA1)
+
+    print(us_med_income)
+
+
 
 def run_census_data_import(geo_level, prod_env):
     lookups = censuslookups.get_census_lookup()

@@ -106,10 +106,10 @@ def query_geography(geo_level, stateid):
 def store_neighborhood_data(state_id, neighborhood_profile_list):
     prod_env=ProductionEnvironment.PRODUCTION
     client = connect_to_client(prod_env=prod_env)
-    dbname = 'ScopeoutMainApp'
+    dbname = 'scopeout'
 
     db = client[dbname]
-    collection = db['NeighborhoodProfiles']
+    collection = db['neighborhoodprofiles']
 
     try:
         tempkey = 'store_neighborhood_data. state_id: {}'.format(state_id)

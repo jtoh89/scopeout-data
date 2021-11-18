@@ -19,9 +19,9 @@ class MedianHouseholdIncome:
         self.labels = []
         self.data1Name = "All"
         self.data1 = []
-        self.data2name = "Owners"
+        self.data2Name = "Owners"
         self.data2 = []
-        self.data3name = "Renters"
+        self.data3Name = "Renters"
         self.data3 = []
         self.datatype = "DOLLAR"
 
@@ -45,11 +45,11 @@ class HouseholdIncomeRange:
         self.labels = []
         self.data1Name = "All"
         self.data1 = []
-        self.data2name = "Owners"
+        self.data2Name = "Owners"
         self.data2 = []
-        self.data3name = "Renters"
+        self.data3Name = "Renters"
         self.data3 = []
-        self.datatype = "PERCENT"
+        self.datatype = "DOLLAR"
 
 
 class EmploymentIndustries:
@@ -68,7 +68,6 @@ class LeadingEmploymentIndustries:
         self.title = "Leading Employment Industries"
         self.charttype = "table"
         self.data = []
-        self.datatype = "PERCENT"
 
 
 class VehiclesOwned:
@@ -79,9 +78,9 @@ class VehiclesOwned:
         self.colors = []
         self.data1Name = "All"
         self.data1 = []
-        self.data2name = "Owners"
+        self.data2Name = "Owners"
         self.data2 = []
-        self.data3name = "Renters"
+        self.data3Name = "Renters"
         self.data3 = []
         self.datatype = "PERCENT"
 
