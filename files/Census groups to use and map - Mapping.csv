@@ -14,8 +14,8 @@ FALSE,Percentage,Highest Education,Total,,Total,B15003_001E,B15003,2168424
 FALSE,Percentage,Gender,Male,,Male,B01001_002E,B01001,1563832
 FALSE,Percentage,Gender,Female,,Female,B01001_026E,B01001,1604212
 FALSE,Percentage,Gender,Total,,Total,B01001_001E,B01001,3168044
-FALSE,PercentageWithSubCategories,Age Groups,under 10,,Female!!Under 5 years,B01001_027E,B01001,91582
-FALSE,PercentageWithSubCategories,Age Groups,under 10,,Female!!5 to 9 years,B01001_028E,B01001,91347
+FALSE,PercentageWithSubCategories,Age Groups,Under 10,,Female!!Under 5 years,B01001_027E,B01001,91582
+FALSE,PercentageWithSubCategories,Age Groups,Under 10,,Female!!5 to 9 years,B01001_028E,B01001,91347
 FALSE,PercentageWithSubCategories,Age Groups,10-19,,Female!!10 to 14 years,B01001_029E,B01001,100123
 FALSE,PercentageWithSubCategories,Age Groups,10-19,,Female!!15 to 17 years,B01001_030E,B01001,61263
 FALSE,PercentageWithSubCategories,Age Groups,10-19,,Female!!18 and 19 years,B01001_031E,B01001,40370
