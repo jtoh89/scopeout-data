@@ -128,7 +128,7 @@ def store_neighborhood_data(state_id, neighborhood_profile_list):
     return True
 
 
-def store_census_data(geo_level, state_id, filtered_dict, prod_env=ProductionEnvironment.PRODUCTION):
+def store_census_data(geo_level, state_id, filtered_dict, prod_env=ProductionEnvironment.PRODUCTION, county_batches=False):
     client = connect_to_client(prod_env=prod_env)
 
     if prod_env == ProductionEnvironment.CENSUS_DATA1:
@@ -172,21 +172,76 @@ def store_census_data(geo_level, state_id, filtered_dict, prod_env=ProductionEnv
         for k, results in filtered_dict.items():
             insert_list.append(results)
 
-    try:
-        tempkey = 'store_census_data. geo_level: {}. state_id: {}'.format(geo_level, state_id)
-        store_temp_backup(key=tempkey,insert_list=insert_list)
+    insert_batches = {}
+    if county_batches == True:
+        for row in insert_list:
+            countyfullcode = row['countyfullcode']
+            if countyfullcode not in insert_batches.keys():
+                insert_batches[countyfullcode] = [row]
+            else:
+                insert_batches[countyfullcode].append(row)
+    else:
+        insert_batches = {'singlebatch': insert_list}
 
-        collection.delete_many(collection_filter)
-        collection.insert_many(insert_list)
+    total_inserts = 0
+    for k, data_list in insert_batches.items():
+        if k != "singlebatch":
+            collection_filter['countyfullcode'] = k
+        try:
+            tempkey = 'store_census_data. geo_level: {}. state_id: {}'.format(geo_level, state_id)
 
-        delete_temp_backup(key=tempkey)
-    except:
-        print("!!! ERROR storing data to Mongo!!!")
-        return False
+            use_single_inserts = store_temp_backup(key=tempkey,insert_list=data_list)
 
-    print("Successfully stored batch into Mongo. Rows inserted: ", len(insert_list))
+            if use_single_inserts:
+                perform_small_batch_inserts(data_list, tempkey, collection, collection_filter, geo_level)
+            else:
+                collection.delete_many(collection_filter)
+                try:
+                    collection.insert_many(data_list)
+                except Exception as e:
+                    print("!!! Could not perform insert many into Census Data. Try again with single insert. Err: ", e)
+                    perform_small_batch_inserts(data_list, tempkey, collection, collection_filter, geo_level)
+
+            delete_temp_backup(key=tempkey)
+            total_inserts += len(data_list)
+
+        except Exception as e:
+            print("!!! ERROR storing data to Mongo:!!! DETAILS: ", e)
+            return False
+
+    print("Successfully stored batch into Mongo. Rows inserted: ", total_inserts)
 
     return True
+
+def perform_small_batch_inserts(data_list, tempkey, collection, collection_filter, geo_level):
+    if geo_level != GeoLevels.TRACT:
+        print('ERROR!!! SINGLE INSERTS IMPLEMENTED ONLY FOR TRACTS')
+        sys.exit()
+
+    print("Finished single inserts. Num of records: ", len(data_list) )
+
+    remove_list = []
+    insert_list = []
+    for i, row in enumerate(data_list, 1):
+        tractid = row['geoid']
+        if i % 99 == 0:
+            store_temp_backup(key=tempkey,insert_list=insert_list)
+
+            collection.delete_many({
+                'geolevel':'tract',
+                'geoid': {'$in': remove_list}})
+            collection.insert_many(insert_list)
+            delete_temp_backup(key=tempkey)
+
+            print("Finished small batch insert. Current index: ", i)
+
+            insert_list.clear()
+            remove_list.clear()
+        else:
+            insert_list.append(row)
+            remove_list.append(tractid)
+
+    print("Finished single inserts. Num of records: ", len(data_list) )
 
 def add_finished_run(geo_level, state_id, scopeout_year, category):
     client = connect_to_client(prod_env=ProductionEnvironment.QA)
@@ -273,9 +328,16 @@ def store_temp_backup(key, insert_list):
             'data': insert_list
         }
         collection.insert_one(collection_add)
-    except:
-        print("!!! ERROR could not store backup to Mongo!!!")
-        sys.exit()
+
+        return False
+    except Exception as e:
+        print("!!! ERROR could not store backup to Mongo!!! Details: ", e)
+
+        error_string = str(e)[:23]
+        if error_string == 'BSON document too large':
+            return True
+        else:
+            sys.exit()
 
 def delete_temp_backup(key):
     client = connect_to_client(prod_env=ProductionEnvironment.QA)
@@ -299,7 +361,7 @@ def store_county_cbsa_lookup(counties_to_cbsa):
         collection = db['CountyToCbsa']
         collection.insert_many(counties_to_cbsa)
     except:
-        print("!!! ERROR could not store backup to Mongo!!!")
+        print("!!! ERROR could not store county_cbsa_lookup to Mongo!!!")
         sys.exit()
 
 def test_mongo(data_dict):

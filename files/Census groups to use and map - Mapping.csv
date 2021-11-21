@@ -338,12 +338,12 @@ TRUE,None,Employment Industry Growth,Public administration,,Male!!Public adminis
 TRUE,None,Employment Industry Growth,Retail trade,,Male!!Retail trade,C24030_009E,C24030,90389
 TRUE,None,Employment Industry Growth,"Transportation and warehousing, and utilities",,"Male!!Transportation and warehousing, and utilities",C24030_010E,C24030,43745
 TRUE,None,Employment Industry Growth,Wholesale trade,,Male!!Wholesale trade,C24030_008E,C24030,36907
-FALSE,Percentage,% of Children,% of Children,,Female!!Under 5 years,B01001_027E,B01001,91582
-FALSE,Percentage,% of Children,% of Children,,Female!!5 to 9 years,B01001_028E,B01001,91347
-FALSE,Percentage,% of Children,% of Children,,Female!!10 to 14 years,B01001_029E,B01001,100123
-FALSE,Percentage,% of Children,% of Children,,Female!!15 to 17 years,B01001_030E,B01001,61263
-FALSE,Percentage,% of Children,% of Children,,Male!!Under 5 years,B01001_003E,B01001,96241
-FALSE,Percentage,% of Children,% of Children,,Male!!5 to 9 years,B01001_004E,B01001,95037
-FALSE,Percentage,% of Children,% of Children,,Male!!10 to 14 years,B01001_005E,B01001,105267
-FALSE,Percentage,% of Children,% of Children,,Male!!15 to 17 years,B01001_006E,B01001,63648
-FALSE,Percentage,% of Children,Total,,Total,B01001_001E,B01001,3168044
+FALSE,Percentage,% of Children (under 18),% of Children (under 18),,Female!!Under 5 years,B01001_027E,B01001,91582
+FALSE,Percentage,% of Children (under 18),% of Children (under 18),,Female!!5 to 9 years,B01001_028E,B01001,91347
+FALSE,Percentage,% of Children (under 18),% of Children (under 18),,Female!!10 to 14 years,B01001_029E,B01001,100123
+FALSE,Percentage,% of Children (under 18),% of Children (under 18),,Female!!15 to 17 years,B01001_030E,B01001,61263
+FALSE,Percentage,% of Children (under 18),% of Children (under 18),,Male!!Under 5 years,B01001_003E,B01001,96241
+FALSE,Percentage,% of Children (under 18),% of Children (under 18),,Male!!5 to 9 years,B01001_004E,B01001,95037
+FALSE,Percentage,% of Children (under 18),% of Children (under 18),,Male!!10 to 14 years,B01001_005E,B01001,105267
+FALSE,Percentage,% of Children (under 18),% of Children (under 18),,Male!!15 to 17 years,B01001_006E,B01001,63648
+FALSE,Percentage,% of Children (under 18),Total,,Total,B01001_001E,B01001,3168044

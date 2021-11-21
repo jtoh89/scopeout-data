@@ -23,10 +23,14 @@ CENSUS_YEARS = [2012, 2013, 2014, 2015, 2016, 2017, 2018, CENSUS_LATEST_YEAR]
 
 SCOPEOUT_YEAR = 2021
 
+# STATES = [
+#     '01','02','04','05','06','08','09','10','11','12','13','15','16','17','18','19','20','21','22','23','24',
+#     '25','26','27','28','29','30','31','32','33','34','35','36','37','38','39','40','41','42','44','45','46',
+#     '47','48','49','50','51','53','54','55','56'
+# ]
+
 STATES = [
-    '01','02','04','05','06','08','09','10','11','12','13','15','16','17','18','19','20','21','22','23','24',
-    '25','26','27','28','29','30','31','32','33','34','35','36','37','38','39','40','41','42','44','45','46',
-    '47','48','49','50','51','53','54','55','56'
+    '06'
 ]
 
 def update_us_median_income_fred(geo_level, prod_env):
@@ -155,6 +159,7 @@ def get_and_store_census_data(geo_level, state_id, variables_df, geographies_df,
     aggregate_type = variables_df['AggregateType'].iloc[0]
     historical = variables_df['Historical'].iloc[0]
     variable_list = list(variables_df['VariableID'])
+    county_batches = False
 
     results_dict = {}
     geo_id = None
@@ -275,6 +280,10 @@ def get_and_store_census_data(geo_level, state_id, variables_df, geographies_df,
             census_result_object['geolevel'] = geo_level.value
             census_result_object['data'] = data_dict
 
+            if geo_level == GeoLevels.TRACT:
+                census_result_object['countyfullcode'] = geo_info.countyfullcode.iloc[0]
+                county_batches = True
+
             if historical:
                 census_result_object['data'] = {category: data_dict}
 
@@ -301,7 +310,8 @@ def get_and_store_census_data(geo_level, state_id, variables_df, geographies_df,
     return mongoclient.store_census_data(geo_level=geo_level,
                                          state_id=state_id,
                                          filtered_dict=filtered_dict,
-                                         prod_env=prod_env)
+                                         prod_env=prod_env,
+                                         county_batches=county_batches)
 
 
 

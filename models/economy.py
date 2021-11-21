@@ -49,7 +49,7 @@ class HouseholdIncomeRange:
         self.data2 = []
         self.data3Name = "Renters"
         self.data3 = []
-        self.datatype = "DOLLAR"
+        self.datatype = "PERCENT"
 
 
 class EmploymentIndustries:
@@ -102,5 +102,6 @@ class CommuteToWork:
         self.charttype = "horizontalbar"
         self.labels = []
         self.data = []
+        self.colors = []
         self.datatype = "PERCENT"
 
