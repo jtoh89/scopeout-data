@@ -8,6 +8,13 @@ from census.censusdata import calculate_category_percentage
 from utils.utils import calculate_percent_change
 
 def update_regional_unemployment(geo_level):
+    '''
+    Function updates ACS unemployment data with BLS monthly unemployment data for geographies.
+    ACS unemployment is under Unemployment. BLS is under Unemployment Historic.
+    Only updates Cbsa and County
+    :param geo_level:
+    :return:
+    '''
     states = STATES
 
     if geo_level == GeoLevels.CBSA:
@@ -62,6 +69,10 @@ def update_regional_unemployment(geo_level):
 
 
 def update_tract_unemployment():
+    '''
+    Function updates all tract unemployment rates using unemployment adjustments calculated from BLS data.
+    :return:
+    '''
     for stateid in STATES:
         collection_filter = {
             'geolevel': {'$eq': GeoLevels.TRACT.value},

@@ -6,3 +6,5 @@ libs
 -dnspython
 -python-dotenv
 -requests
+-fredapi
+-openpyxl

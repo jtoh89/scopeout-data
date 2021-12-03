@@ -19,30 +19,3 @@ def get_census_lookup():
     return df
 
 
-
-def create_county_to_cbsa_lookup():
-
-    cbsa_data = mongoclient.query_collection(database_name="Geographies",
-                                             collection_name="Cbsa",
-                                             collection_filter={},
-                                             prod_env=ProductionEnvironment.GEO_ONLY)
-
-    counties_to_cbsa = []
-    for i, cbsa in cbsa_data.iterrows():
-        cbsaid = cbsa['cbsacode']
-        cbsaname = cbsa['cbsatitle']
-        for county in cbsa['counties']:
-            stateid = county['stateinfo']['fipsstatecode']
-            counties_to_cbsa.append({
-                'countyfullcode': county['countyfullcode'],
-                'cbsacode': cbsaid,
-                'cbsaname': cbsaname,
-                'stateid': stateid
-            })
-
-    print(counties_to_cbsa)
-    mongoclient.store_county_cbsa_lookup(counties_to_cbsa)
-
-
-
-

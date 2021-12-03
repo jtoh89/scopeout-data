@@ -6,10 +6,25 @@ class GeoLevels(Enum):
     STATE = 'state'
     COUNTY = 'county'
     TRACT = 'tract'
+    ZIPCODE = 'zipcode'
+
+class GeoIdField(Enum):
+    USA = 'usacode'
+    CBSA = 'cbsacode'
+    COUNTY = 'countyfullcode'
+    ZIPCODE = 'zipcode'
+
+class GeoNameField(Enum):
+    USA = 'usacode'
+    CBSA = 'cbsaname'
+    COUNTY = 'countyname'
+    ZIPCODE = 'zipcodename'
 
 class DefaultGeoIds(Enum):
     USA = '99999'
     CBSA = '00000'
+    COUNTY = None
+    ZIPCODE = '99999'
 
 class ProductionEnvironment(Enum):
     PRODUCTION = 'prod'
@@ -17,6 +32,7 @@ class ProductionEnvironment(Enum):
     QA = 'qa'
     CENSUS_DATA1 = 'censusdata1'
     CENSUS_DATA2 = 'censusdata2'
+    MARKET_TRENDS = 'markettrends'
 
 class CensusDataByEnvironment(Enum):
     CENSUS_DATA1 = 'censusdata1'

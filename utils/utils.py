@@ -1,3 +1,6 @@
+from database import mongoclient
+from enums import ProductionEnvironment
+
 def calculate_percent_change(starting_data, ending_data, move_decimal=True, decimal_places=1):
     if starting_data == 0 or ending_data == 0:
         return 0
@@ -11,43 +14,18 @@ def calculate_percent_change(starting_data, ending_data, move_decimal=True, deci
     return percent_change
 
 
-REDFIN_MSA_TO_CBSA = {
-    '16974':'16980',
-    '20994':'16980',
-    '23844':'16980',
-    '29404':'16980',
-    '19124':'19100',
-    '23104':'19100',
-    '19804':'19820',
-    '47664':'19820',
-    '11244':'31080',
-    '31084':'31080',
-    '22744':'33100',
-    '33124':'33100',
-    '48424':'33100',
-    '20524':'35620',
-    '35004':'35620',
-    '35084':'35620',
-    '35614':'35620',
-    '15804':'37980',
-    '33874':'37980',
-    '37964':'37980',
-    '48864':'37980',
-    '36084':'41860',
-    '41884':'41860',
-    '42034':'41860',
-    '42644':'42660',
-    '45104':'42660',
-    '43524':'47900',
-    '47894':'47900',
-    '71654':'14460',
-    '72104':'14460',
-    '73104':'14460',
-    '73604':'14460',
-    '74204':'14460',
-    '74804':'14460',
-    '74854':'14460',
-    '75404':'14460',
-    '76524':'14460',
-    '78254':'14460'
-}
+
+def get_county_cbsa_lookup(state_id):
+    if state_id == '':
+        collection_filter = {}
+    else:
+        collection_filter = {'stateid': {'$eq': state_id}}
+
+    counties_to_cbsa = mongoclient.query_collection(database_name="Geographies",
+                                                    collection_name="CountyToCbsa",
+                                                    collection_filter=collection_filter,
+                                                    prod_env=ProductionEnvironment.GEO_ONLY)
+
+    county_cbsa_lookup = counties_to_cbsa[['countyfullcode', 'cbsacode', 'cbsaname']]
+
+    return  county_cbsa_lookup

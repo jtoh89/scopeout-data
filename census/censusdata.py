@@ -1,7 +1,6 @@
 import requests as r
 import pandas as pd
 from ast import literal_eval
-
 import utils.utils
 from database import mongoclient
 import sys
@@ -13,6 +12,7 @@ import time
 import os
 from fredapi import Fred
 from dotenv import load_dotenv
+from lookups import OLD_TO_NEW_CBSAID
 from datetime import datetime
 
 CENSUS_LATEST_YEAR = 2019
@@ -30,10 +30,15 @@ SCOPEOUT_YEAR = 2021
 # ]
 
 STATES = [
-    '06'
+    '02'
 ]
 
-def update_us_median_income_fred(geo_level, prod_env):
+def update_us_median_income_fred():
+    '''
+    Function will get national unemployment data from Fred API and update median household income data for
+    US data.
+    :return: None
+    '''
     load_dotenv()
     fred_api = os.getenv("FRED_API")
     fred = Fred(api_key=fred_api)
@@ -97,10 +102,21 @@ def update_us_median_income_fred(geo_level, prod_env):
 
 
 def run_census_data_import(geo_level, prod_env):
+    '''
+    Downloads census data variables. Function iterates through states, checks finished runs, and downloads
+    data that are currently missing. Specify SCOPEOUT_YEAR when new year releases.
+    :param geo_level:
+    :param prod_env:
+    :return: None
+    '''
     lookups = censuslookups.get_census_lookup()
     all_categories = lookups['Category'].drop_duplicates()
 
-    finished_runs = mongoclient.get_finished_runs(geo_level, SCOPEOUT_YEAR)
+    collection_find_finished_runs = {
+        'scopeout_year': SCOPEOUT_YEAR,
+        'geo_level': geo_level.value,
+    }
+    finished_runs = mongoclient.get_finished_runs(collection_find_finished_runs)
 
     for i, stateid in enumerate(STATES):
         #usa and cbsa data does not need more than 1 iteration
@@ -140,7 +156,14 @@ def run_census_data_import(geo_level, prod_env):
                 print("*** END RUN - get_and_store_census_data Failed ***")
                 sys.exit()
 
-            mongoclient.add_finished_run(geo_level, stateid, SCOPEOUT_YEAR, category)
+
+            collection_add_finished_run = {
+                'scopeout_year': SCOPEOUT_YEAR,
+                'state_id': stateid,
+                'geo_level': geo_level.value,
+                'category': category,
+            }
+            mongoclient.add_finished_run(collection_add_finished_run)
 
 
 
@@ -180,22 +203,9 @@ def get_and_store_census_data(geo_level, state_id, variables_df, geographies_df,
                 '30100':'30060',
                 '49060':'11680',
             }
-            remap_old_cbsa_code = {
-                '42060': '42200',
-                '43860': '38240',
-                '44600': '48260',
-                '32270': '49220',
-                '20620': '41400',
-                '29140': '29200',
-                '30500': '15680',
-                '14060': '14010',
-                '31100': '31080',
-                '37820': '25840',
-                '26100': '26090',
-                '26180': '46520',
-            }
+
             df['cbsa'] = df['cbsa'].replace(remap_cbsa_code)
-            df['cbsa'] = df['cbsa'].replace(remap_old_cbsa_code)
+            df['cbsa'] = df['cbsa'].replace(OLD_TO_NEW_CBSAID)
 
         census_geoname_lookup = df[['NAME', geo_level.value]]
 

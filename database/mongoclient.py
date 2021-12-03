@@ -38,6 +38,11 @@ def connect_to_client(prod_env):
         database = os.getenv("CENSUS_DATA2_DATABASE")
         un = os.getenv("CENSUS_DATA2_USERNAME")
         pw = os.getenv("CENSUS_DATA2_PASSWORD")
+    elif prod_env == ProductionEnvironment.MARKET_TRENDS:
+        host = os.getenv("MARKET_TRENDS_MONGO_HOST")
+        database = os.getenv("MARKET_TRENDS_MONGO_DATABASE")
+        un = os.getenv("MARKET_TRENDS_MONGO_USERNAME")
+        pw = os.getenv("MARKET_TRENDS_MONGO_PASSWORD")
 
     connection_string = 'mongodb+srv://{}:{}@{}/{}?retryWrites=true&w=majority' \
         .format(un, pw, host, database)
@@ -71,13 +76,9 @@ def query_geography(geo_level, stateid):
     collection = None
 
     if geo_level == GeoLevels.USA:
-        return pd.DataFrame.from_dict({
-            'name': ['United States'],
-            'geoid': [DefaultGeoIds.USA.value],
-            'stateid': [DefaultGeoIds.USA.value]
-        })
-
-    if geo_level == GeoLevels.CBSA:
+        collection = db['USA']
+        collection_filter = {}
+    elif geo_level == GeoLevels.CBSA:
         collection = db['Cbsa']
         collection_filter = {}
     elif geo_level == GeoLevels.STATE:
@@ -87,14 +88,24 @@ def query_geography(geo_level, stateid):
         }
     elif geo_level == GeoLevels.COUNTY:
         collection = db['County']
+
         collection_filter = {
             'stateinfo.fipsstatecode': stateid,
         }
+
+        if stateid == None:
+            collection_filter = {}
+
     elif geo_level == GeoLevels.TRACT:
         collection = db['EsriTracts']
         collection_filter = {
             'fipsstatecode': stateid,
         }
+    elif geo_level == GeoLevels.ZIPCODE:
+        collection = db['ZipCountyCbsa']
+        collection_filter = {}
+    else:
+        return pd.DataFrame()
 
     data = list(collection.find(collection_filter))
     df = DataFrame(data)
@@ -102,9 +113,36 @@ def query_geography(geo_level, stateid):
 
     return df
 
+def create_county_to_cbsa_lookup():
+    '''
+    Function creates lookup for counties to cbsa ids
+    :return: None
+    '''
+    cbsa_data = query_collection(database_name="Geographies",
+                                             collection_name="Cbsa",
+                                             collection_filter={},
+                                             prod_env=ProductionEnvironment.GEO_ONLY)
+
+    counties_to_cbsa = []
+    for i, cbsa in cbsa_data.iterrows():
+        cbsaid = cbsa['cbsacode']
+        cbsaname = cbsa['cbsatitle']
+        for county in cbsa['counties']:
+            stateid = county['stateinfo']['fipsstatecode']
+            counties_to_cbsa.append({
+                'countyfullcode': county['countyfullcode'],
+                'cbsacode': cbsaid,
+                'cbsaname': cbsaname,
+                'stateid': stateid
+            })
+
+    insert_list_mongo(list_data=counties_to_cbsa,
+                                  dbname='Geographies',
+                                  collection_name='CountyToCbsa',
+                                  prod_env=ProductionEnvironment.GEO_ONLY)
 
 def store_neighborhood_data(state_id, neighborhood_profile_list):
-    prod_env=ProductionEnvironment.PRODUCTION
+    prod_env = ProductionEnvironment.PRODUCTION
     client = connect_to_client(prod_env=prod_env)
     dbname = 'scopeout'
 
@@ -164,6 +202,7 @@ def store_census_data(geo_level, state_id, filtered_dict, prod_env=ProductionEnv
             print('DID NOT FIND GEO IN FILTERED DICT. GEOID: ', geoid)
             continue
 
+        # append data to dict
         existing_data.update(filtered_dict[geoid]['data'])
 
     insert_list = existing_list
@@ -193,14 +232,14 @@ def store_census_data(geo_level, state_id, filtered_dict, prod_env=ProductionEnv
             use_single_inserts = store_temp_backup(key=tempkey,insert_list=data_list)
 
             if use_single_inserts:
-                perform_small_batch_inserts(data_list, tempkey, collection, collection_filter, geo_level)
+                perform_small_batch_inserts_census_tracts(data_list, tempkey, collection, collection_filter, geo_level)
             else:
                 collection.delete_many(collection_filter)
                 try:
                     collection.insert_many(data_list)
                 except Exception as e:
                     print("!!! Could not perform insert many into Census Data. Try again with single insert. Err: ", e)
-                    perform_small_batch_inserts(data_list, tempkey, collection, collection_filter, geo_level)
+                    perform_small_batch_inserts_census_tracts(data_list, tempkey, collection, collection_filter, geo_level)
 
             delete_temp_backup(key=tempkey)
             total_inserts += len(data_list)
@@ -213,12 +252,64 @@ def store_census_data(geo_level, state_id, filtered_dict, prod_env=ProductionEnv
 
     return True
 
-def perform_small_batch_inserts(data_list, tempkey, collection, collection_filter, geo_level):
+def store_market_trends(data_list, collection, collection_filter, geoid_field):
+    '''
+    Function will insert records into mongo 99 records at a time.
+
+    :param data_list:
+    :param collection:
+    :param collection_filter:
+    :param geoid_field:
+    :return:
+    '''
+    try:
+        tempkey = 'store_market_trends_data'
+
+        insert_ids = []
+
+        insert_list = []
+        for i, data in enumerate(data_list, 1):
+            insert_ids.append(data[geoid_field])
+            insert_list.append(data)
+            if i % 99 == 0:
+                market_trends_db_insert(insert_list, insert_ids, collection, collection_filter, tempkey, geoid_field)
+
+                insert_ids = []
+                insert_list = []
+
+        # insert any remaining inserts
+        if len(insert_list) > 0:
+            market_trends_db_insert(insert_list, insert_ids, collection, collection_filter, tempkey, geoid_field)
+
+    except Exception as e:
+        print("!!! ERROR storing data to Mongo:!!! DETAILS: ", e)
+        return False
+
+    return True
+
+
+def market_trends_db_insert(insert_list, insert_ids, collection, collection_filter, tempkey, geoid_field):
+    collection_filter[geoid_field] = {'$in': insert_ids}
+    insert_failed = store_temp_backup(key=tempkey,insert_list=insert_list)
+
+    if not insert_failed:
+        collection.delete_many(collection_filter)
+
+    try:
+        collection.insert_many(insert_list)
+    except Exception as e:
+        print("!!! Could not perform insert many into Census Data. Try again with single insert. Err: ", e)
+
+
+    delete_temp_backup(key=tempkey)
+
+
+def perform_small_batch_inserts_census_tracts(data_list, tempkey, collection, collection_filter, geo_level):
     if geo_level != GeoLevels.TRACT:
         print('ERROR!!! SINGLE INSERTS IMPLEMENTED ONLY FOR TRACTS')
         sys.exit()
 
-    print("Finished single inserts. Num of records: ", len(data_list) )
+    print("Finished single inserts. Num of records: ", len(data_list))
 
     remove_list = []
     insert_list = []
@@ -243,37 +334,27 @@ def perform_small_batch_inserts(data_list, tempkey, collection, collection_filte
 
     print("Finished single inserts. Num of records: ", len(data_list) )
 
-def add_finished_run(geo_level, state_id, scopeout_year, category):
+def add_finished_run(collection_add_finished_run):
     client = connect_to_client(prod_env=ProductionEnvironment.QA)
     db = client['CensusDataInfo']
     # Add entry to finished runs. So if process stops, we can start from where we left off without running through
     # each state and category again.
     try:
         collection = db['FinishedRuns']
-        collection_add = {
-            'scopeout_year': scopeout_year,
-            'state_id': state_id,
-            'geo_level': geo_level.value,
-            'category': category,
-        }
-        collection.insert_one(collection_add)
+
+        collection.insert_one(collection_add_finished_run)
     except:
         print("!!! ERROR storing finished run to Mongo!!!")
         sys.exit()
 
     print("Successfully stored finished run into Mongo")
 
-def get_finished_runs(geo_level, scopeout_year):
+def get_finished_runs(collection_find_finished_runs):
     client = connect_to_client(prod_env=ProductionEnvironment.QA)
     db = client['CensusDataInfo']
     collection = db['FinishedRuns']
 
-    collection_find = {
-        'scopeout_year': scopeout_year,
-        'geo_level': geo_level.value,
-    }
-
-    data = list(collection.find(collection_find))
+    data = list(collection.find(collection_find_finished_runs))
 
     if len(data) > 0:
         df = DataFrame(data)
@@ -282,6 +363,24 @@ def get_finished_runs(geo_level, scopeout_year):
         df = pd.DataFrame(columns=['state_id'])
 
     return df
+
+def update_finished_run(collection_add_finished_run, geo_level, category):
+    client = connect_to_client(prod_env=ProductionEnvironment.QA)
+    db = client['CensusDataInfo']
+
+
+
+    # Add entry to finished runs. So if process stops, we can start from where we left off without running through
+    # each state and category again.
+    try:
+        collection = db['FinishedRuns']
+        collection.delete_one({'category': category, 'geo_level': geo_level.value})
+        collection.insert_one(collection_add_finished_run)
+    except:
+        print("!!! ERROR storing finished run to Mongo!!!")
+        sys.exit()
+
+    print("Successfully stored finished run into Mongo")
 
 def store_missing_geo(missing_geo, geo_level, state_id, category):
     print("!!! STORING MISSING GEO !!! COUNT: ".format(len(missing_geo)))
@@ -353,15 +452,16 @@ def delete_temp_backup(key):
         print("!!! ERROR could not delete backup Mongo!!!")
         sys.exit()
 
-def store_county_cbsa_lookup(counties_to_cbsa):
-    client = connect_to_client(prod_env=ProductionEnvironment.QA)
-    db = client['CensusDataInfo']
+
+def insert_list_mongo(list_data, dbname, collection_name, prod_env):
+    client = connect_to_client(prod_env=prod_env)
+    db = client[dbname]
 
     try:
-        collection = db['CountyToCbsa']
-        collection.insert_many(counties_to_cbsa)
+        collection = db[collection_name]
+        collection.insert_many(list_data)
     except:
-        print("!!! ERROR could not store county_cbsa_lookup to Mongo!!!")
+        print("!!! ERROR could not store insert_list_mongo to Mongo!!!")
         sys.exit()
 
 def test_mongo(data_dict):

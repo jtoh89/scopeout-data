@@ -2,12 +2,11 @@ import pandas as pd
 import requests as r
 from database import mongoclient
 import sys
-from enums import ProductionEnvironment
-from enums import GeoLevels
-from enums import DefaultGeoIds
+from enums import ProductionEnvironment, GeoLevels, DefaultGeoIds
 import os
-from  census.censusdata import STATES
+from census.censusdata import STATES
 import copy
+from lookups import MONTH_FORMAT, MONTH_INTEGER
 
 CURRENT_YEAR = '2021'
 CURRENT_MONTH = 'M01'
@@ -17,61 +16,11 @@ DELIMETER = '\t'
 US_UNEMPLOYMENT = 6.3
 #https://fred.stlouisfed.org/series/UNRATE
 
-MONTH_FORMAT = {
-    'M01': 'January',
-    'M02': 'February',
-    'M03': 'March',
-    'M04': 'April',
-    'M05': 'May',
-    'M06': 'June',
-    'M07': 'July',
-    'M08': 'August',
-    'M09': 'September',
-    'M10': 'October',
-    'M11': 'November',
-    'M12': 'December',
-    '01': 'January',
-    '02': 'February',
-    '03': 'March',
-    '04': 'April',
-    '05': 'May',
-    '06': 'June',
-    '07': 'July',
-    '08': 'August',
-    '09': 'September',
-    '10': 'October',
-    '11': 'November',
-    '12': 'December',
-}
-
-MONTH_INTEGER = {
-    'M01': 1,
-    'M02': 2,
-    'M03': 3,
-    'M04': 4,
-    'M05': 5,
-    'M06': 6,
-    'M07': 7,
-    'M08': 8,
-    'M09': 9,
-    'M10': 10,
-    'M11': 11,
-    'M12': 12,
-    '01': 1,
-    '02': 2,
-    '03': 3,
-    '04': 4,
-    '05': 5,
-    '06': 6,
-    '07': 7,
-    '08': 8,
-    '09': 9,
-    '00': 10,
-    '11': 11,
-    '12': 12,
-}
-
 def download_cbsa_unemployment():
+    '''
+    Function will download unemployment data for cbsa geographies.
+    :return:
+    '''
     ############################################
     ######## METRO UNEMPLOYMENT
     ############################################
@@ -143,6 +92,10 @@ def download_cbsa_unemployment():
 
 
 def download_county_unemployment():
+    '''
+    Function will download unemployment data for county geographies.
+    :return:
+    '''
     urls = {
         'counties': 'https://download.bls.gov/pub/time.series/la/la.data.64.County',
     }
@@ -211,6 +164,10 @@ def download_county_unemployment():
 
 
 def download_usa_unemployment():
+    '''
+    Function will download unemployment data for USA.
+    :return:
+    '''
     currpath = os.path.dirname(os.path.abspath(__file__))
     rootpath = os.path.dirname(os.path.abspath(currpath))
     with open(rootpath + '/files/UNRATE.csv') as file:

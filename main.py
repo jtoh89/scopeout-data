@@ -1,19 +1,26 @@
-from scopeoutdata import processtracts
-from unemployment import unemploymentdownload
-from unemployment import unemploymentupdates
-from enums import GeoLevels
-from enums import ProductionEnvironment
-from census import censusdata
-from census import censuslookups
+from scopeoutdata import processtracts, createmarketprofiles
+from unemployment import unemploymentdownload, unemploymentupdates
+from enums import GeoLevels, DefaultGeoIds, ProductionEnvironment, GeoIdField, GeoNameField
+from census import censusdata, censuslookups
+from realestate import redfin, buildingpermits, initialize, zillow
+from geographies import geographies
+from database import mongoclient
+
+
+##################################################
+##################################################
+######  DONE
+##################################################
+##################################################
 
 # censusdata.run_census_data_import(GeoLevels.USA, ProductionEnvironment.CENSUS_DATA1)
 # censusdata.update_us_median_income_fred(GeoLevels.USA, ProductionEnvironment.CENSUS_DATA1)
 # censusdata.run_census_data_import(GeoLevels.STATE, ProductionEnvironment.CENSUS_DATA1)
 # censusdata.run_census_data_import(GeoLevels.CBSA, ProductionEnvironment.CENSUS_DATA1)
 # censusdata.run_census_data_import(GeoLevels.COUNTY, ProductionEnvironment.CENSUS_DATA1)
-censusdata.run_census_data_import(GeoLevels.TRACT, ProductionEnvironment.CENSUS_DATA1)
+# censusdata.run_census_data_import(GeoLevels.TRACT, ProductionEnvironment.CENSUS_DATA1)
 
-# censuslookups.create_county_to_cbsa_lookup()
+# mongoclient.create_county_to_cbsa_lookup()
 
 # unemploymentdownload.download_cbsa_unemployment()
 # unemploymentdownload.download_county_unemployment()
@@ -22,8 +29,74 @@ censusdata.run_census_data_import(GeoLevels.TRACT, ProductionEnvironment.CENSUS_
 # unemploymentupdates.update_regional_unemployment(GeoLevels.CBSA)
 # unemploymentupdates.update_regional_unemployment(GeoLevels.COUNTY)
 
+# dump zipcodes to geographies
+# geographies.dump_zipcode()
 
-#NOT DONE
+# # dump zillow to cbsa mapping
+# geographies.dump_zillow_cbsa_mapping()
+
+# # dump initialize market trends for cbsa
+
+
+# initialize.initialize_market_trends(geo_level=GeoLevels.CBSA,
+#                                     default_geoid=DefaultGeoIds.CBSA,
+#                                     geoid_field=GeoIdField.CBSA.value,
+#                                     geoname_field=GeoNameField.CBSA.value
+#                                     )
+# initialize.initialize_market_trends(geo_level=GeoLevels.COUNTY,
+#                                     default_geoid=DefaultGeoIds.COUNTY.value,
+#                                     geoid_field=GeoIdField.COUNTY.value,
+#                                     geoname_field=GeoNameField.COUNTY.value
+#                                     )
+
+
+# buildingpermits.run_cbsa_building_permit(geo_level=GeoLevels.CBSA,
+#                                          geoid_field=GeoIdField.CBSA.value,
+#                                          geoname_field=GeoNameField.CBSA.value)
+
+
+# redfin.import_redfin_data(geo_level=GeoLevels.USA,
+#                           default_geoid=DefaultGeoIds.USA.value,
+#                           geoid_field=GeoIdField.USA.value,
+#                           geoname_field=GeoNameField.USA.value,
+#                           batches=True)
+
+
+# redfin.import_redfin_data(geo_level=GeoLevels.CBSA,
+#                           default_geoid=DefaultGeoIds.CBSA.value,
+#                           geoid_field=GeoIdField.CBSA.value,
+#                           geoname_field=GeoNameField.CBSA.value)
+
+
+# redfin.import_redfin_data(geo_level=GeoLevels.COUNTY,
+#                               default_geoid=DefaultGeoIds.COUNTY.value,
+#                               geoid_field=GeoIdField.COUNTY.value,
+#                               geoname_field=GeoNameField.COUNTY.value)
+
+
+# zillow.import_zillow_msa_rental_data(geo_level=GeoLevels.USA,
+#                                      default_geoid=DefaultGeoIds.USA.value,
+#                                      geoid_field=GeoIdField.USA.value,
+#                                      geoname_field=GeoNameField.USA.value)
+
+# zillow.import_zillow_msa_rental_data(geo_level=GeoLevels.CBSA,
+#                                      default_geoid=DefaultGeoIds.CBSA.value,
+#                                      geoid_field=GeoIdField.CBSA.value,
+#                                      geoname_field=GeoNameField.CBSA.value)
+
+
+
+
+##################################################
+##################################################
+###### NOT DONE
+##################################################
+##################################################
+
+
+
 # unemploymentupdates.update_tract_unemployment()
 
 # processtracts.process_tracts()
+
+createmarketprofiles.process_market_profiles()

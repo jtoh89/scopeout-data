@@ -1,12 +1,12 @@
 import sys
-
 from database import mongoclient
 from models import neighborhoodprofile
 from database import mongoclient
 import json
 from enums import GeoLevels
 from enums import ProductionEnvironment
-from utils.utils import calculate_percent_change
+from utils.utils import calculate_percent_change, get_county_cbsa_lookup
+
 
 CENSUS_LATEST_YEAR = 2019
 CENSUS_YEARS = [2012, 2013, 2014, 2015, 2016, 2017, 2018, CENSUS_LATEST_YEAR]
@@ -18,8 +18,11 @@ TRACT_LABEL_NAME = 'Neighborhood'
 US_Name = 'United States'
 
 def process_tracts():
+    '''
+    Function stores neighborhood profiles for app
+    :return:
+    '''
     state_id = "01"
-
 
     census_tract_data_filter = {
         'stateid': {'$eq': state_id},
@@ -54,13 +57,9 @@ def process_tracts():
                                                collection_filter=census_county_data_filter,
                                                prod_env=ProductionEnvironment.CENSUS_DATA1)
 
-    counties_to_cbsa = mongoclient.query_collection(database_name="CensusDataInfo",
-                                               collection_name="CountyToCbsa",
-                                               collection_filter={'stateid': {'$eq': state_id}},
-                                               prod_env=ProductionEnvironment.QA)
+    county_cbsa_lookup = get_county_cbsa_lookup(state_id=state_id)
 
-    county_cbsa_lookup = counties_to_cbsa[['countyfullcode', 'cbsacode', 'cbsaname']]
-    all_cbsa = list(counties_to_cbsa['cbsacode'].drop_duplicates())
+    all_cbsa = list(county_cbsa_lookup['cbsacode'].drop_duplicates())
 
     census_cbsa_data_filter = {
         'geolevel': {'$eq': 'cbsa'},
@@ -84,11 +83,14 @@ def process_tracts():
 
         # Set geoid and neighborhood shapes
         neighborhood_profile.geoid = tract_profile.geoid
+        neighborhood_profile.countyfullcode = None
+        neighborhood_profile.countyname = ''
+        neighborhood_profile.cbsacode = None
+        neighborhood_profile.cbsaname = ''
         neighborhood_profile.geoshapecoordinates = get_neighborhood_map_shape(tract_profile.geoinfo)
 
         # County
         countyfullcode = tract_profile.geoinfo['countyfullcode']
-
         county_profile = county_data[county_data['geoid'] == countyfullcode]
 
         if len(county_profile) > 1:
@@ -96,7 +98,8 @@ def process_tracts():
             sys.exit()
         else:
             county_profile = county_profile.iloc[0]
-
+            neighborhood_profile.countyfullcode = county_profile.geoid
+            neighborhood_profile.countyname = county_profile.geoinfo['countyname']
 
         cbsainfo = county_cbsa_lookup[county_cbsa_lookup['countyfullcode'] == countyfullcode]
 
@@ -109,6 +112,9 @@ def process_tracts():
                 cbsa_profile = None
             else:
                 cbsa_profile = cbsa_profile.iloc[0]
+                neighborhood_profile.cbsacode = cbsa_profile.geoid
+                neighborhood_profile.cbsaname = cbsa_profile.geoinfo['cbsatitle']
+
         elif len(cbsainfo) > 1:
             print('!!!ERROR - Check why there is more than 1 cbsa record for tractid: {}!!!'.format(tract_profile.geoid))
             sys.exit()
