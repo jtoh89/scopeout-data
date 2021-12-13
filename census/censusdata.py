@@ -30,7 +30,8 @@ SCOPEOUT_YEAR = 2021
 # ]
 
 STATES = [
-    '02'
+    '01'
+    # '20'
 ]
 
 def update_us_median_income_fred():
@@ -322,11 +323,6 @@ def get_and_store_census_data(geo_level, state_id, variables_df, geographies_df,
                                          filtered_dict=filtered_dict,
                                          prod_env=prod_env,
                                          county_batches=county_batches)
-
-
-
-
-
 
 
 def filter_existing_data(results_dict, geo_level, category, prod_env, state_id=None):

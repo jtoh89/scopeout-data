@@ -74,9 +74,13 @@ def import_redfin_data(geo_level, default_geoid, geoid_field, geoname_field):
             if i == (len(df) - 1):
                 store_last_month = True
 
-            if not store_last_month and geoid not in geo_list and geoid not in list(missing_geos_df[geoid_field]):
-                print('No match for redfin geo. geoid: {}. geoname: {}'.format(geoid, row.region))
-                missing_geos_df = missing_geos_df.append({geoid_field: geoid, geoname_field: row.region}, ignore_index=True)
+            if geoid == '3066':
+                print('')
+
+            if not store_last_month and geoid not in geo_list:
+                # print('No match for redfin geo. geoid: {}. geoname: {}'.format(geoid, row.region))
+                # if geoid not in list(missing_geos_df[geoid_field]):
+                #     missing_geos_df = missing_geos_df.append({geoid_field: geoid, geoname_field: row.region}, ignore_index=True)
                 continue
 
             property_type = row.property_type
@@ -97,7 +101,6 @@ def import_redfin_data(geo_level, default_geoid, geoid_field, geoname_field):
 
             if download_year == 0:
                 download_year = current_year
-
 
             if download_year != current_year or store_last_month:
                 check_full_year(redfin_dict, category_name, download_year, last_month)

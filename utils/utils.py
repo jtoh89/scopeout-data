@@ -29,3 +29,13 @@ def get_county_cbsa_lookup(state_id):
     county_cbsa_lookup = counties_to_cbsa[['countyfullcode', 'cbsacode', 'cbsaname']]
 
     return  county_cbsa_lookup
+
+
+def check_dataframe_has_one_record(df):
+    if len(df) == 0:
+        return False
+    elif len(df) > 1:
+        print('!!! WARN - more than one record found for dataframe.')
+        return False
+    else:
+        return True

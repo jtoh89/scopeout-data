@@ -1,4 +1,4 @@
-from scopeoutdata import processtracts, createmarketprofiles
+from scopeoutdata import createneighborhoodprofiles, createmarketprofiles
 from unemployment import unemploymentdownload, unemploymentupdates
 from enums import GeoLevels, DefaultGeoIds, ProductionEnvironment, GeoIdField, GeoNameField
 from census import censusdata, censuslookups
@@ -94,9 +94,8 @@ from database import mongoclient
 ##################################################
 
 
+createmarketprofiles.create_market_profiles()
 
 # unemploymentupdates.update_tract_unemployment()
 
-# processtracts.process_tracts()
-
-createmarketprofiles.process_market_profiles()
+# createneighborhoodprofiles.create_neighborhood_profiles()

@@ -7,6 +7,7 @@ from enums import GeoLevels
 from enums import ProductionEnvironment
 from utils.utils import calculate_percent_change, get_county_cbsa_lookup
 
+SCOPEOUT_YEAR = 2021
 
 CENSUS_LATEST_YEAR = 2019
 CENSUS_YEARS = [2012, 2013, 2014, 2015, 2016, 2017, 2018, CENSUS_LATEST_YEAR]
@@ -17,7 +18,7 @@ GROWTH_YEAR_LABELS = CENSUS_YEARS[1:]
 TRACT_LABEL_NAME = 'Neighborhood'
 US_Name = 'United States'
 
-def process_tracts():
+def create_neighborhood_profiles():
     '''
     Function stores neighborhood profiles for app
     :return:
@@ -83,9 +84,9 @@ def process_tracts():
 
         # Set geoid and neighborhood shapes
         neighborhood_profile.geoid = tract_profile.geoid
-        neighborhood_profile.countyfullcode = None
+        neighborhood_profile.countyfullcode = False
         neighborhood_profile.countyname = ''
-        neighborhood_profile.cbsacode = None
+        neighborhood_profile.cbsacode = False
         neighborhood_profile.cbsaname = ''
         neighborhood_profile.geoshapecoordinates = get_neighborhood_map_shape(tract_profile.geoinfo)
 
@@ -95,6 +96,9 @@ def process_tracts():
 
         if len(county_profile) > 1:
             print('!!!ERROR - Check why there is more than 1 county record for tractid: {}!!!'.format(tract_profile.geoid))
+            sys.exit()
+        elif len(county_profile) == 0:
+            print('!!!ERROR - Check why there is there no county record for tractid: {}!!!'.format(tract_profile.geoid))
             sys.exit()
         else:
             county_profile = county_profile.iloc[0]
@@ -130,7 +134,19 @@ def process_tracts():
         add_dict = neighborhood_profile_to_dict(neighborhood_profile, state_id)
         neighborhood_profile_list.append(add_dict)
 
-    mongoclient.store_neighborhood_data(state_id, neighborhood_profile_list)
+    success = mongoclient.store_neighborhood_data(state_id, neighborhood_profile_list)
+
+    if success:
+        print('Successfully stored neighborhood profile for stateid: {}'.format(state_id))
+
+        collection_add_finished_run = {
+            'scopeout_year': SCOPEOUT_YEAR,
+            'category': 'neighborhoodprofile',
+            'stateid': state_id,
+        }
+
+        mongoclient.add_finished_run(collection_add_finished_run)
+
 
 def get_neighborhood_map_shape(geoinfo):
     coordinate_list = []
@@ -147,7 +163,7 @@ def neighborhood_profile_to_dict(neighborhood_profile, state_id):
 
 def set_demographic_section(tract_profile, neighborhood_profile, cbsa_profile, county_profile, usa_profile):
     neighborhood_profile.demographics.demographicquickfacts.value1 = str(tract_profile.data['Poverty Rate']['Poverty Rate']) + '%'
-    neighborhood_profile.demographics.demographicquickfacts.value2 = str(tract_profile.data["% of Children"]["% of Children"]) + '%'
+    neighborhood_profile.demographics.demographicquickfacts.value2 = str(tract_profile.data['% of Children (under 18)']['% of Children (under 18)']) + '%'
     neighborhood_profile.demographics.demographicquickfacts.value3 = str(tract_profile.data['College Population']['College Population']) + '%'
     neighborhood_profile.demographics.demographicquickfacts.value4 = str(tract_profile.data['Veteran']['Veteran']) + '%'
 
