@@ -80,8 +80,6 @@ def import_zillow_msa_rental_data(geo_level, default_geoid, geoid_field, geoname
                     }
                 }
 
-
-
         success = store_market_trends_zillow_data(zillow_dict,
                                            category_name,
                                            geoid_field=geoid_field,
@@ -130,7 +128,7 @@ def update_existing_market_trends(existing_list, market_trends_dict, geoid_field
         if geoid not in market_trends_dict.keys():
             # If geoid does not exist in market trends, then check if the existing data has realestatetrends.
             # If so, delete realestatetrends because it will result in a time gap. For example, 2012-2013, then jumping to 2015.
-            print('DID NOT FIND EXISTING GEOID IN MARKET TRENDS. GEOID: {}'.format(geoid))
+            # print('DID NOT FIND EXISTING GEOID IN MARKET TRENDS. GEOID: {}'.format(geoid))
             if category_name in existing_item.keys():
                 print('!!! DELETING REALESTATETRENDS BECAUSE THERE IS A TIME GAP IN HISTORICAL DATA. GEOID: {}'.format(geoid))
                 del existing_item[category_name]

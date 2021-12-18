@@ -35,20 +35,6 @@ from database import mongoclient
 # # dump zillow to cbsa mapping
 # geographies.dump_zillow_cbsa_mapping()
 
-# # dump initialize market trends for cbsa
-
-
-# initialize.initialize_market_trends(geo_level=GeoLevels.CBSA,
-#                                     default_geoid=DefaultGeoIds.CBSA,
-#                                     geoid_field=GeoIdField.CBSA.value,
-#                                     geoname_field=GeoNameField.CBSA.value
-#                                     )
-# initialize.initialize_market_trends(geo_level=GeoLevels.COUNTY,
-#                                     default_geoid=DefaultGeoIds.COUNTY.value,
-#                                     geoid_field=GeoIdField.COUNTY.value,
-#                                     geoname_field=GeoNameField.COUNTY.value
-#                                     )
-
 
 # buildingpermits.run_cbsa_building_permit(geo_level=GeoLevels.CBSA,
 #                                          geoid_field=GeoIdField.CBSA.value,
@@ -58,8 +44,7 @@ from database import mongoclient
 # redfin.import_redfin_data(geo_level=GeoLevels.USA,
 #                           default_geoid=DefaultGeoIds.USA.value,
 #                           geoid_field=GeoIdField.USA.value,
-#                           geoname_field=GeoNameField.USA.value,
-#                           batches=True)
+#                           geoname_field=GeoNameField.USA.value)
 
 
 # redfin.import_redfin_data(geo_level=GeoLevels.CBSA,
@@ -67,24 +52,24 @@ from database import mongoclient
 #                           geoid_field=GeoIdField.CBSA.value,
 #                           geoname_field=GeoNameField.CBSA.value)
 
-
 # redfin.import_redfin_data(geo_level=GeoLevels.COUNTY,
 #                               default_geoid=DefaultGeoIds.COUNTY.value,
 #                               geoid_field=GeoIdField.COUNTY.value,
 #                               geoname_field=GeoNameField.COUNTY.value)
 
-
 # zillow.import_zillow_msa_rental_data(geo_level=GeoLevels.USA,
 #                                      default_geoid=DefaultGeoIds.USA.value,
 #                                      geoid_field=GeoIdField.USA.value,
 #                                      geoname_field=GeoNameField.USA.value)
-
+#
 # zillow.import_zillow_msa_rental_data(geo_level=GeoLevels.CBSA,
 #                                      default_geoid=DefaultGeoIds.CBSA.value,
 #                                      geoid_field=GeoIdField.CBSA.value,
 #                                      geoname_field=GeoNameField.CBSA.value)
 
-
+# unemploymentdownload.update_market_profile_unemployment(GeoLevels.USA, GeoIdField.USA.value)
+# unemploymentdownload.update_market_profile_unemployment(GeoLevels.CBSA, GeoIdField.CBSA.value)
+# unemploymentdownload.update_market_profile_unemployment(GeoLevels.COUNTY, GeoIdField.COUNTY.value)
 
 
 ##################################################
@@ -94,7 +79,7 @@ from database import mongoclient
 ##################################################
 
 
-createmarketprofiles.create_market_profiles()
+# createmarketprofiles.import_market_profiles()
 
 # unemploymentupdates.update_tract_unemployment()
 

@@ -15,7 +15,7 @@ class GeoIdField(Enum):
     ZIPCODE = 'zipcode'
 
 class GeoNameField(Enum):
-    USA = 'usacode'
+    USA = 'name'
     CBSA = 'cbsaname'
     COUNTY = 'countyname'
     ZIPCODE = 'zipcodename'

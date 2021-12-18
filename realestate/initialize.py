@@ -18,9 +18,6 @@ def initialize_zipcodes():
                                                       prod_env=ProductionEnvironment.CENSUS_DATA1)
 
 
-
-
-
 def initialize_market_trends(geo_level, default_geoid, geoid_field, geoname_field):
     '''
     Function creates cbsa records for MarketTrend.
@@ -36,7 +33,7 @@ def initialize_market_trends(geo_level, default_geoid, geoid_field, geoname_fiel
                                                  prod_env=ProductionEnvironment.MARKET_TRENDS)
     if len(current_collection) > 0:
         print('Cannot initialize market trends. Data already exists')
-        sys.exit()
+        return
     else:
         geographies_df = mongoclient.query_geography(geo_level=geo_level, stateid=default_geoid)
 
@@ -44,6 +41,7 @@ def initialize_market_trends(geo_level, default_geoid, geoid_field, geoname_fiel
         for i, row in geographies_df.iterrows():
             init_all_geos.append({geoid_field: row[geoid_field],
                                   'geolevel':geo_level.value,
+                                  'geoname': row[geoname_field]
                                   })
 
     mongoclient.insert_list_mongo(list_data=init_all_geos,

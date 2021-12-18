@@ -219,7 +219,7 @@ def update_existing_market_trends(existing_list, building_permit_dict, latest_in
         # If geoid does not exist in market trends, then check if the existing data has realestatetrends.
         # If so, delete realestatetrends because it will result in a time gap. For example, 2012-2013, then jumping to 2015.
         if geoid not in building_permit_dict.keys():
-            print('DID NOT FIND EXISTING GEOID IN MARKET TRENDS. GEOID: {}'.format(geoid))
+            # print('DID NOT FIND EXISTING GEOID IN MARKET TRENDS. GEOID: {}'.format(geoid))
             if category_name in existing_item.keys():
                 print('!!! DELETING REALESTATETRENDS BECAUSE THERE IS A TIME GAP IN HISTORICAL DATA. GEOID: {}'.format(geoid))
                 del existing_item[category_name]

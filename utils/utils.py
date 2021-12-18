@@ -39,3 +39,11 @@ def check_dataframe_has_one_record(df):
         return False
     else:
         return True
+
+def drop_na_values_from_dict(dict):
+    return {k: v for k, v in dict.items() if v == v}
+
+def set_na_to_false_from_dict(dict):
+    for k, v in dict.items():
+        if v != v:
+            dict[k] = False
