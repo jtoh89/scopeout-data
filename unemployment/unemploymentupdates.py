@@ -26,7 +26,7 @@ def update_regional_unemployment(geo_level):
             'stateid': stateid
         }
 
-        geo_data = mongoclient.query_collection(database_name="censusdata1",
+        geo_data = mongoclient.query_collection(database_name="CensusData1",
                                                          collection_name="CensusData",
                                                          collection_filter=collection_filter,
                                                          prod_env=ProductionEnvironment.CENSUS_DATA1)
@@ -79,7 +79,7 @@ def update_tract_unemployment():
             'stateid': stateid
         }
 
-        geo_data = mongoclient.query_collection(database_name="censusdata1",
+        geo_data = mongoclient.query_collection(database_name="CensusData1",
                                                 collection_name="CensusData",
                                                 collection_filter=collection_filter,
                                                 prod_env=ProductionEnvironment.CENSUS_DATA1)
@@ -89,7 +89,7 @@ def update_tract_unemployment():
             'stateid': stateid
         }
 
-        county_data = mongoclient.query_collection(database_name="censusdata1",
+        county_data = mongoclient.query_collection(database_name="CensusData1",
                                                 collection_name="CensusData",
                                                 collection_filter=county_filter,
                                                 prod_env=ProductionEnvironment.CENSUS_DATA1)

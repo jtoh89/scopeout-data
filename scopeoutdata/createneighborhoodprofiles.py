@@ -6,6 +6,7 @@ import json
 from enums import GeoLevels
 from enums import ProductionEnvironment
 from utils.utils import calculate_percent_change, get_county_cbsa_lookup
+import os
 
 SCOPEOUT_YEAR = 2021
 
@@ -30,7 +31,7 @@ def create_neighborhood_profiles():
         'geolevel': {'$eq': 'tract'},
     }
 
-    census_tract_data = mongoclient.query_collection(database_name="censusdata1",
+    census_tract_data = mongoclient.query_collection(database_name="CensusData1",
                                                      collection_name="CensusData",
                                                      collection_filter=census_tract_data_filter,
                                                      prod_env=ProductionEnvironment.CENSUS_DATA1)
@@ -53,7 +54,7 @@ def create_neighborhood_profiles():
         'geoid': {'$in': counties_to_get},
     }
 
-    county_data = mongoclient.query_collection(database_name="censusdata1",
+    county_data = mongoclient.query_collection(database_name="CensusData1",
                                                collection_name="CensusData",
                                                collection_filter=census_county_data_filter,
                                                prod_env=ProductionEnvironment.CENSUS_DATA1)
@@ -67,12 +68,12 @@ def create_neighborhood_profiles():
         'geoid': {'$in': all_cbsa}
     }
 
-    cbsa_data = mongoclient.query_collection(database_name="censusdata1",
+    cbsa_data = mongoclient.query_collection(database_name="CensusData1",
                                                collection_name="CensusData",
                                                collection_filter=census_cbsa_data_filter,
                                                prod_env=ProductionEnvironment.CENSUS_DATA1)
 
-    usa_data = mongoclient.query_collection(database_name="censusdata1",
+    usa_data = mongoclient.query_collection(database_name="CensusData1",
                                              collection_name="CensusData",
                                              collection_filter={'geolevel': {'$eq': 'us'}},
                                              prod_env=ProductionEnvironment.CENSUS_DATA1)

@@ -158,7 +158,7 @@ def store_neighborhood_data(state_id, neighborhood_profile_list):
 
         delete_temp_backup(key=tempkey)
     except:
-        print("!!! ERROR storing data to Mongo!!!")
+        print("!!! ERROR storing neighborhood data to Mongo!!!")
         return False
 
     print("Successfully stored store_neighborhood_data into Mongo. Rows inserted: ", len(neighborhood_profile_list))
@@ -170,10 +170,11 @@ def store_census_data(geo_level, state_id, filtered_dict, prod_env=ProductionEnv
     client = connect_to_client(prod_env=prod_env)
 
     if prod_env == ProductionEnvironment.CENSUS_DATA1:
-        dbname = 'censusdata1'
+        dbname = os.getenv("CENSUS_DATA1_DATABASE")
         print("Storing census1 data into Mongo")
     elif prod_env == ProductionEnvironment.CENSUS_DATA2:
-        dbname = 'censusdata2'
+        dbname = os.getenv("CENSUS_DATA2_DATABASE")
+        # dbname = 'censusdata2'
         print("Storing census2 data into Mongo")
     else:
         dbname = 'scopeout'
@@ -232,14 +233,14 @@ def store_census_data(geo_level, state_id, filtered_dict, prod_env=ProductionEnv
             use_single_inserts = store_temp_backup(key=tempkey,insert_list=data_list)
 
             if use_single_inserts:
-                perform_small_batch_inserts_census_tracts(data_list, tempkey, collection, collection_filter, geo_level)
+                perform_small_batch_inserts_census(data_list, tempkey, collection, collection_filter, geo_level)
             else:
                 collection.delete_many(collection_filter)
                 try:
                     collection.insert_many(data_list)
                 except Exception as e:
                     print("!!! Could not perform insert many into Census Data. Try again with single insert. Err: ", e)
-                    perform_small_batch_inserts_census_tracts(data_list, tempkey, collection, collection_filter, geo_level)
+                    perform_small_batch_inserts_census(data_list, tempkey, collection, collection_filter, geo_level)
 
             delete_temp_backup(key=tempkey)
             total_inserts += len(data_list)
@@ -304,12 +305,12 @@ def market_trends_db_insert(insert_list, insert_ids, collection, collection_filt
     delete_temp_backup(key=tempkey)
 
 
-def perform_small_batch_inserts_census_tracts(data_list, tempkey, collection, collection_filter, geo_level):
-    if geo_level != GeoLevels.TRACT:
-        print('ERROR!!! SINGLE INSERTS IMPLEMENTED ONLY FOR TRACTS')
-        sys.exit()
+def perform_small_batch_inserts_census(data_list, tempkey, collection, collection_filter, geo_level):
+    # if geo_level != GeoLevels.TRACT:
+    #     print('ERROR!!! SINGLE INSERTS IMPLEMENTED ONLY FOR TRACTS')
+    #     sys.exit()
 
-    print("Finished single inserts. Num of records: ", len(data_list))
+    print("Start single inserts. Num of records: ", len(data_list))
 
     remove_list = []
     insert_list = []
@@ -319,7 +320,7 @@ def perform_small_batch_inserts_census_tracts(data_list, tempkey, collection, co
             store_temp_backup(key=tempkey,insert_list=insert_list)
 
             collection.delete_many({
-                'geolevel':'tract',
+                'geolevel':geo_level.value,
                 'geoid': {'$in': remove_list}})
             collection.insert_many(insert_list)
             delete_temp_backup(key=tempkey)
@@ -401,18 +402,19 @@ def store_missing_geo(missing_geo, geo_level, state_id, category):
     try:
         collection.insert_many(missing_geo)
     except:
-        print("!!! ERROR storing data to Mongo!!!")
+        print("!!! ERROR storing missinggeo data to Mongo!!!")
 
 def get_mongo_info_from_environment(prod_env):
+
     if prod_env == ProductionEnvironment.CENSUS_DATA1:
         return {
-            'dbname': 'censusdata1',
+            'dbname': os.getenv("CENSUS_DATA1_DATABASE"),
             'collectionname': 'CensusData'
         }
 
     elif prod_env == ProductionEnvironment.CENSUS_DATA2:
         return {
-            'dbname': 'censusdata2',
+            'dbname': os.getenv("CENSUS_DATA2_DATABASE"),
             'collectionname': 'CensusData'
         }
 

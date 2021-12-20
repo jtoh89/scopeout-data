@@ -1,5 +1,4 @@
 from enum import Enum
-
 class GeoLevels(Enum):
     USA = 'us'
     CBSA = 'cbsa'
@@ -30,10 +29,10 @@ class ProductionEnvironment(Enum):
     PRODUCTION = 'prod'
     GEO_ONLY = 'geoonly'
     QA = 'qa'
-    CENSUS_DATA1 = 'censusdata1'
-    CENSUS_DATA2 = 'censusdata2'
+    CENSUS_DATA1 = 'CensusData1'
+    CENSUS_DATA2 = 'CensusData2'
     MARKET_TRENDS = 'markettrends'
 
 class CensusDataByEnvironment(Enum):
-    CENSUS_DATA1 = 'censusdata1'
-    CENSUS_DATA2 = 'censusdata2'
+    CENSUS_DATA1 = 'CensusData1'
+    CENSUS_DATA2 = 'CensusData2'

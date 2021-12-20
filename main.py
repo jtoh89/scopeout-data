@@ -13,8 +13,19 @@ from database import mongoclient
 ##################################################
 ##################################################
 
+###################################################
+###### GEOGRAPHIES
+# # dump zipcodes to geographies
+# geographies.dump_zipcode()
+
+# # dump zillow to cbsa mapping
+# geographies.dump_zillow_cbsa_mapping()
+###################################################
+
+
+
 # censusdata.run_census_data_import(GeoLevels.USA, ProductionEnvironment.CENSUS_DATA1)
-# censusdata.update_us_median_income_fred(GeoLevels.USA, ProductionEnvironment.CENSUS_DATA1)
+# censusdata.update_us_median_income_fred()
 # censusdata.run_census_data_import(GeoLevels.STATE, ProductionEnvironment.CENSUS_DATA1)
 # censusdata.run_census_data_import(GeoLevels.CBSA, ProductionEnvironment.CENSUS_DATA1)
 # censusdata.run_census_data_import(GeoLevels.COUNTY, ProductionEnvironment.CENSUS_DATA1)
@@ -29,16 +40,6 @@ from database import mongoclient
 # unemploymentupdates.update_regional_unemployment(GeoLevels.CBSA)
 # unemploymentupdates.update_regional_unemployment(GeoLevels.COUNTY)
 
-# dump zipcodes to geographies
-# geographies.dump_zipcode()
-
-# # dump zillow to cbsa mapping
-# geographies.dump_zillow_cbsa_mapping()
-
-
-# buildingpermits.run_cbsa_building_permit(geo_level=GeoLevels.CBSA,
-#                                          geoid_field=GeoIdField.CBSA.value,
-#                                          geoname_field=GeoNameField.CBSA.value)
 
 
 # redfin.import_redfin_data(geo_level=GeoLevels.USA,
@@ -61,11 +62,18 @@ from database import mongoclient
 #                                      default_geoid=DefaultGeoIds.USA.value,
 #                                      geoid_field=GeoIdField.USA.value,
 #                                      geoname_field=GeoNameField.USA.value)
-#
+
 # zillow.import_zillow_msa_rental_data(geo_level=GeoLevels.CBSA,
 #                                      default_geoid=DefaultGeoIds.CBSA.value,
 #                                      geoid_field=GeoIdField.CBSA.value,
 #                                      geoname_field=GeoNameField.CBSA.value)
+
+
+# buildingpermits.run_cbsa_building_permit(geo_level=GeoLevels.CBSA,
+#                                          geoid_field=GeoIdField.CBSA.value,
+#                                          geoname_field=GeoNameField.CBSA.value)
+
+
 
 # unemploymentdownload.update_market_profile_unemployment(GeoLevels.USA, GeoIdField.USA.value)
 # unemploymentdownload.update_market_profile_unemployment(GeoLevels.CBSA, GeoIdField.CBSA.value)

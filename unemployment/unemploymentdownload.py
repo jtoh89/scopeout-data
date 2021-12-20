@@ -7,14 +7,59 @@ import os
 from census.censusdata import STATES
 import copy
 from lookups import MONTH_FORMAT, MONTH_INTEGER
+from lookups import OLD_TO_NEW_CBSAID, NECTAMSA_to_CBSA_conversion
+from utils.utils import drop_na_values_from_dict
 
-CURRENT_YEAR = '2021'
-CURRENT_MONTH = 'M01'
+# CURRENT_YEAR = '2021'
+# CURRENT_MONTH = 'M01'
 MINIMUM_YEAR = 2008
 DELIMETER = '\t'
 
 US_UNEMPLOYMENT = 6.3
 #https://fred.stlouisfed.org/series/UNRATE
+
+def update_market_profile_unemployment(geo_level, geoid_field, prod_env=ProductionEnvironment.MARKET_TRENDS):
+    cbsa_profiles = mongoclient.query_collection(database_name="MarketTrends",
+                                                 collection_name="markettrends",
+                                                 collection_filter={'geolevel': geo_level.value},
+                                                 prod_env=ProductionEnvironment.MARKET_TRENDS)
+
+    geo_data = mongoclient.query_collection(database_name="CensusData1",
+                                                 collection_name="CensusData",
+                                                 collection_filter={'geolevel': geo_level.value},
+                                                 prod_env=ProductionEnvironment.CENSUS_DATA1)
+
+    insert_list = []
+    for i, row in cbsa_profiles.iterrows():
+        add_dict = row.to_dict()
+        geo_unemployment_data = geo_data[geo_data['geoid'] == add_dict[geoid_field]]
+
+        if len(geo_unemployment_data) > 0:
+            if 'Unemployment Historic'  in geo_unemployment_data.data.iloc[0].keys():
+                geo_unemployment_data = geo_unemployment_data.data.iloc[0]['Unemployment Historic']
+                add_dict['historicalunemploymentrate'] = {}
+                add_dict['historicalunemploymentrate']['unemploymentrate'] = geo_unemployment_data['Unemployment Historic']
+                add_dict['historicalunemploymentrate']['dates'] = geo_unemployment_data['Date']
+
+        add_dict = drop_na_values_from_dict(add_dict)
+
+        insert_list.append(add_dict)
+
+    client = mongoclient.connect_to_client(prod_env=prod_env)
+    dbname = 'MarketTrends'
+    db = client[dbname]
+    collection = db['markettrends']
+
+    collection_filter = {'geolevel': geo_level.value}
+
+    success = mongoclient.store_market_trends(insert_list, collection, collection_filter, geoid_field)
+
+    if success:
+        print("Successfully stored batch into Mongo. Rows inserted: ", len(insert_list))
+        return success
+
+
+
 
 def download_cbsa_unemployment():
     '''
@@ -47,13 +92,7 @@ def download_cbsa_unemployment():
         else:
             bls_cbsa_data = bls_cbsa_data.append(df)
 
-    MSA_to_CBSA_conversion = {
-        '70750':'12620','70900':'12700','71050':'12740','71350':'13540','71500':'13620','71650':'14460','71950':'14860','72400':'15540','72700':'18180',
-        '73450':'25540','73750':'28300','73900':'29060','74350':'30100','74650':'30340','74950':'31700','75700':'35300','76450':'35980',
-        '76600':'38340','76750':'38860','77200':'39300','77650':'40860','78100':'44140','78400':'45860','78500':'47240',
-        '79600':'49340','71000':'12300','73300':'24640','72500':'17200'}
-
-    for k,v in MSA_to_CBSA_conversion.items():
+    for k,v in NECTAMSA_to_CBSA_conversion.items():
         if k in list(bls_cbsa_data[bls_cbsa_data['geo_type'] == 'cbsa']['cbsacode']):
             bls_cbsa_data.loc[bls_cbsa_data['cbsacode'] == k, 'cbsacode'] = v
 
@@ -75,6 +114,8 @@ def download_cbsa_unemployment():
     if not no_match_from_cbsa_df.empty and (~no_match_from_cbsa_df.cbsacode.isin(['12300'])).any():
         print('!!! ERROR - There are Geo IDs in scopeout cbsa list missing in the current BLS data. Mismatch count: ', len(no_match_from_cbsa_df['cbsacode'].drop_duplicates()))
 
+    common['value'] = common['value'].astype(float)
+
     cbsa_unemployment = create_unemployment_dict(df=common,
                                                  geoid_field='cbsacode',
                                                  geo_df=cbsa_df)
@@ -89,7 +130,6 @@ def download_cbsa_unemployment():
         print('Successfully stored unemployment data')
     else:
         print('ERROR: Failed to store unemployment data')
-
 
 def download_county_unemployment():
     '''
@@ -140,6 +180,7 @@ def download_county_unemployment():
         print('!!! ERROR - There are Geo IDs in the scopeout county list missing in the current BLS data', len(no_match_from_geo_names_df['countyfullcode'].drop_duplicates()))
 
 
+    common['value'] = common['value'].astype(float)
 
     for stateid in STATES:
         counties_to_process = copy.deepcopy(counties_df)
@@ -161,8 +202,6 @@ def download_county_unemployment():
         else:
             print('ERROR: Failed to store unemployment data')
 
-
-
 def download_usa_unemployment():
     '''
     Function will download unemployment data for USA.
@@ -183,6 +222,8 @@ def download_usa_unemployment():
             'stateid': [DefaultGeoIds.USA.value]
         })
 
+        df['UNRATE'] = df['UNRATE'].astype(float)
+
         df = df.rename(columns={'year':'Year','UNRATE':'Unemployment Historic'})
         us_unemployment_dict = create_unemployment_dict(df=df, geoid_field='geoid', geo_df=geo_df)
 
@@ -196,9 +237,6 @@ def download_usa_unemployment():
             print('Successfully stored unemployment data')
         else:
             print('ERROR: Failed to store unemployment data')
-
-
-
 
 def get_unemployment_df(url):
     data = r.get(url)
@@ -233,7 +271,6 @@ def get_unemployment_df(url):
     df = pd.DataFrame(row_list, columns=headers)
 
     return df
-
 
 def create_unemployment_dict(df, geoid_field, geo_df):
     df = df.rename(columns={'year':'Year','period':'Month','value':'Unemployment Historic'})
