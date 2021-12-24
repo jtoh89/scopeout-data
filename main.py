@@ -29,7 +29,7 @@ from database import mongoclient
 # censusdata.run_census_data_import(GeoLevels.STATE, ProductionEnvironment.CENSUS_DATA1)
 # censusdata.run_census_data_import(GeoLevels.CBSA, ProductionEnvironment.CENSUS_DATA1)
 # censusdata.run_census_data_import(GeoLevels.COUNTY, ProductionEnvironment.CENSUS_DATA1)
-# censusdata.run_census_data_import(GeoLevels.TRACT, ProductionEnvironment.CENSUS_DATA1)
+censusdata.run_census_data_import(GeoLevels.TRACT, ProductionEnvironment.CENSUS_DATA1)
 
 # mongoclient.create_county_to_cbsa_lookup()
 
@@ -68,7 +68,7 @@ from database import mongoclient
 #                                      geoid_field=GeoIdField.CBSA.value,
 #                                      geoname_field=GeoNameField.CBSA.value)
 
-
+#
 # buildingpermits.run_cbsa_building_permit(geo_level=GeoLevels.CBSA,
 #                                          geoid_field=GeoIdField.CBSA.value,
 #                                          geoname_field=GeoNameField.CBSA.value)
@@ -87,8 +87,8 @@ from database import mongoclient
 ##################################################
 
 
-# createmarketprofiles.import_market_profiles()
+# createmarketprofiles.import_county_market_profiles()
 
 # unemploymentupdates.update_tract_unemployment()
 
-# createneighborhoodprofiles.create_neighborhood_profiles()
+createneighborhoodprofiles.create_neighborhood_profiles()

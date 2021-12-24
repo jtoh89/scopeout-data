@@ -94,15 +94,26 @@ def update_tract_unemployment():
                                                 collection_filter=county_filter,
                                                 prod_env=ProductionEnvironment.CENSUS_DATA1)
 
-
+        unemployment_update = {}
 
         for i, row in geo_data.iterrows():
-            row['data']['Unemployment Rate']['Unemployment Rate'] = row['data']['Unemployment Historic']['Unemployment Historic'][-1:][0]
+            countyfullcode = row.geoinfo['countyfullcode']
+            county_data_dict = county_data[county_data['geoid'] == countyfullcode].iloc[0]
+
+            if 'Unemployment Rate' not in county_data_dict['data'].keys() or 'Unemployment Rate % Change' not in county_data_dict['data']['Unemployment Rate'].keys():
+                print('FIX - Why is Unemployment Rate % Change missing')
+                county_unemployment_rate_change = 1
+            else:
+                county_unemployment_rate_change = county_data_dict['data']['Unemployment Rate']['Unemployment Rate % Change']
+
+            tract_unemployment = row['data']['Unemployment Rate']['Unemployment Rate']
+            unemployment_adjustment = tract_unemployment * county_unemployment_rate_change
+            tract_unemployment = round(tract_unemployment + unemployment_adjustment, 1)
 
             unemployment_update[row['geoid']] = {
                 'data': {
                     'Unemployment Rate': {
-                        'Unemployment Rate': row['data']['Unemployment Historic']['Unemployment Historic'][-1:][0]
+                        'Unemployment Rate': tract_unemployment
                     }
                 }
             }
@@ -111,7 +122,8 @@ def update_tract_unemployment():
         success = mongoclient.store_census_data(geo_level=GeoLevels.TRACT,
                                                 state_id=stateid,
                                                 filtered_dict=unemployment_update,
-                                                prod_env=ProductionEnvironment.CENSUS_DATA1)
+                                                prod_env=ProductionEnvironment.CENSUS_DATA1,
+                                                county_batches=True)
 
         if success:
             print('Successfully stored unemployment data')

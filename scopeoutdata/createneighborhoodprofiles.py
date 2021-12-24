@@ -7,6 +7,7 @@ from enums import GeoLevels
 from enums import ProductionEnvironment
 from utils.utils import calculate_percent_change, get_county_cbsa_lookup
 import os
+from realestate.redfin import REDFIN_PROPERTY_TYPES
 
 SCOPEOUT_YEAR = 2021
 
@@ -24,7 +25,7 @@ def create_neighborhood_profiles():
     Function stores neighborhood profiles for app
     :return:
     '''
-    state_id = "01"
+    state_id = "06"
 
     census_tract_data_filter = {
         'stateid': {'$eq': state_id},
@@ -37,7 +38,7 @@ def create_neighborhood_profiles():
                                                      prod_env=ProductionEnvironment.CENSUS_DATA1)
 
     if len(census_tract_data) < 1:
-        print('Did not find any county_data. Check which database state uses for censusdata')
+        print('Did not find any census_tract_data. Check which database state uses for censusdata')
         sys.exit()
 
     counties_to_get = []
@@ -77,6 +78,12 @@ def create_neighborhood_profiles():
                                              collection_name="CensusData",
                                              collection_filter={'geolevel': {'$eq': 'us'}},
                                              prod_env=ProductionEnvironment.CENSUS_DATA1)
+
+    market_profiles = mongoclient.query_collection(database_name="MarketTrends",
+                                            collection_name="markettrendprofiles",
+                                            collection_filter={'countyfullcode': {'$in': counties_to_get}},
+                                            prod_env=ProductionEnvironment.MARKET_TRENDS)
+
 
     neighborhood_profile_list = []
 
@@ -118,7 +125,7 @@ def create_neighborhood_profiles():
             else:
                 cbsa_profile = cbsa_profile.iloc[0]
                 neighborhood_profile.cbsacode = cbsa_profile.geoid
-                neighborhood_profile.cbsaname = cbsa_profile.geoinfo['cbsatitle']
+                neighborhood_profile.cbsaname = cbsa_profile.geoinfo['cbsaname']
 
         elif len(cbsainfo) > 1:
             print('!!!ERROR - Check why there is more than 1 cbsa record for tractid: {}!!!'.format(tract_profile.geoid))
@@ -128,6 +135,7 @@ def create_neighborhood_profiles():
 
         usa_profile = usa_data.iloc[0]
 
+        neighborhood_profile = set_market_trends_section(tract_profile, neighborhood_profile, market_profiles)
         neighborhood_profile = set_demographic_section(tract_profile, neighborhood_profile, cbsa_profile, county_profile, usa_profile)
         neighborhood_profile = set_economy_section(tract_profile, neighborhood_profile, cbsa_profile, county_profile, usa_profile)
         neighborhood_profile = set_housing_section(tract_profile, neighborhood_profile, cbsa_profile, county_profile, usa_profile)
@@ -140,26 +148,75 @@ def create_neighborhood_profiles():
     if success:
         print('Successfully stored neighborhood profile for stateid: {}'.format(state_id))
 
-        collection_add_finished_run = {
-            'scopeout_year': SCOPEOUT_YEAR,
-            'category': 'neighborhoodprofile',
-            'stateid': state_id,
-        }
+        # collection_add_finished_run = {
+        #     'scopeout_year': SCOPEOUT_YEAR,
+        #     'category': 'neighborhoodprofile',
+        #     'stateid': state_id,
+        # }
+        #
+        # mongoclient.add_finished_run(collection_add_finished_run)
 
-        mongoclient.add_finished_run(collection_add_finished_run)
 
+def process_property_types(neighborhood_profile_object, market_profile, propertytype):
+    if propertytype in market_profile.keys():
+        neighborhood_profile_object.labels = market_profile[propertytype]['labels']
+        neighborhood_profile_object.data1 = market_profile[propertytype]['data1']
+        neighborhood_profile_object.data1Name = market_profile[propertytype]['data1Name']
+        neighborhood_profile_object.data2 = market_profile[propertytype]['data2']
+        neighborhood_profile_object.data2Name = market_profile[propertytype]['data2Name']
+        neighborhood_profile_object.data3 = market_profile[propertytype]['data3']
+        neighborhood_profile_object.data3Name = market_profile[propertytype]['data3Name']
 
-def get_neighborhood_map_shape(geoinfo):
-    coordinate_list = []
-    for coordinate in geoinfo['esristandardgeofeatures']['geometry']['rings'][0]:
-        coordinate_list.append({'lng': coordinate[0], 'lat': coordinate[1]})
+def set_market_trends_section(tract_profile, neighborhood_profile, market_profiles):
+    market_profile = market_profiles[market_profiles['countyfullcode'] == tract_profile.countyfullcode].iloc[0]
 
-    return coordinate_list
+    if len(market_profile) < 1:
+        print('No market trends')
+        return
 
-def neighborhood_profile_to_dict(neighborhood_profile, state_id):
-    neighborhood_profile = neighborhood_profile.convert_to_dict()
-    neighborhood_profile.stateid = state_id
-    return neighborhood_profile.__dict__
+    if market_profile.realestatedata:
+        if 'median_sale_price' in market_profile.realestatedata.keys():
+            process_property_types(neighborhood_profile.marketprofile.mediansaleprice.all, market_profile.realestatedata['median_sale_price'], 'allresidential')
+            process_property_types(neighborhood_profile.marketprofile.mediansaleprice.singlefamily, market_profile.realestatedata['median_sale_price'], 'singlefamily')
+            process_property_types(neighborhood_profile.marketprofile.mediansaleprice.multifamily, market_profile.realestatedata['median_sale_price'], 'multifamily')
+
+        if 'median_ppsf' in market_profile.realestatedata.keys():
+            process_property_types(neighborhood_profile.marketprofile.medianppsf.all, market_profile.realestatedata['median_ppsf'], 'allresidential')
+            process_property_types(neighborhood_profile.marketprofile.medianppsf.singlefamily, market_profile.realestatedata['median_ppsf'], 'singlefamily')
+            process_property_types(neighborhood_profile.marketprofile.medianppsf.multifamily, market_profile.realestatedata['median_ppsf'], 'multifamily')
+
+        if 'months_of_supply' in market_profile.realestatedata.keys():
+            process_property_types(neighborhood_profile.marketprofile.monthsofsupply.all, market_profile.realestatedata['months_of_supply'], 'allresidential')
+            process_property_types(neighborhood_profile.marketprofile.monthsofsupply.singlefamily, market_profile.realestatedata['months_of_supply'], 'singlefamily')
+            process_property_types(neighborhood_profile.marketprofile.monthsofsupply.multifamily, market_profile.realestatedata['months_of_supply'], 'multifamily')
+
+        if 'median_dom' in market_profile.realestatedata.keys():
+            process_property_types(neighborhood_profile.marketprofile.mediandom.all, market_profile.realestatedata['median_dom'], 'allresidential')
+            process_property_types(neighborhood_profile.marketprofile.mediandom.singlefamily, market_profile.realestatedata['median_dom'], 'singlefamily')
+            process_property_types(neighborhood_profile.marketprofile.mediandom.multifamily, market_profile.realestatedata['median_dom'], 'multifamily')
+
+        if 'price_drops' in market_profile.realestatedata.keys():
+            process_property_types(neighborhood_profile.marketprofile.pricedrops.all, market_profile.realestatedata['price_drops'], 'allresidential')
+            process_property_types(neighborhood_profile.marketprofile.pricedrops.singlefamily, market_profile.realestatedata['price_drops'], 'singlefamily')
+            process_property_types(neighborhood_profile.marketprofile.pricedrops.multifamily, market_profile.realestatedata['price_drops'], 'multifamily')
+    else:
+        neighborhood_profile.marketprofile.mediansaleprice.hasData = False
+        neighborhood_profile.marketprofile.medianppsf.hasData = False
+        neighborhood_profile.marketprofile.monthsofsupply.hasData = False
+        neighborhood_profile.marketprofile.mediandom.hasData = False
+        neighborhood_profile.marketprofile.pricedrops.hasData = False
+
+    if market_profile.rentaldata:
+        neighborhood_profile.marketprofile.rentaltrends = market_profile.rentaldata
+    else:
+        neighborhood_profile.marketprofile.rentaltrends.hasData = False
+
+    if market_profile.unemploymentdata:
+        neighborhood_profile.marketprofile.unemploymentrate = market_profile.unemploymentdata
+    else:
+        neighborhood_profile.marketprofile.unemploymentrate.hasData = False
+
+    return neighborhood_profile
 
 
 def set_demographic_section(tract_profile, neighborhood_profile, cbsa_profile, county_profile, usa_profile):
@@ -199,7 +256,7 @@ def set_demographic_section(tract_profile, neighborhood_profile, cbsa_profile, c
     us_population_oneyeargrowth = calculate_percent_change(usa_profile.data['Population Growth']['Total Population'][-2], usa_profile.data['Population Growth']['Total Population'][-1])
 
     if cbsa_profile is not None:
-        cbsa_name = cbsa_profile.geoinfo['cbsatitle']
+        cbsa_name = cbsa_profile.geoinfo['cbsaname']
         cbsa_population_oneyeargrowth = calculate_percent_change(cbsa_profile.data['Population Growth']['Total Population'][-2], cbsa_profile.data['Population Growth']['Total Population'][-1])
     else:
         cbsa_name = "N/A"
@@ -260,7 +317,7 @@ def set_economy_section(tract_profile, neighborhood_profile, cbsa_profile, count
     county_name = county_profile.geoinfo['countyname']
 
     if cbsa_profile is not None:
-        cbsa_name = cbsa_profile.geoinfo['cbsatitle']
+        cbsa_name = cbsa_profile.geoinfo['cbsaname']
         cbsa_medianhouseholdincome_all = cbsa_profile.data['Median Household Income']['All'][-1]
         cbsa_medianhouseholdincome_owner = cbsa_profile.data['Median Household Income']['Owners'][-1]
         cbsa_medianhouseholdincome_renter = cbsa_profile.data['Median Household Income']['Renters'][-1]
@@ -320,6 +377,9 @@ def set_housing_section(tract_profile, neighborhood_profile, cbsa_profile, count
     housingunit_growth = calculate_historic_growth(housingunit)
     housingunit_oneyeargrowth = calculate_percent_change(tract_profile.data['Housing Unit Growth']['Total Housing Units'][-2], tract_profile.data['Housing Unit Growth']['Total Housing Units'][-1])
 
+    if 'Homeowner Growth' not in tract_profile.data.keys():
+        print('')
+
     homeowner_oneyeargrowth = calculate_percent_change(tract_profile.data['Homeowner Growth']['Owner'][-2], tract_profile.data['Homeowner Growth']['Owner'][-1])
     renter_oneyeargrowth = calculate_percent_change(tract_profile.data['Renter Growth']['Renter'][-2], tract_profile.data['Renter Growth']['Renter'][-1])
 
@@ -334,7 +394,6 @@ def set_housing_section(tract_profile, neighborhood_profile, cbsa_profile, count
     neighborhood_profile.housing.housingquickfacts.value2 = str(renter_oneyeargrowth) + '%'
     neighborhood_profile.housing.housingquickfacts.value3 = str(housingunit_oneyeargrowth) + '%'
     neighborhood_profile.housing.housingquickfacts.value4 = dominant_housing_type
-
 
     neighborhood_profile.housing.occupancyrate.labels = list(tract_profile.data['Occupancy rate'].keys())
     neighborhood_profile.housing.occupancyrate.data = list(tract_profile.data['Occupancy rate'].values())
@@ -374,6 +433,22 @@ def set_housing_section(tract_profile, neighborhood_profile, cbsa_profile, count
 
 
     return neighborhood_profile
+
+
+def get_neighborhood_map_shape(geoinfo):
+    coordinate_list = []
+    for coordinate in geoinfo['esristandardgeofeatures']['geometry']['rings'][0]:
+        coordinate_list.append({'lng': coordinate[0], 'lat': coordinate[1]})
+
+    return coordinate_list
+
+def neighborhood_profile_to_dict(neighborhood_profile, state_id):
+    neighborhood_profile = neighborhood_profile.convert_to_dict()
+    neighborhood_profile.stateid = state_id
+    return neighborhood_profile.__dict__
+
+
+
 
 def calculate_top_industry_growth(industry_growth_dict):
     industry_1_year_growth = {}

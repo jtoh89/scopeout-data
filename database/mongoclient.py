@@ -126,7 +126,7 @@ def create_county_to_cbsa_lookup():
     counties_to_cbsa = []
     for i, cbsa in cbsa_data.iterrows():
         cbsaid = cbsa['cbsacode']
-        cbsaname = cbsa['cbsatitle']
+        cbsaname = cbsa['cbsaname']
         for county in cbsa['counties']:
             stateid = county['stateinfo']['fipsstatecode']
             counties_to_cbsa.append({
@@ -149,16 +149,20 @@ def store_neighborhood_data(state_id, neighborhood_profile_list):
     db = client[dbname]
     collection = db['neighborhoodprofiles']
 
+    tempkey = 'store_neighborhood_data. state_id: {}'.format(state_id)
     try:
-        tempkey = 'store_neighborhood_data. state_id: {}'.format(state_id)
-        store_temp_backup(key=tempkey,insert_list=neighborhood_profile_list)
+        temp_insert_failed = store_temp_backup(key=tempkey,insert_list=neighborhood_profile_list)
 
-        collection.delete_many({'stateid': state_id})
-        collection.insert_many(neighborhood_profile_list)
+        if temp_insert_failed:
+            perform_small_batch_inserts_census(neighborhood_profile_list, tempkey, collection, GeoLevels.TRACT)
+        else:
+            collection.delete_many({'stateid': state_id})
+            collection.insert_many(neighborhood_profile_list)
 
         delete_temp_backup(key=tempkey)
     except:
-        print("!!! ERROR storing neighborhood data to Mongo!!!")
+        print("!!! ERROR storing neighborhood profiles to Mongo. Try single inserts!!!")
+        perform_small_batch_inserts_census(neighborhood_profile_list, tempkey, collection, GeoLevels.TRACT)
         return False
 
     print("Successfully stored store_neighborhood_data into Mongo. Rows inserted: ", len(neighborhood_profile_list))
@@ -174,7 +178,6 @@ def store_census_data(geo_level, state_id, filtered_dict, prod_env=ProductionEnv
         print("Storing census1 data into Mongo")
     elif prod_env == ProductionEnvironment.CENSUS_DATA2:
         dbname = os.getenv("CENSUS_DATA2_DATABASE")
-        # dbname = 'censusdata2'
         print("Storing census2 data into Mongo")
     else:
         dbname = 'scopeout'
@@ -233,14 +236,14 @@ def store_census_data(geo_level, state_id, filtered_dict, prod_env=ProductionEnv
             use_single_inserts = store_temp_backup(key=tempkey,insert_list=data_list)
 
             if use_single_inserts:
-                perform_small_batch_inserts_census(data_list, tempkey, collection, collection_filter, geo_level)
+                perform_small_batch_inserts_census(data_list, tempkey, collection, geo_level)
             else:
                 collection.delete_many(collection_filter)
                 try:
                     collection.insert_many(data_list)
                 except Exception as e:
                     print("!!! Could not perform insert many into Census Data. Try again with single insert. Err: ", e)
-                    perform_small_batch_inserts_census(data_list, tempkey, collection, collection_filter, geo_level)
+                    perform_small_batch_inserts_census(data_list, tempkey, collection, geo_level)
 
             delete_temp_backup(key=tempkey)
             total_inserts += len(data_list)
@@ -305,7 +308,7 @@ def market_trends_db_insert(insert_list, insert_ids, collection, collection_filt
     delete_temp_backup(key=tempkey)
 
 
-def perform_small_batch_inserts_census(data_list, tempkey, collection, collection_filter, geo_level):
+def perform_small_batch_inserts_census(data_list, tempkey, collection, geo_level):
     # if geo_level != GeoLevels.TRACT:
     #     print('ERROR!!! SINGLE INSERTS IMPLEMENTED ONLY FOR TRACTS')
     #     sys.exit()
@@ -320,7 +323,7 @@ def perform_small_batch_inserts_census(data_list, tempkey, collection, collectio
             store_temp_backup(key=tempkey,insert_list=insert_list)
 
             collection.delete_many({
-                'geolevel':geo_level.value,
+                'geolevel': geo_level.value,
                 'geoid': {'$in': remove_list}})
             collection.insert_many(insert_list)
             delete_temp_backup(key=tempkey)

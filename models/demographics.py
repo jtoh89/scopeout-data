@@ -31,6 +31,7 @@ class HighestEducation:
         self.labels = []
         self.data = []
         self.colors = []
+        self.datatype = "PERCENT"
 
 class Race:
     def __init__(self):
@@ -39,6 +40,7 @@ class Race:
         self.labels = []
         self.data = []
         self.colors = []
+        self.datatype = "PERCENT"
 
 class AgeGroups:
     def __init__(self):
@@ -77,3 +79,4 @@ class FamilyType:
         self.labels = []
         self.data = []
         self.colors = []
+        self.datatype = "PERCENT"

@@ -6,7 +6,7 @@ from math import nan
 import pandas as pd
 from realestate.redfin import REDFIN_PROPERTY_TYPES, REDFIN_DATA_CATEGORIES
 
-def import_market_profiles():
+def import_county_market_profiles():
     us_profile = mongoclient.query_collection(database_name="MarketTrends",
                                                      collection_name="markettrends",
                                                      collection_filter={'geolevel': GeoLevels.USA.value},
