@@ -31,7 +31,7 @@ SCOPEOUT_YEAR = 2021
 
 STATES = [
     # '01','02','04','05','06'
-                        '01','06'
+                        '06'
 ]
 
 def update_us_median_income_fred():
@@ -493,14 +493,14 @@ def check_percentages(percentage_dict, options=False):
             values = v.values()
             total = sum(values)
 
-            if total < 99.8 or total > 100.2:
-                print("Percentages do not add up: {}".format(total))
+            # if total < 99.8 or total > 100.2:
+            #     print("Percentages do not add up: {}".format(total))
     else:
         values = percentage_dict.values()
         total = sum(values)
 
-        if total < 99.8 or total > 100.2:
-            print("Percentages do not add up: {}".format(total))
+        # if total < 99.8 or total > 100.2:
+        #     print("Percentages do not add up: {}".format(total))
 
 def sum_categories(variable_data_dict, variables_df):
     '''

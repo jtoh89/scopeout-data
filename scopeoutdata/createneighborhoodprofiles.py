@@ -305,7 +305,7 @@ def set_economy_section(tract_profile, neighborhood_profile, cbsa_profile, count
 
     neighborhood_profile.economy.commutetowork.labels = list(tract_profile.data['Commute to Work'].keys())
     neighborhood_profile.economy.commutetowork.data = list(tract_profile.data['Commute to Work'].values())
-    neighborhood_profile.economy.meansoftransportation.colors = COLORS[:len(tract_profile.data['Commute to Work'].values())]
+    neighborhood_profile.economy.commutetowork.colors = COLORS[:len(tract_profile.data['Commute to Work'].values())]
 
     neighborhood_profile.economy.meansoftransportation.labels = list(tract_profile.data['Means of Transportation'].keys())
     neighborhood_profile.economy.meansoftransportation.data = list(tract_profile.data['Means of Transportation'].values())

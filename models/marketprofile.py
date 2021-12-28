@@ -55,6 +55,7 @@ class MedianSalePrice:
         self.singlefamily = PropertyTypeDataObject(title="Single Family", charttype="line")
         self.multifamily = PropertyTypeDataObject(title="2-4 Units", charttype="line")
         self.hasData = True
+        self.datatype = "DOLLAR"
 
 class Median_PPSF:
     def __init__(self):
@@ -86,3 +87,4 @@ class PriceDrops:
         self.singlefamily = PropertyTypeDataObject(title="Single Family", charttype="line")
         self.multifamily = PropertyTypeDataObject(title="2-4 Units", charttype="line")
         self.hasData = True
+        self.datatype = "PERCENT"

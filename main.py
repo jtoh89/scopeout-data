@@ -91,4 +91,4 @@ censusdata.run_census_data_import(GeoLevels.TRACT, ProductionEnvironment.CENSUS_
 
 # unemploymentupdates.update_tract_unemployment()
 
-createneighborhoodprofiles.create_neighborhood_profiles()
+# createneighborhoodprofiles.create_neighborhood_profiles()
