@@ -89,8 +89,8 @@ from database import mongoclient
 
 # createmarketprofiles.create_county_market_profiles()
 
-createcbsamarketprofiles.generate_cbsa_market_profiles(prod_env=ProductionEnvironment.MARKET_TRENDS,
-                                                       geoid_field=GeoIdField.CBSA.value)
+# createcbsamarketprofiles.generate_cbsa_market_profiles(prod_env=ProductionEnvironment.MARKET_TRENDS,
+#                                                        geoid_field=GeoIdField.CBSA.value)
 
 # createneighborhoodprofiles.create_neighborhood_profiles()
 

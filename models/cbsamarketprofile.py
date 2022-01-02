@@ -3,6 +3,8 @@ import json
 class CbsaMarketProfile:
     def __init__(self):
         self.cbsacode = ""
+        self.cbsaname = ""
+        self.urlslug = ""
         self.mediansaleprice = MedianSalePrice()
         self.medianppsf = Median_PPSF()
         self.monthsofsupply = MonthsOfSupply()

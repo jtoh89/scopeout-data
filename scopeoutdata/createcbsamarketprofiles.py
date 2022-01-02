@@ -12,13 +12,18 @@ def generate_cbsa_market_profiles(prod_env, geoid_field):
                                                  collection_name="markettrends",
                                                  collection_filter={'geolevel': GeoLevels.CBSA.value},
                                                  prod_env=ProductionEnvironment.MARKET_TRENDS)
+
+
+
     cbsa_market_profile_list = []
 
     for i, row in cbsa_profiles.iterrows():
         cbsa_profile = row.to_dict()
         set_na_to_false_from_dict(cbsa_profile)
         cbsa_market_profile = cbsamarketprofile.CbsaMarketProfile()
-        cbsa_market_profile.cbsacode = row['cbsacode']
+        cbsa_market_profile.cbsacode = row[geoid_field]
+        cbsa_market_profile.cbsaname = row['geoname']
+        cbsa_market_profile.urlslug = row['geoname'].split(", ")[0].replace('--','-').replace(' ','-').lower() + "-real-estate-market-trends"
 
         if cbsa_profile['realestatetrends']:
             cbsa_market_profile.mediansaleprice.data1 = cbsa_profile['realestatetrends']['All Residential']['median_sale_price']

@@ -42,7 +42,6 @@ def initialize_market_trends(geo_level, default_geoid, geoid_field, geoname_fiel
             init_all_geos.append({geoid_field: row[geoid_field],
                                   'geolevel': geo_level.value,
                                   'geoname': row[geoname_field],
-                                  'urlslug': row[geoname_field].split(", ")[0].replace('--','-').replace(' ','-').lower() + "-real-estate-market-trends"
                                   })
 
     mongoclient.insert_list_mongo(list_data=init_all_geos,
