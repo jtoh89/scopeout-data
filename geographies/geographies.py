@@ -4,6 +4,51 @@ from database import mongoclient
 import pandas as pd
 from enums import ProductionEnvironment
 
+
+
+def dump_zillow_cbsa_mapping():
+    '''
+    Function dumps mappings for zillow metro ids to cbsa ids
+    :return:
+    '''
+    currpath = os.path.dirname(os.path.abspath(__file__))
+    rootpath = os.path.dirname(os.path.abspath(currpath))
+
+    final_df = pd.DataFrame()
+
+    # get this csv from google sheet
+    file_dir = '/files/Zillow CBSA ID Map.csv'
+    df = pd.read_csv(rootpath + file_dir)
+    df = df[df['cbsamissinginzillow'] != 'Yes']
+    df[['zillowmsaid','cbsacode']] = df[['zillowmsaid','cbsacode']].fillna(0).astype(int)
+
+    zillow_cbsa_mapping_list = []
+
+    length_zillow = len(df['zillowmsaid'])
+    length_zillow_unique = len(df['zillowmsaid'].drop_duplicates())
+    length_cbsa = len(df['cbsacode'])
+    length_cbsa_unique = len(df['cbsacode'].drop_duplicates())
+
+    if length_zillow != length_zillow_unique and length_cbsa != length_cbsa_unique:
+        print('Why is there a mismatch in number ')
+        sys.exit()
+
+    for i, row in df.iterrows():
+        zillow_cbsa_mapping_list.append({
+            'zillowmsaid': row.zillowmsaid,
+            'zillowmsaname': row.zillowmetroname,
+            'cbsacode': row.cbsacode,
+            'cbsaname': row.cbsaname
+        })
+
+
+    mongoclient.insert_list_mongo(list_data=zillow_cbsa_mapping_list,
+                                  dbname='Geographies',
+                                  collection_name='Zillow_Cbsa_Mapping',
+                                  prod_env=ProductionEnvironment.GEO_ONLY)
+
+
+
 ZIP_FILE_YEARS = ['10','15','19','20']
 # ZIP_FILE_YEARS = ['20']
 
@@ -74,46 +119,4 @@ def dump_zipcode():
     mongoclient.insert_list_mongo(list_data=insert_list,
                                   dbname='Geographies',
                                   collection_name='ZipCountyCbsa',
-                                  prod_env=ProductionEnvironment.GEO_ONLY)
-
-
-def dump_zillow_cbsa_mapping():
-    '''
-    Function dumps mappings for zillow metro ids to cbsa ids
-    :return:
-    '''
-    currpath = os.path.dirname(os.path.abspath(__file__))
-    rootpath = os.path.dirname(os.path.abspath(currpath))
-
-    final_df = pd.DataFrame()
-
-    # get this csv from google sheet
-    file_dir = '/files/Zillow CBSA ID Map.csv'
-    df = pd.read_csv(rootpath + file_dir)
-    df = df[df['cbsamissinginzillow'] != 'Yes']
-    df[['zillowmsaid','cbsacode']] = df[['zillowmsaid','cbsacode']].fillna(0).astype(int)
-
-    zillow_cbsa_mapping_list = []
-
-    length_zillow = len(df['zillowmsaid'])
-    length_zillow_unique = len(df['zillowmsaid'].drop_duplicates())
-    length_cbsa = len(df['cbsacode'])
-    length_cbsa_unique = len(df['cbsacode'].drop_duplicates())
-
-    if length_zillow != length_zillow_unique and length_cbsa != length_cbsa_unique:
-        print('Why is there a mismatch in number ')
-        sys.exit()
-
-    for i, row in df.iterrows():
-        zillow_cbsa_mapping_list.append({
-            'zillowmsaid': row.zillowmsaid,
-            'zillowmsaname': row.zillowmetroname,
-            'cbsacode': row.cbsacode,
-            'cbsaname': row.cbsaname
-        })
-
-
-    mongoclient.insert_list_mongo(list_data=zillow_cbsa_mapping_list,
-                                  dbname='Geographies',
-                                  collection_name='Zillow_Cbsa_Mapping',
                                   prod_env=ProductionEnvironment.GEO_ONLY)

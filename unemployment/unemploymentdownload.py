@@ -52,7 +52,7 @@ def update_market_profile_unemployment(geo_level, geoid_field, prod_env=Producti
 
     collection_filter = {'geolevel': geo_level.value}
 
-    success = mongoclient.store_market_trends(insert_list, collection, collection_filter, geoid_field)
+    success = mongoclient.batch_inserts_with_list(insert_list, collection, collection_filter, geoid_field)
 
     if success:
         print("Successfully stored batch into Mongo. Rows inserted: ", len(insert_list))
@@ -246,7 +246,7 @@ def get_unemployment_df(url):
 
     count = 0
     for line in data.text.splitlines():
-        if count is 0:
+        if count == 0:
             headers = [x.strip() for x in line.split(DELIMETER)]
             count += 1
         else:

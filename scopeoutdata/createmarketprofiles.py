@@ -5,8 +5,9 @@ from utils.utils import get_county_cbsa_lookup, check_dataframe_has_one_record, 
 from math import nan
 import pandas as pd
 from realestate.redfin import REDFIN_PROPERTY_TYPES, REDFIN_DATA_CATEGORIES
+from models import cbsamarketprofile
 
-def import_county_market_profiles():
+def create_county_market_profiles():
     us_profile = mongoclient.query_collection(database_name="MarketTrends",
                                                      collection_name="markettrends",
                                                      collection_filter={'geolevel': GeoLevels.USA.value},
@@ -28,25 +29,23 @@ def import_county_market_profiles():
 
     for i, county_profile in county_profiles.iterrows():
         county_profile = county_profile.to_dict()
-        final_county_profile = create_county_market_profile(county_profile, county_cbsa_lookup, cbsa_profiles, us_profile)
+        final_county_profile = aggregate_all_to_county_profile(county_profile, county_cbsa_lookup, cbsa_profiles, us_profile)
         county_profile_list.append(final_county_profile)
 
     client = mongoclient.connect_to_client(prod_env=ProductionEnvironment.MARKET_TRENDS)
     dbname = 'MarketTrends'
     db = client[dbname]
 
-    collection = db['markettrendprofiles']
+    collection = db['countymarketprofile']
 
     collection_filter = {}
-    success = mongoclient.store_market_trends(county_profile_list, collection, collection_filter, GeoIdField.COUNTY.value)
+    success = mongoclient.batch_inserts_with_list(county_profile_list, collection, collection_filter, GeoIdField.COUNTY.value)
 
     if success:
         print("Successfully stored batch into Mongo. County market profiles inserted: ", len(county_profile_list))
         return success
 
-
-
-def create_county_market_profile(county_profile, county_cbsa_lookup, cbsa_profiles, us_profile):
+def aggregate_all_to_county_profile(county_profile, county_cbsa_lookup, cbsa_profiles, us_profile):
     # Add countyrealestatetrends. Set False if no data available
     set_na_to_false_from_dict(county_profile)
 
@@ -71,6 +70,7 @@ def add_unemployment_to_county_profile(county_profile, us_profile):
         }
     else:
         county_profile['historicalunemploymentrate'] = False
+
 
 
 def add_realestate_rental_to_county_profile(county_profile, cbsa_profiles, cbsa_match, us_profile):
@@ -213,7 +213,6 @@ def create_unemployment_dict(county_profile, countyname):
     }
 
     return return_dict
-
 
 def list_replace_nan_with_none(data_list):
     return_list = []

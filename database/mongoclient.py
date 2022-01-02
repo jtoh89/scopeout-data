@@ -256,7 +256,7 @@ def store_census_data(geo_level, state_id, filtered_dict, prod_env=ProductionEnv
 
     return True
 
-def store_market_trends(data_list, collection, collection_filter, geoid_field):
+def batch_inserts_with_list(data_list, collection, collection_filter, geoid_field):
     '''
     Function will insert records into mongo 99 records at a time.
 
@@ -276,14 +276,14 @@ def store_market_trends(data_list, collection, collection_filter, geoid_field):
             insert_ids.append(data[geoid_field])
             insert_list.append(data)
             if i % 99 == 0:
-                market_trends_db_insert(insert_list, insert_ids, collection, collection_filter, tempkey, geoid_field)
+                insert_batch(insert_list, insert_ids, collection, collection_filter, tempkey, geoid_field)
 
                 insert_ids = []
                 insert_list = []
 
         # insert any remaining inserts
         if len(insert_list) > 0:
-            market_trends_db_insert(insert_list, insert_ids, collection, collection_filter, tempkey, geoid_field)
+            insert_batch(insert_list, insert_ids, collection, collection_filter, tempkey, geoid_field)
 
     except Exception as e:
         print("!!! ERROR storing data to Mongo:!!! DETAILS: ", e)
@@ -292,7 +292,7 @@ def store_market_trends(data_list, collection, collection_filter, geoid_field):
     return True
 
 
-def market_trends_db_insert(insert_list, insert_ids, collection, collection_filter, tempkey, geoid_field):
+def insert_batch(insert_list, insert_ids, collection, collection_filter, tempkey, geoid_field):
     collection_filter[geoid_field] = {'$in': insert_ids}
     insert_failed = store_temp_backup(key=tempkey,insert_list=insert_list)
 
@@ -302,7 +302,8 @@ def market_trends_db_insert(insert_list, insert_ids, collection, collection_filt
     try:
         collection.insert_many(insert_list)
     except Exception as e:
-        print("!!! Could not perform insert many into Census Data. Try again with single insert. Err: ", e)
+        print("!!! insert_batch - Could not perform insert many. Err: ", e)
+        sys.exit()
 
 
     delete_temp_backup(key=tempkey)

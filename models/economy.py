@@ -31,16 +31,17 @@ class UnemploymentRate:
     def __init__(self):
         self.hascolors = True
         self.title = "Unemployment Rate"
+        self.datatype = "PERCENT"
         self.charttype = "horizontalbar"
         self.labels = []
         self.data = []
         self.colors = []
-        self.datatype = "PERCENT"
 
 
 class HouseholdIncomeRange:
     def __init__(self):
         self.title = "Household Income Range"
+        self.datatype = "PERCENT"
         self.charttype = "verticalbartoggle"
         self.labels = []
         self.data1Name = "All"
@@ -49,18 +50,17 @@ class HouseholdIncomeRange:
         self.data2 = []
         self.data3Name = "Renters"
         self.data3 = []
-        self.datatype = "PERCENT"
 
 
 class EmploymentIndustries:
     def __init__(self):
         self.hascolors = True
         self.title = "Employment Industries"
+        self.datatype = "PERCENT"
         self.charttype ="verticalbar"
         self.labels = []
         self.data = []
         self.colors = []
-        self.datatype = "PERCENT"
 
 
 class LeadingEmploymentIndustries:
@@ -73,6 +73,7 @@ class LeadingEmploymentIndustries:
 class VehiclesOwned:
     def __init__(self):
         self.title = "Vehicles Owned"
+        self.datatype = "PERCENT"
         self.charttype = "piecharttoggle"
         self.labels = []
         self.colors = []
@@ -82,26 +83,25 @@ class VehiclesOwned:
         self.data2 = []
         self.data3Name = "Renters"
         self.data3 = []
-        self.datatype = "PERCENT"
 
 
 class MeansOfTransportation:
     def __init__(self):
         self.hascolors = True,
         self.title = "Means of Transportation"
+        self.datatype = "PERCENT"
         self.charttype = "donut"
         self.labels = []
         self.data = []
         self.colors = []
-        self.datatype = "PERCENT"
 
 class CommuteToWork:
     def __init__(self):
         self.hascolors = True
         self.title = "Commute to Work"
+        self.datatype = "PERCENT"
         self.charttype = "horizontalbar"
         self.labels = []
         self.data = []
         self.colors = []
-        self.datatype = "PERCENT"
 

@@ -30,28 +30,29 @@ class OccupancyRate:
     def __init__(self):
         self.hascolors = True,
         self.title = "Occupancy rate"
+        self.datatype = "PERCENT"
         self.charttype = "donut"
         self.labels = []
         self.data = []
         self.colors = []
-        self.datatype = "PERCENT"
 
 
 class UtilitiesIncluded:
     def __init__(self):
         self.hascolors = True,
         self.title = "Utilities in Rent"
+        self.datatype = "PERCENT"
         self.charttype = "donut"
         self.labels = []
         self.data = []
         self.colors = []
-        self.datatype = "PERCENT"
 
 
 class HousingUnitGrowth:
     def __init__(self):
         self.title = "Housing Unit Growth"
         self.charttype = "line"
+        self.datatype = "INTEGER"
         self.data1Name = "# of Housing Units"
         self.labels1 = []
         self.data1 = []
@@ -64,6 +65,7 @@ class PropertyTypes:
     def __init__(self):
         self.title = "Property Types"
         self.charttype = "piecharttoggle"
+        self.datatype = "PERCENT"
         self.labels = []
         self.colors = []
         self.data1Name = "All"
@@ -72,21 +74,21 @@ class PropertyTypes:
         self.data2 = []
         self.data3Name = "Renters"
         self.data3 = []
-        self.datatype = "PERCENT"
 
 
 class YearBuilt:
     def __init__(self):
         self.hascolors = True
         self.title = "Year Built"
+        self.datatype = "PERCENT"
         self.charttype = "verticalbar"
         self.labels = []
         self.data = []
-        self.datatype = "PERCENT"
 
 class NumberOfBedrooms:
     def __init__(self):
         self.title = "Number of Bedrooms"
+        self.datatype = "PERCENT"
         self.charttype = "piecharttoggle"
         self.labels = []
         self.colors = []
@@ -96,13 +98,13 @@ class NumberOfBedrooms:
         self.data2 = []
         self.data3Name = "Renters"
         self.data3 = []
-        self.datatype = "PERCENT"
 
 
 
 class YearMovedIn:
     def __init__(self):
         self.title = "Year Moved In"
+        self.datatype = "PERCENT"
         self.charttype = "piecharttoggle"
         self.labels = []
         self.colors = []
@@ -112,13 +114,13 @@ class YearMovedIn:
         self.data2 = []
         self.data3Name = "Renters"
         self.data3 = []
-        self.datatype = "PERCENT"
 
 
 
 class IncomeHousingCost:
     def __init__(self):
         self.title = "% Income on Housing Costs"
+        self.datatype = "PERCENT"
         self.charttype = "piecharttoggle"
         self.labels = []
         self.colors = []
@@ -128,7 +130,6 @@ class IncomeHousingCost:
         self.data2 = []
         self.data3Name = "Renters"
         self.data3 = []
-        self.datatype = "PERCENT"
 
 
 

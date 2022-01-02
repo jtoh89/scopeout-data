@@ -1,4 +1,4 @@
-from scopeoutdata import createneighborhoodprofiles, createmarketprofiles
+from scopeoutdata import createneighborhoodprofiles, createmarketprofiles, createcbsamarketprofiles
 from unemployment import unemploymentdownload, unemploymentupdates
 from enums import GeoLevels, DefaultGeoIds, ProductionEnvironment, GeoIdField, GeoNameField
 from census import censusdata, censuslookups
@@ -29,7 +29,7 @@ from database import mongoclient
 # censusdata.run_census_data_import(GeoLevels.STATE, ProductionEnvironment.CENSUS_DATA1)
 # censusdata.run_census_data_import(GeoLevels.CBSA, ProductionEnvironment.CENSUS_DATA1)
 # censusdata.run_census_data_import(GeoLevels.COUNTY, ProductionEnvironment.CENSUS_DATA1)
-censusdata.run_census_data_import(GeoLevels.TRACT, ProductionEnvironment.CENSUS_DATA1)
+# censusdata.run_census_data_import(GeoLevels.TRACT, ProductionEnvironment.CENSUS_DATA1)
 
 # mongoclient.create_county_to_cbsa_lookup()
 
@@ -46,8 +46,8 @@ censusdata.run_census_data_import(GeoLevels.TRACT, ProductionEnvironment.CENSUS_
 #                           default_geoid=DefaultGeoIds.USA.value,
 #                           geoid_field=GeoIdField.USA.value,
 #                           geoname_field=GeoNameField.USA.value)
-
-
+#
+#
 # redfin.import_redfin_data(geo_level=GeoLevels.CBSA,
 #                           default_geoid=DefaultGeoIds.CBSA.value,
 #                           geoid_field=GeoIdField.CBSA.value,
@@ -68,7 +68,7 @@ censusdata.run_census_data_import(GeoLevels.TRACT, ProductionEnvironment.CENSUS_
 #                                      geoid_field=GeoIdField.CBSA.value,
 #                                      geoname_field=GeoNameField.CBSA.value)
 
-#
+
 # buildingpermits.run_cbsa_building_permit(geo_level=GeoLevels.CBSA,
 #                                          geoid_field=GeoIdField.CBSA.value,
 #                                          geoname_field=GeoNameField.CBSA.value)
@@ -82,13 +82,19 @@ censusdata.run_census_data_import(GeoLevels.TRACT, ProductionEnvironment.CENSUS_
 
 ##################################################
 ##################################################
-###### NOT DONE
+###### PRODUCTION DATA
 ##################################################
 ##################################################
 
 
-# createmarketprofiles.import_county_market_profiles()
+# createmarketprofiles.create_county_market_profiles()
 
-# unemploymentupdates.update_tract_unemployment()
+createcbsamarketprofiles.generate_cbsa_market_profiles(prod_env=ProductionEnvironment.MARKET_TRENDS,
+                                                       geoid_field=GeoIdField.CBSA.value)
 
 # createneighborhoodprofiles.create_neighborhood_profiles()
+
+
+
+
+# unemploymentupdates.update_tract_unemployment()

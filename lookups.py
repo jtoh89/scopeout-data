@@ -1,4 +1,3 @@
-
 MONTH_TO_INDEX = {
     'January': 0,
     'February': 1,
@@ -83,7 +82,6 @@ MONTH_INTEGER = {
     '12': 12,
 }
 
-
 OLD_TO_NEW_CBSAID = {
     '42060': '42200',
     '43860': '38240',
@@ -158,6 +156,13 @@ STATE_ABREV_TO_STATEID = {
     'WV':'54',
     'WI':'55',
     'WY':'56'
+}
+
+REDFIN_PROPERTY_TYPES_conversion = {
+    'All Residential': 'all',
+    'Single Family Residential': 'multifamily',
+    'Multi-Family (2-4 Unit)': 'singlefamily',
+    'Condo/Co-op': 'condos'
 }
 
 REDFIN_USA_TO_FIPS = {

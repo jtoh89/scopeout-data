@@ -114,7 +114,7 @@ def store_market_trends_zillow_data(zillow_dict, category_name, geoid_field, geo
         for k, results in zillow_dict.items():
             existing_list.append(results)
 
-    success = mongoclient.store_market_trends(existing_list, collection, collection_filter, geoid_field)
+    success = mongoclient.batch_inserts_with_list(existing_list, collection, collection_filter, geoid_field)
 
     if success:
         print("Successfully stored batch into Mongo. Rows inserted: ", len(existing_list))

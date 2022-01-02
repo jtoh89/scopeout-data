@@ -3,8 +3,7 @@ import pandas as pd
 import time
 from ast import literal_eval
 import requests as r
-from lookups import OLD_TO_NEW_CBSAID
-from lookups import MONTH_FORMAT
+from lookups import OLD_TO_NEW_CBSAID, MONTH_FORMAT, REDFIN_MSA_TO_CBSA
 from enums import DefaultGeoIds, ProductionEnvironment
 from database import mongoclient
 from enums import GeoLevels
@@ -125,11 +124,16 @@ def run_cbsa_building_permit(geo_level, geoid_field, geoname_field):
                 cbsaid = row[geoid_field]
 
                 if cbsaid in OLD_TO_NEW_CBSAID.keys():
-                    print('updating cbsacode to new ids')
+                    print('updating cbsacode')
                     cbsaid = OLD_TO_NEW_CBSAID[cbsaid]
 
+                if cbsaid in REDFIN_MSA_TO_CBSA.keys():
+                    print('updating cbsacode')
+                    cbsaid = REDFIN_MSA_TO_CBSA[cbsaid]
+
+
                 if cbsaid not in cbsaid_list:
-                    print('No cbsa match for: cbsacode: {}. cbsaname: {}'.format(cbsaid, row.cbsaidname))
+                    print('No cbsa match for cbsacode: {}. cbsaname: {}'.format(cbsaid, row.cbsaidname))
                     continue
 
                 survey_date = row['survey_date']
@@ -138,16 +142,14 @@ def run_cbsa_building_permit(geo_level, geoid_field, geoname_field):
 
                 date_string = MONTH_FORMAT[month_string] + ' ' + year_string
                 unit_1 = int(row['unit_1'])
-                units_2 = int(row['units_2'])
-                units_3_to_4 = int(row['units_3_to_4'])
+                units_2_to_4 = int(row['units_2']) + int(row['units_3_to_4'])
                 units_5plus = int(row['units_5plus'])
-                total = unit_1 + units_2 + units_3_to_4 + units_5plus
+                total = unit_1 + units_2_to_4 + units_5plus
 
                 if cbsaid in building_permit_dict.keys():
                     building_permit_dict[cbsaid][category_name]['dates'].append(date_string)
                     building_permit_dict[cbsaid][category_name]['unit_1'].append(unit_1)
-                    building_permit_dict[cbsaid][category_name]['units_2'].append(units_2)
-                    building_permit_dict[cbsaid][category_name]['units_3_to_4'].append(units_3_to_4)
+                    building_permit_dict[cbsaid][category_name]['units_2_to_4'].append(units_2_to_4)
                     building_permit_dict[cbsaid][category_name]['units_5plus'].append(units_5plus)
                     building_permit_dict[cbsaid][category_name]['total'].append(total)
                 else:
@@ -157,8 +159,7 @@ def run_cbsa_building_permit(geo_level, geoid_field, geoname_field):
                         category_name: {
                             'dates': [date_string],
                             'unit_1': [unit_1],
-                            'units_2': [units_2],
-                            'units_3_to_4': [units_3_to_4],
+                            'units_2_to_4': [units_2_to_4],
                             'units_5plus': [units_5plus],
                             'total': [total]
                         }
@@ -196,7 +197,7 @@ def store_building_permits(building_permit_dict, geo_level, latest_insert_year, 
         for k, results in building_permit_dict.items():
             existing_list.append(results)
 
-    success = mongoclient.store_market_trends(existing_list, collection, collection_filter, geoid_field)
+    success = mongoclient.batch_inserts_with_list(existing_list, collection, collection_filter, geoid_field)
 
     if success:
         print("Successfully stored batch into Mongo. Rows inserted: ", len(existing_list))

@@ -3,16 +3,15 @@ import pandas as pd
 from ast import literal_eval
 import utils.utils
 from database import mongoclient
-import sys
-from enums import GeoLevels
+from enums import GeoLevels, ProductionEnvironment, DefaultGeoIds
 from census import censuslookups
-from enums import ProductionEnvironment
-from enums import DefaultGeoIds
-import time
-import os
 from fredapi import Fred
 from dotenv import load_dotenv
 from lookups import OLD_TO_NEW_CBSAID
+from census.censushelpers import calculate_category_percentage, check_percentages, sum_categories, sum_categories_and_total, sum_categories_with_owner_renter
+import time
+import os
+import sys
 from datetime import datetime
 
 CENSUS_LATEST_YEAR = 2019
@@ -29,10 +28,9 @@ SCOPEOUT_YEAR = 2021
 #     '47','48','49','50','51','53','54','55','56'
 # ]
 
-STATES = [
-    # '01','02','04','05','06'
-                        '06'
-]
+
+STATES = ['36','37','38','39','40','41','42','44','45','46',
+          '47','48','49','50','51','53','54','55','56']
 
 def update_us_median_income_fred():
     '''
@@ -101,7 +99,6 @@ def update_us_median_income_fred():
     print(us_med_income)
 
 
-
 def run_census_data_import(geo_level, prod_env):
     '''
     Downloads census data variables. Function iterates through states, checks finished runs, and downloads
@@ -165,8 +162,6 @@ def run_census_data_import(geo_level, prod_env):
                 'category': category,
             }
             mongoclient.add_finished_run(collection_add_finished_run)
-
-
 
 
 def get_and_store_census_data(geo_level, state_id, variables_df, geographies_df, prod_env):
@@ -359,6 +354,7 @@ def filter_existing_data(results_dict, geo_level, category, prod_env, state_id=N
     return results_dict
 
 
+# def add_market_trend():
 
 
 def build_query(year, geo_level, state_id, variable_list):
@@ -468,148 +464,5 @@ def census_api(query_url):
         return df
 
 
-
-def calculate_category_percentage(category_sum_dict):
-    '''
-    Function iterates through categories and gets percentage by dividing each sum with total value.
-    :param category_sum_dict: dictionary
-    :return: dictionary
-    '''
-    percentage_dict = {}
-    total = category_sum_dict['Total']
-    del category_sum_dict['Total']
-
-    for k, v in category_sum_dict.items():
-        if total == 0:
-            percentage_dict[k] = 0
-        else:
-            percentage_dict[k] = round(v / total * 100, 1)
-
-    return percentage_dict
-
-def check_percentages(percentage_dict, options=False):
-    if options:
-        for k, v in percentage_dict.items():
-            values = v.values()
-            total = sum(values)
-
-            # if total < 99.8 or total > 100.2:
-            #     print("Percentages do not add up: {}".format(total))
-    else:
-        values = percentage_dict.values()
-        total = sum(values)
-
-        # if total < 99.8 or total > 100.2:
-        #     print("Percentages do not add up: {}".format(total))
-
-def sum_categories(variable_data_dict, variables_df):
-    '''
-    Function will sum all values based on subcategories (Eg. Master's degree and Doctorate degree grouped under Master's/Doctorate),
-
-    :param variable_data_dict:
-    :param variables_df:
-    :return: dataframe
-    '''
-
-    # Create dictionary mapping variableid to subcategory name
-    col_dict = dict(zip(variables_df['VariableID'], variables_df['Sub-Category']))
-
-    category_sum_dict = {}
-    for k, data in variable_data_dict.items():
-
-        # Skip Geography info that is returned from census2 api
-        if k in [GeoLevels.CBSA.value, GeoLevels.STATE.value, GeoLevels.COUNTY.value, GeoLevels.TRACT.value, GeoLevels.USA.value]:
-            continue
-
-        value = int(data)
-        category = col_dict[k]
-
-        # Create dictionary with categories and sum up values
-        if category in category_sum_dict:
-            category_sum_dict[category] = value + category_sum_dict[category]
-        else:
-            category_sum_dict[category] = value
-
-    return category_sum_dict
-
-def sum_categories_and_total(variable_data_dict, variables_df):
-    col_dict = dict(zip(variables_df['VariableID'], variables_df['Sub-Category']))
-
-    category_sum_dict = {}
-    total = 0
-    for k, data in variable_data_dict.items():
-        if k in [GeoLevels.CBSA.value, GeoLevels.STATE.value, GeoLevels.COUNTY.value, GeoLevels.USA.value, GeoLevels.TRACT.value]:
-            continue
-
-        value = int(data)
-        category = col_dict[k]
-
-        if category in category_sum_dict:
-            category_sum_dict[category] = value + category_sum_dict[category]
-        else:
-            category_sum_dict[category] = value
-
-        total += value
-
-    category_sum_dict['Total'] = total
-
-    return category_sum_dict
-
-def sum_categories_with_owner_renter(variable_data_dict, variables_df):
-    '''
-
-    :param variable_data_dict:
-    :param variables_df:
-    :return:
-    '''
-
-    # Create dict mapping variableid to subcategory name
-    col_dict = dict(zip(variables_df['VariableID'], variables_df['Sub-Category']))
-
-    # Create dict mapping variableid to owner or renter
-    option_dict = dict(zip(variables_df['VariableID'], variables_df['OwnerRenterOption']))
-
-    category_sum_dict = {}
-    owners_sum_dict = {}
-    renters_sum_dict = {}
-
-    owners_total = 0
-    renters_total = 0
-
-    for k, data in variable_data_dict.items():
-        if k in [GeoLevels.CBSA.value, GeoLevels.STATE.value, GeoLevels.COUNTY.value, GeoLevels.TRACT.value, GeoLevels.USA.value]:
-            continue
-
-        value = int(data)
-        category = col_dict[k]
-        option = option_dict[k]
-
-        if category not in category_sum_dict:
-            category_sum_dict[category] = value
-        else:
-            category_sum_dict[category] = value + category_sum_dict[category]
-
-        if option == 'Owner':
-            owners_total += value
-            if category not in owners_sum_dict:
-                owners_sum_dict[category] = value
-            else:
-                owners_sum_dict[category] = value + owners_sum_dict[category]
-        elif option == 'Renter':
-            renters_total += value
-            if category not in renters_sum_dict:
-                renters_sum_dict[category] = value
-            else:
-                renters_sum_dict[category] = value + renters_sum_dict[category]
-
-    owners_sum_dict['Total'] = owners_total
-    renters_sum_dict['Total'] = renters_total
-
-    aggregate_dict = {}
-    aggregate_dict['All'] = calculate_category_percentage(category_sum_dict)
-    aggregate_dict['Owners'] = calculate_category_percentage(owners_sum_dict)
-    aggregate_dict['Renters'] = calculate_category_percentage(renters_sum_dict)
-
-    return aggregate_dict
 
 

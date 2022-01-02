@@ -1,7 +1,7 @@
 from models import demographics
 from models import economy
 from models import housing
-from models import marketprofile
+from models import neighborhoodmarketprofile
 import json
 
 class NeighborhoodProfile:
@@ -14,7 +14,7 @@ class NeighborhoodProfile:
         self.demographics = demographics.Demographics()
         self.economy = economy.Economy()
         self.housing = housing.Housing()
-        self.marketprofile = marketprofile.MarketProfile()
+        self.marketprofile = neighborhoodmarketprofile.NeighborhoodMarketProfile()
 
     def convert_to_dict(self):
         self.demographics.demographicquickfacts = json.loads(json.dumps(self.demographics.demographicquickfacts, default=lambda o: o.__dict__))

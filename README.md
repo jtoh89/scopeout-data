@@ -1,5 +1,6 @@
 # scopeout
 
+
 libs 
 -pandas
 -pymongo
@@ -8,3 +9,8 @@ libs
 -requests
 -fredapi
 -openpyxl
+
+
+
+files
+-

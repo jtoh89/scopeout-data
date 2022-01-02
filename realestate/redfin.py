@@ -3,7 +3,7 @@ import pandas as pd
 import os
 import csv
 from database import mongoclient
-from lookups import MONTH_FORMAT, REDFIN_MSA_TO_CBSA, REDFIN_COUNTYID_TO_FIPS, REDFIN_USA_TO_FIPS, MONTH_TO_INDEX, INDEX_TO_MONTH
+from lookups import MONTH_FORMAT, REDFIN_PROPERTY_TYPES_conversion, REDFIN_MSA_TO_CBSA, REDFIN_COUNTYID_TO_FIPS, REDFIN_USA_TO_FIPS, MONTH_TO_INDEX, INDEX_TO_MONTH
 from database import mongoclient
 from copy import deepcopy
 from realestate import initialize
@@ -75,12 +75,13 @@ def import_redfin_data(geo_level, default_geoid, geoid_field, geoname_field):
             if i == (len(df) - 1):
                 store_last_month = True
 
-            if not store_last_month and geoid not in geo_list:
+            if geoid not in geo_list:
                 continue
 
+            # if not store_last_month:
+            #     continue
             property_type = row.property_type
-
-            if not store_last_month and property_type not in ['All Residential', 'Multi-Family (2-4 Unit)', 'Single Family Residential']:
+            if property_type not in ['All Residential', 'Multi-Family (2-4 Unit)', 'Single Family Residential']:
                 continue
 
             year_string = row.period_begin[:4]
@@ -179,6 +180,7 @@ def check_full_year(redfin_dict, category_name, download_year, last_month, geoid
     copy_redfin_dict = deepcopy(redfin_dict)
 
     for k, data in copy_redfin_dict.items():
+
         realestatetrenddata = data[category_name]
 
         for property_type in REDFIN_PROPERTY_TYPES:
@@ -261,7 +263,7 @@ def store_market_trends_redfin_data(market_trends_dict, category_name, download_
         for k, results in market_trends_dict.items():
             existing_list.append(results)
 
-    success = mongoclient.store_market_trends(existing_list, collection, collection_filter, geoid_field)
+    success = mongoclient.batch_inserts_with_list(existing_list, collection, collection_filter, geoid_field)
 
     if success:
         print("Successfully stored batch into Mongo. Rows inserted: ", len(existing_list))
@@ -298,9 +300,6 @@ def update_existing_market_trends(existing_list, market_trends_dict, download_ye
     '''
     for existing_item in existing_list:
         geoid = existing_item[geoid_field]
-
-        if geoid == '01021' or geoid == '01037':
-            print('')
 
         # If geoid does not exist in market trends, then check if the existing data has realestatetrends.
         # If so, delete realestatetrends because it will result in a time gap. For example, 2012-2013, then jumping to 2015.
@@ -361,6 +360,12 @@ def update_existing_market_trends(existing_list, market_trends_dict, download_ye
                             existing_data[key][cat].append(market_trends_dict[geoid][category_name][key][cat][i])
 
 def initialize_geo(geo_level):
+    if geo_level == GeoLevels.USA:
+        initialize.initialize_market_trends(geo_level=GeoLevels.USA,
+                                            default_geoid=DefaultGeoIds.USA,
+                                            geoid_field=GeoIdField.USA.value,
+                                            geoname_field=GeoNameField.USA.value
+                                            )
     if geo_level == GeoLevels.CBSA:
         initialize.initialize_market_trends(geo_level=GeoLevels.CBSA,
                                             default_geoid=DefaultGeoIds.CBSA,

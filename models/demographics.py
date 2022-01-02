@@ -27,33 +27,34 @@ class DemographicQuickFacts:
 class HighestEducation:
     def __init__(self):
         self.title = "Highest Education"
+        self.datatype = "PERCENT"
         self.charttype = "donut"
         self.labels = []
         self.data = []
         self.colors = []
-        self.datatype = "PERCENT"
 
 class Race:
     def __init__(self):
         self.title = "Race/Ethnicity"
+        self.datatype = "PERCENT"
         self.charttype = "donut"
         self.labels = []
         self.data = []
         self.colors = []
-        self.datatype = "PERCENT"
 
 class AgeGroups:
     def __init__(self):
         self.title = "Age Groups"
+        self.datatype = "PERCENT"
         self.charttype = "verticalbar"
         self.labels = []
         self.data = []
         self.colors = []
-        self.datatype = "PERCENT"
 
 class PopulationTrends:
     def __init__(self):
         self.title = "Population Trends"
+        self.datatype = "INTEGER"
         self.charttype = "line"
         self.data1Name = "Population"
         self.data1 = []
@@ -66,17 +67,17 @@ class OneYearGrowth:
     def __init__(self):
         self.hascolors = True
         self.title = "1 Year Population Growth"
+        self.datatype = "PERCENT"
         self.charttype = "horizontalbar"
         self.labels = []
         self.data = []
         self.colors = []
-        self.datatype = "PERCENT"
 
 class FamilyType:
     def __init__(self):
         self.title = "Family Type"
+        self.datatype = "PERCENT"
         self.charttype = "donut"
         self.labels = []
         self.data = []
         self.colors = []
-        self.datatype = "PERCENT"

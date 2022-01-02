@@ -1,4 +1,4 @@
-class MarketProfile:
+class NeighborhoodMarketProfile:
     def __init__(self):
         self.mediansaleprice = MedianSalePrice()
         self.medianppsf = Median_PPSF()
@@ -51,14 +51,17 @@ class PropertyTypeDataObject:
 
 class MedianSalePrice:
     def __init__(self):
+        self.title = "Median Sale Price"
+        self.datatype = "DOLLAR"
         self.all = PropertyTypeDataObject(title="All", charttype="line")
         self.singlefamily = PropertyTypeDataObject(title="Single Family", charttype="line")
         self.multifamily = PropertyTypeDataObject(title="2-4 Units", charttype="line")
         self.hasData = True
-        self.datatype = "DOLLAR"
 
 class Median_PPSF:
     def __init__(self):
+        self.title = "Median Price Per SqFt"
+        self.datatype = "INTEGER"
         self.all = PropertyTypeDataObject(title="All", charttype="line")
         self.singlefamily = PropertyTypeDataObject(title="Single Family", charttype="line")
         self.multifamily = PropertyTypeDataObject(title="2-4 Units", charttype="line")
@@ -67,6 +70,8 @@ class Median_PPSF:
 
 class MonthsOfSupply:
     def __init__(self):
+        self.title = "Months Of Supply"
+        self.datatype = "FLOAT"
         self.all = PropertyTypeDataObject(title="All", charttype="line")
         self.singlefamily = PropertyTypeDataObject(title="Single Family", charttype="line")
         self.multifamily = PropertyTypeDataObject(title="2-4 Units", charttype="line")
@@ -75,6 +80,8 @@ class MonthsOfSupply:
 
 class MedianDOM:
     def __init__(self):
+        self.title = "Median Days On Market"
+        self.datatype = "INTEGER"
         self.all = PropertyTypeDataObject(title="All", charttype="line")
         self.singlefamily = PropertyTypeDataObject(title="Single Family", charttype="line")
         self.multifamily = PropertyTypeDataObject(title="2-4 Units", charttype="line")
@@ -83,6 +90,8 @@ class MedianDOM:
 
 class PriceDrops:
     def __init__(self):
+        self.title = "% of Listings With Price Drops"
+        self.datatype = "PERCENT"
         self.all = PropertyTypeDataObject(title="All", charttype="line")
         self.singlefamily = PropertyTypeDataObject(title="Single Family", charttype="line")
         self.multifamily = PropertyTypeDataObject(title="2-4 Units", charttype="line")
