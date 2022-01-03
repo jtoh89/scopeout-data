@@ -46,12 +46,12 @@ from database import mongoclient
 #                           default_geoid=DefaultGeoIds.USA.value,
 #                           geoid_field=GeoIdField.USA.value,
 #                           geoname_field=GeoNameField.USA.value)
+
 #
-#
-# redfin.import_redfin_data(geo_level=GeoLevels.CBSA,
-#                           default_geoid=DefaultGeoIds.CBSA.value,
-#                           geoid_field=GeoIdField.CBSA.value,
-#                           geoname_field=GeoNameField.CBSA.value)
+redfin.import_redfin_data(geo_level=GeoLevels.CBSA,
+                          default_geoid=DefaultGeoIds.CBSA.value,
+                          geoid_field=GeoIdField.CBSA.value,
+                          geoname_field=GeoNameField.CBSA.value)
 
 # redfin.import_redfin_data(geo_level=GeoLevels.COUNTY,
 #                               default_geoid=DefaultGeoIds.COUNTY.value,
@@ -75,9 +75,9 @@ from database import mongoclient
 
 
 
-# unemploymentdownload.update_market_profile_unemployment(GeoLevels.USA, GeoIdField.USA.value)
-# unemploymentdownload.update_market_profile_unemployment(GeoLevels.CBSA, GeoIdField.CBSA.value)
-# unemploymentdownload.update_market_profile_unemployment(GeoLevels.COUNTY, GeoIdField.COUNTY.value)
+# unemploymentdownload.market_profile_add_unemployment(GeoLevels.USA, GeoIdField.USA.value)
+# unemploymentdownload.market_profile_add_unemployment(GeoLevels.CBSA, GeoIdField.CBSA.value)
+# unemploymentdownload.market_profile_add_unemployment(GeoLevels.COUNTY, GeoIdField.COUNTY.value)
 
 
 ##################################################
@@ -89,8 +89,8 @@ from database import mongoclient
 
 # createmarketprofiles.create_county_market_profiles()
 
-# createcbsamarketprofiles.generate_cbsa_market_profiles(prod_env=ProductionEnvironment.MARKET_TRENDS,
-#                                                        geoid_field=GeoIdField.CBSA.value)
+createcbsamarketprofiles.generate_cbsa_market_profiles(prod_env=ProductionEnvironment.MARKET_TRENDS,
+                                                       geoid_field=GeoIdField.CBSA.value)
 
 # createneighborhoodprofiles.create_neighborhood_profiles()
 

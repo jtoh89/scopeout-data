@@ -79,15 +79,20 @@ def generate_cbsa_market_profiles(prod_env, geoid_field):
                     sys.exit()
 
         if cbsa_profile['rentaltrends']:
+            cbsa_market_profile.rentaltrends.dataName = "Median Rent"
             cbsa_market_profile.rentaltrends.data = cbsa_profile['rentaltrends']['All Residential']['median_rent']
             cbsa_market_profile.rentaltrends.labels = cbsa_profile['rentaltrends']['All Residential']['dates']
 
         if cbsa_profile['buildingpermits']:
+            cbsa_market_profile.buildingpermits.dataName = "Total Units Permitted"
             cbsa_market_profile.buildingpermits.labels = cbsa_profile['buildingpermits']['dates']
-            cbsa_market_profile.buildingpermits.units_all = cbsa_profile['buildingpermits']['total']
-            cbsa_market_profile.buildingpermits.units_1 = cbsa_profile['buildingpermits']['unit_1']
-            cbsa_market_profile.buildingpermits.units_2_to_4 = cbsa_profile['buildingpermits']['units_2_to_4']
-            cbsa_market_profile.buildingpermits.units_5plus = cbsa_profile['buildingpermits']['units_5plus']
+            cbsa_market_profile.buildingpermits.data = cbsa_profile['buildingpermits']['total']
+
+        if cbsa_profile['historicunemploymentrate']:
+            cbsa_market_profile.unemploymentrate.dataName = "Unemployment Rate"
+            cbsa_market_profile.unemploymentrate.labels = cbsa_profile['historicunemploymentrate']['dates']
+            cbsa_market_profile.unemploymentrate.data = cbsa_profile['historicunemploymentrate']['unemploymentrate']
+
 
         cbsa_market_profile.convert_to_dict()
         cbsa_market_profile_list.append(cbsa_market_profile.__dict__)

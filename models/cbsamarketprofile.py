@@ -11,7 +11,7 @@ class CbsaMarketProfile:
         self.mediandom = MedianDOM()
         self.pricedrops = PriceDrops()
         self.rentaltrends = OneLineChart(title="Median Rent", datatype="DOLLAR")
-        self.unemploymentdata = OneLineChart(title="Unemployment Rate", datatype="PERCENT")
+        self.unemploymentrate = OneLineChart(title="Unemployment Rate", datatype="PERCENT")
         self.buildingpermits = BuildingPermits()
 
     def convert_to_dict(self):
@@ -21,12 +21,7 @@ class CbsaMarketProfile:
         self.mediandom = json.loads(json.dumps(self.mediandom, default=lambda o: o.__dict__))
         self.pricedrops = json.loads(json.dumps(self.pricedrops, default=lambda o: o.__dict__))
         self.rentaltrends = json.loads(json.dumps(self.rentaltrends, default=lambda o: o.__dict__))
-        self.unemploymentdata = json.loads(json.dumps(self.unemploymentdata, default=lambda o: o.__dict__))
-
-        self.buildingpermits.units_all = json.loads(json.dumps(self.buildingpermits.units_all, default=lambda o: o.__dict__))
-        self.buildingpermits.units_1 = json.loads(json.dumps(self.buildingpermits.units_1, default=lambda o: o.__dict__))
-        self.buildingpermits.units_2_to_4 = json.loads(json.dumps(self.buildingpermits.units_2_to_4, default=lambda o: o.__dict__))
-        self.buildingpermits.units_5plus = json.loads(json.dumps(self.buildingpermits.units_5plus, default=lambda o: o.__dict__))
+        self.unemploymentrate = json.loads(json.dumps(self.unemploymentrate, default=lambda o: o.__dict__))
 
         self.buildingpermits = json.loads(json.dumps(self.buildingpermits, default=lambda o: o.__dict__))
 
@@ -38,14 +33,7 @@ class BuildingPermits:
         self.title = "Building Permits"
         self.datatype = "INTEGER"
         self.labels = []
-        self.units_all = BuildingPermitUnitData(dataname="Total")
-        self.units_1 = BuildingPermitUnitData(dataname="1 unit")
-        self.units_2_to_4 = BuildingPermitUnitData(dataname="2-4 Units")
-        self.units_5plus = BuildingPermitUnitData(dataname="5+ Units")
-
-class BuildingPermitUnitData:
-    def __init__(self, dataname):
-        self.dataName = dataname
+        self.dataName = ""
         self.data = []
 
 
@@ -89,19 +77,19 @@ class MedianSalePrice:
         self.data1 = []
         self.data2Name = "Single Family"
         self.data2 = []
-        self.data3Name = "Multi-Family"
+        self.data3Name = "2-4 Units"
         self.data3 = []
 
 class Median_PPSF:
     def __init__(self):
         self.title = "Median Price Per SqFt"
-        self.datatype = "INTEGER"
+        self.datatype = "DOLLAR"
         self.labels = []
         self.data1Name = "All"
         self.data1 = []
         self.data2Name = "Single Family"
         self.data2 = []
-        self.data3Name = "Multi-Family"
+        self.data3Name = "2-4 Units"
         self.data3 = []
 
 
@@ -114,7 +102,7 @@ class MonthsOfSupply:
         self.data1 = []
         self.data2Name = "Single Family"
         self.data2 = []
-        self.data3Name = "Multi-Family"
+        self.data3Name = "2-4 Units"
         self.data3 = []
 
 
@@ -127,7 +115,7 @@ class MedianDOM:
         self.data1 = []
         self.data2Name = "Single Family"
         self.data2 = []
-        self.data3Name = "Multi-Family"
+        self.data3Name = "2-4 Units"
         self.data3 = []
 
 
@@ -140,5 +128,5 @@ class PriceDrops:
         self.data1 = []
         self.data2Name = "Single Family"
         self.data2 = []
-        self.data3Name = "Multi-Family"
+        self.data3Name = "2-4 Units"
         self.data3 = []

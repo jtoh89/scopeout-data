@@ -211,8 +211,8 @@ def set_market_trends_section(tract_profile, neighborhood_profile, market_profil
     else:
         neighborhood_profile.marketprofile.rentaltrends.hasData = False
 
-    if market_profile.unemploymentdata:
-        neighborhood_profile.marketprofile.unemploymentrate = market_profile.unemploymentdata
+    if market_profile.unemploymentrate:
+        neighborhood_profile.marketprofile.unemploymentrate = market_profile.unemploymentrate
     else:
         neighborhood_profile.marketprofile.unemploymentrate.hasData = False
 

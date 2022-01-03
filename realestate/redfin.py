@@ -57,7 +57,7 @@ def import_redfin_data(geo_level, default_geoid, geoid_field, geoname_field):
         df = df.sort_values(by='date')
         df = df.reset_index()
 
-        last_month = list(df['period_begin'].drop_duplicates())[-1:][0][5:7]
+        last_month_in_dataset = list(df['period_begin'].drop_duplicates())[-1:][0][5:7]
 
         if geo_level == GeoLevels.USA:
             df['table_id'] = df['table_id'].astype(str).replace(REDFIN_USA_TO_FIPS)
@@ -68,12 +68,13 @@ def import_redfin_data(geo_level, default_geoid, geoid_field, geoname_field):
 
         print('Create redfin data dictionaries')
         download_year = 0
-        store_last_month = False
+        last_row = False
         for i, row in df.iterrows():
+
             geoid = row.table_id
 
             if i == (len(df) - 1):
-                store_last_month = True
+                last_row = True
 
             if geoid not in geo_list:
                 continue
@@ -81,7 +82,7 @@ def import_redfin_data(geo_level, default_geoid, geoid_field, geoname_field):
             # if not store_last_month:
             #     continue
             property_type = row.property_type
-            if property_type not in ['All Residential', 'Multi-Family (2-4 Unit)', 'Single Family Residential']:
+            if not last_row and property_type not in ['All Residential', 'Multi-Family (2-4 Unit)', 'Single Family Residential']:
                 continue
 
             year_string = row.period_begin[:4]
@@ -90,16 +91,16 @@ def import_redfin_data(geo_level, default_geoid, geoid_field, geoname_field):
 
             current_year = int(year_string)
 
-            if REDFIN_MIN_YEAR > current_year:
+            if not last_row and REDFIN_MIN_YEAR > current_year:
                 continue
-            elif last_finished_year >= current_year:
+            elif not last_row and last_finished_year >= current_year:
                 continue
 
             if download_year == 0:
                 download_year = current_year
 
-            if download_year != current_year or store_last_month:
-                check_full_year(redfin_dict, category_name, download_year, last_month, geoid_field)
+            if download_year != current_year or last_row:
+                check_full_year(redfin_dict, category_name, download_year, last_month_in_dataset, geoid_field)
 
                 success = store_market_trends_redfin_data(redfin_dict,
                                                           category_name,
@@ -107,7 +108,7 @@ def import_redfin_data(geo_level, default_geoid, geoid_field, geoname_field):
                                                           geoid_field=geoid_field,
                                                           geo_level=geo_level)
 
-                if download_year == REDFIN_MAX_YEAR and last_month != '12':
+                if download_year == REDFIN_MAX_YEAR and last_month_in_dataset != '12':
                     download_year = download_year - 1
 
                 if success:
@@ -175,12 +176,11 @@ def import_redfin_data(geo_level, default_geoid, geoid_field, geoname_field):
                     }
                 }
 
-def check_full_year(redfin_dict, category_name, download_year, last_month, geoid_field):
-    last_month_string = MONTH_FORMAT[last_month]
+def check_full_year(redfin_dict, category_name, download_year, last_month_in_dataset, geoid_field):
+    last_month_in_dataset_string = MONTH_FORMAT[last_month_in_dataset]
     copy_redfin_dict = deepcopy(redfin_dict)
 
     for k, data in copy_redfin_dict.items():
-
         realestatetrenddata = data[category_name]
 
         for property_type in REDFIN_PROPERTY_TYPES:
@@ -196,19 +196,23 @@ def check_full_year(redfin_dict, category_name, download_year, last_month, geoid
 
             if dates_length < 12:
                 print('Filling missing months for geoid: {}'.format(data[geoid_field]))
-                fill_missing_months(redfin_dict[k][category_name][property_type], download_year, last_month_string)
+                fill_missing_months(redfin_dict[k][category_name][property_type], download_year, last_month_in_dataset_string)
 
 
 
-def fill_missing_months(realestatetrenddata_by_ptype, download_year, last_month_string):
+def fill_missing_months(realestatetrenddata_by_ptype, download_year, last_month_in_dataset_string):
     data_keys = list(realestatetrenddata_by_ptype.keys())
     data_keys.remove('dates')
 
+    break_loop = False
     for i, date in enumerate(realestatetrenddata_by_ptype['dates']):
         month_short = date.split()[0]
 
-        if download_year == REDFIN_MAX_YEAR and month_short == last_month_string:
+        if break_loop:
             continue
+
+        if download_year == REDFIN_MAX_YEAR and month_short == last_month_in_dataset_string:
+            break_loop = True
 
         if INDEX_TO_MONTH[i] != month_short:
             realestatetrenddata_by_ptype['dates'].insert(i, INDEX_TO_MONTH[i] + ' ' + str(download_year))
@@ -217,12 +221,15 @@ def fill_missing_months(realestatetrenddata_by_ptype, download_year, last_month_
                 realestatetrenddata_by_ptype[redfin_cat].insert(i, None)
 
     # If data series is missing last few months, append
-    if len(realestatetrenddata_by_ptype['dates']) < 12 and download_year != REDFIN_MAX_YEAR:
+    # if len(realestatetrenddata_by_ptype['dates']) < 12 and download_year != REDFIN_MAX_YEAR:
+    if len(realestatetrenddata_by_ptype['dates']) < 12:
         last_month = realestatetrenddata_by_ptype['dates'][-1].split()[0]
         last_month_index = MONTH_TO_INDEX[last_month]
 
         for k, month_string in INDEX_TO_MONTH.items():
             if k < last_month_index:
+                continue
+            elif download_year == REDFIN_MAX_YEAR and k > MONTH_TO_INDEX[last_month_in_dataset_string] - 1:
                 continue
             else:
                 realestatetrenddata_by_ptype['dates'].append(month_string + ' ' + str(download_year))

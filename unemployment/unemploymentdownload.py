@@ -18,7 +18,7 @@ DELIMETER = '\t'
 US_UNEMPLOYMENT = 6.3
 #https://fred.stlouisfed.org/series/UNRATE
 
-def update_market_profile_unemployment(geo_level, geoid_field, prod_env=ProductionEnvironment.MARKET_TRENDS):
+def market_profile_add_unemployment(geo_level, geoid_field, prod_env=ProductionEnvironment.MARKET_TRENDS):
     cbsa_profiles = mongoclient.query_collection(database_name="MarketTrends",
                                                  collection_name="markettrends",
                                                  collection_filter={'geolevel': geo_level.value},
@@ -35,11 +35,11 @@ def update_market_profile_unemployment(geo_level, geoid_field, prod_env=Producti
         geo_unemployment_data = geo_data[geo_data['geoid'] == add_dict[geoid_field]]
 
         if len(geo_unemployment_data) > 0:
-            if 'Unemployment Historic'  in geo_unemployment_data.data.iloc[0].keys():
+            if 'Unemployment Historic' in geo_unemployment_data.data.iloc[0].keys():
                 geo_unemployment_data = geo_unemployment_data.data.iloc[0]['Unemployment Historic']
-                add_dict['historicalunemploymentrate'] = {}
-                add_dict['historicalunemploymentrate']['unemploymentrate'] = geo_unemployment_data['Unemployment Historic']
-                add_dict['historicalunemploymentrate']['dates'] = geo_unemployment_data['Date']
+                add_dict['historicunemploymentrate'] = {}
+                add_dict['historicunemploymentrate']['unemploymentrate'] = geo_unemployment_data['Unemployment Historic']
+                add_dict['historicunemploymentrate']['dates'] = geo_unemployment_data['Date']
 
         add_dict = drop_na_values_from_dict(add_dict)
 
