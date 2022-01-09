@@ -6,10 +6,10 @@ class NeighborhoodMarketProfile:
         self.mediandom = MedianDOM()
         self.pricedrops = PriceDrops()
         self.rentaltrends = RentalTrends()
-        self.unemploymentdata = UnemploymentData()
+        self.unemploymentrate = UnemploymentRate()
 
 
-class UnemploymentData:
+class UnemploymentRate:
     def __init__(self):
         self.title = "Unemployment Rate"
         self.charttype = "line"

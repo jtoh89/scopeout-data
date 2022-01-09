@@ -110,4 +110,3 @@ def generate_cbsa_market_profiles(prod_env, geoid_field):
     if success:
         print("Successfully stored batch into Mongo. Rows inserted: ", len(cbsa_market_profile_list))
         return success
-

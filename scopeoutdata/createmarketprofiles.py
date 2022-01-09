@@ -71,8 +71,6 @@ def add_unemployment_to_county_profile(county_profile, us_profile):
     else:
         county_profile['historicalunemploymentrate'] = False
 
-
-
 def add_realestate_rental_to_county_profile(county_profile, cbsa_profiles, cbsa_match, us_profile):
     # Check if cbsa exists for county
     if check_dataframe_has_one_record(cbsa_match):
@@ -127,7 +125,6 @@ def group_geo_market_data(county_profile):
         final_dict['unemploymentdata'] = False
 
     return final_dict
-
 
 def create_redfin_dict(county_profile, countyname, cbsaname):
 

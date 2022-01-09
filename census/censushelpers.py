@@ -1,4 +1,4 @@
-
+from enums import GeoLevels
 
 def calculate_category_percentage(category_sum_dict):
     '''

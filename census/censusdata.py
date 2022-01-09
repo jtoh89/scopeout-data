@@ -12,25 +12,26 @@ from census.censushelpers import calculate_category_percentage, check_percentage
 import time
 import os
 import sys
+from globals import SCOPEOUT_YEAR, CENSUS_LATEST_YEAR, CENSUS_YEARS
 from datetime import datetime
-
-CENSUS_LATEST_YEAR = 2019
-CENSUS_YEARS = [2012, 2013, 2014, 2015, 2016, 2017, 2018, CENSUS_LATEST_YEAR]
 
 # CENSUS_LATEST_YEAR = 2014
 # CENSUS_YEARS = [2013, CENSUS_LATEST_YEAR]
 
-SCOPEOUT_YEAR = 2021
+STATES1 = [
+    '01','02','04','05','06','08','09','10','11','12','13','15','16','17','18','19','20','21','22','23','24',
+    '25','26','27','28','29','30','31','32','33','34','35'
+]
 
-# STATES = [
-#     '01','02','04','05','06','08','09','10','11','12','13','15','16','17','18','19','20','21','22','23','24',
-#     '25','26','27','28','29','30','31','32','33','34','35','36','37','38','39','40','41','42','44','45','46',
-#     '47','48','49','50','51','53','54','55','56'
-# ]
+STATES2 = [
+    '36','37','38','39','40','41','42','44','45','46',
+    '47','48','49','50','51','53','54','55','56'
+]
 
 
-STATES = ['36','37','38','39','40','41','42','44','45','46',
-          '47','48','49','50','51','53','54','55','56']
+STATES = ['11','12','13','15','16','17','18','19','20','21','22','23','24',
+    '25','26','27','28','29','30','31','32','33','34','35','36','37','38','39','40','41','42','44','45','46',
+    '47','48','49','50','51','53','54','55','56']
 
 def update_us_median_income_fred():
     '''
@@ -121,14 +122,9 @@ def run_census_data_import(geo_level, prod_env):
         if geo_level in [GeoLevels.CBSA, GeoLevels.USA] and i > 0:
             break
 
-        if geo_level == GeoLevels.USA:
-            stateid = DefaultGeoIds.USA.value
-        elif geo_level == GeoLevels.CBSA:
-            stateid = DefaultGeoIds.CBSA.value
-
         geographies_df = mongoclient.query_geography(geo_level=geo_level, stateid=stateid)
 
-        print('Starting import for stateid: ', stateid)
+        print('Starting import for stateid: {}. geolevel: {}'.format(stateid, geo_level.value))
 
         finished_cats = []
         if len(finished_runs) > 0:

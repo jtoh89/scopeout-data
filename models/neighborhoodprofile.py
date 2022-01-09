@@ -51,7 +51,7 @@ class NeighborhoodProfile:
         self.marketprofile.mediandom = json.loads(json.dumps(self.marketprofile.mediandom, default=lambda o: o.__dict__))
         self.marketprofile.pricedrops = json.loads(json.dumps(self.marketprofile.pricedrops, default=lambda o: o.__dict__))
         self.marketprofile.rentaltrends = json.loads(json.dumps(self.marketprofile.rentaltrends, default=lambda o: o.__dict__))
-        self.marketprofile.unemploymentdata = json.loads(json.dumps(self.marketprofile.unemploymentdata, default=lambda o: o.__dict__))
+        self.marketprofile.unemploymentrate = json.loads(json.dumps(self.marketprofile.unemploymentrate, default=lambda o: o.__dict__))
 
         self.demographics = json.loads(json.dumps(self.demographics, default=lambda o: o.__dict__))
         self.economy = json.loads(json.dumps(self.economy, default=lambda o: o.__dict__))
