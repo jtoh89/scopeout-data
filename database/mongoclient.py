@@ -369,6 +369,21 @@ def get_finished_runs(collection_find_finished_runs):
 
     return df
 
+
+def delete_finished_run(collection_delete_finished_run):
+    client = connect_to_client(prod_env=ProductionEnvironment.QA)
+    db = client['CensusDataInfo']
+    try:
+        collection = db['FinishedRuns']
+
+        collection.delete_many(collection_delete_finished_run)
+    except:
+        print("!!! ERROR storing finished run to Mongo!!!")
+        sys.exit()
+
+    print("Successfully deleted finished run into Mongo")
+
+
 def update_finished_run(collection_add_finished_run, geo_level, category):
     client = connect_to_client(prod_env=ProductionEnvironment.QA)
     db = client['CensusDataInfo']

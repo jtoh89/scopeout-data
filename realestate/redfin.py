@@ -3,7 +3,7 @@ import pandas as pd
 import os
 import csv
 from database import mongoclient
-from lookups import MONTH_FORMAT, REDFIN_PROPERTY_TYPES_conversion, REDFIN_MSA_TO_CBSA, REDFIN_COUNTYID_TO_FIPS, REDFIN_USA_TO_FIPS, MONTH_TO_INDEX, INDEX_TO_MONTH
+from lookups import MONTH_FORMAT, REDFIN_PROPERTY_TYPES_LOWERCASE_CONVERSION, REDFIN_MSA_TO_CBSA, REDFIN_COUNTYID_TO_FIPS, REDFIN_USA_TO_FIPS, MONTH_TO_INDEX, INDEX_TO_MONTH
 from database import mongoclient
 from copy import deepcopy
 from realestate import initialize
@@ -12,6 +12,7 @@ from enums import GeoLevels, DefaultGeoIds, ProductionEnvironment, GeoIdField, G
 REDFIN_MIN_YEAR = 2015
 REDFIN_MAX_YEAR = 2021
 REDFIN_PROPERTY_TYPES = ['All Residential', 'Single Family Residential', 'Multi-Family (2-4 Unit)']
+REDFIN_PROPERTY_TYPES_LOWERCASE = ['all', 'singlefamily', 'multifamily']
 REDFIN_DATA_CATEGORIES = ['median_sale_price', 'median_ppsf', 'months_of_supply', 'median_dom', 'price_drops']
 
 def import_redfin_data(geo_level, default_geoid, geoid_field, geoname_field):
@@ -79,11 +80,12 @@ def import_redfin_data(geo_level, default_geoid, geoid_field, geoname_field):
             if geoid not in geo_list:
                 continue
 
-            # if not store_last_month:
-            #     continue
             property_type = row.property_type
-            if not last_row and property_type not in ['All Residential', 'Multi-Family (2-4 Unit)', 'Single Family Residential']:
+
+            if property_type not in ['All Residential', 'Multi-Family (2-4 Unit)', 'Single Family Residential']:
                 continue
+
+            property_type = REDFIN_PROPERTY_TYPES_LOWERCASE_CONVERSION[property_type]
 
             year_string = row.period_begin[:4]
             month_string = row.period_begin[5:7]
@@ -134,7 +136,6 @@ def import_redfin_data(geo_level, default_geoid, geoid_field, geoname_field):
 
             if geoid in redfin_dict.keys():
                 redfin_data = redfin_dict[geoid][category_name]
-
                 if property_type in redfin_data.keys():
                     redfin_data[property_type]['dates'].append(date_string)
                     redfin_data[property_type]['median_sale_price'].append(median_sale_price)
@@ -183,7 +184,7 @@ def check_full_year(redfin_dict, category_name, download_year, last_month_in_dat
     for k, data in copy_redfin_dict.items():
         realestatetrenddata = data[category_name]
 
-        for property_type in REDFIN_PROPERTY_TYPES:
+        for property_type in REDFIN_PROPERTY_TYPES_LOWERCASE:
             if property_type not in realestatetrenddata.keys():
                 continue
 

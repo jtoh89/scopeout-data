@@ -158,7 +158,7 @@ STATE_ABREV_TO_STATEID = {
     'WY':'56'
 }
 
-REDFIN_PROPERTY_TYPES_conversion = {
+REDFIN_PROPERTY_TYPES_LOWERCASE_CONVERSION = {
     'All Residential': 'all',
     'Single Family Residential': 'multifamily',
     'Multi-Family (2-4 Unit)': 'singlefamily',

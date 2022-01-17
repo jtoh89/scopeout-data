@@ -15,6 +15,10 @@ from database import mongoclient
 
 ###################################################
 ###### GEOGRAPHIES
+
+# # dump state, county, cbsa geographies
+# geographies.dump_all_geographies()
+
 # # dump zipcodes to geographies
 # geographies.dump_zipcode()
 
@@ -22,6 +26,19 @@ from database import mongoclient
 # geographies.dump_zillow_cbsa_mapping()
 ###################################################
 
+
+# mongoclient.delete_finished_run({
+#         'geo_level': GeoLevels.CBSA.value,
+#         'category': 'buildingpermits'
+#     })
+# print('Delete done')
+
+# mongoclient.delete_finished_run({
+#     'state_id':"04",
+#         'geo_level': GeoLevels.COUNTY.value,
+#         'category': 'Unemployment Rate'
+#     })
+# print('Delete done')
 
 
 # censusdata.run_census_data_import(GeoLevels.USA, ProductionEnvironment.CENSUS_DATA1)
@@ -37,9 +54,9 @@ from database import mongoclient
 # unemploymentdownload.download_cbsa_unemployment()
 # unemploymentdownload.download_county_unemployment()
 # unemploymentdownload.download_usa_unemployment()
-
 # unemploymentupdates.update_regional_unemployment(GeoLevels.CBSA)
 # unemploymentupdates.update_regional_unemployment(GeoLevels.COUNTY)
+
 
 # unemploymentupdates.update_tract_unemployment()
 
@@ -49,7 +66,7 @@ from database import mongoclient
 #                           geoid_field=GeoIdField.USA.value,
 #                           geoname_field=GeoNameField.USA.value)
 
-
+#
 # redfin.import_redfin_data(geo_level=GeoLevels.CBSA,
 #                           default_geoid=DefaultGeoIds.CBSA.value,
 #                           geoid_field=GeoIdField.CBSA.value,
@@ -94,7 +111,6 @@ from database import mongoclient
 # createcbsamarketprofiles.generate_cbsa_market_profiles(prod_env=ProductionEnvironment.MARKET_TRENDS,
 #                                                        geoid_field=GeoIdField.CBSA.value)
 
+
 createneighborhoodprofiles.create_neighborhood_profiles()
-
-
 

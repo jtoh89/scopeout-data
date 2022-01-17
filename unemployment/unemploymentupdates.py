@@ -3,8 +3,7 @@ from enums import GeoLevels
 from enums import ProductionEnvironment
 from globals import CENSUS_ACS_YEAR
 from database import mongoclient
-from census.censusdata import STATES, STATES1, STATES2
-from census.censusdata import CENSUS_LATEST_YEAR
+from census.censusdata import STATES, STATES1, STATES2, CENSUS_LATEST_YEAR, SCOPEOUT_YEAR
 from census.censusdata import calculate_category_percentage
 from utils.utils import calculate_percent_change
 
@@ -39,23 +38,22 @@ def update_regional_unemployment(geo_level):
                 print('COULD NOT SET UNEMPLOYMENT. Unemployment Historic is missing. Geocode: ', row['geoid'])
                 continue
 
+            # Need to check if unemplorate change updated.
+
             update_unemployment = 0
 
+            # need to check the last month update was made
+
             current_unemployment = float(row['data']['Unemployment Historic']['Unemployment Historic'][-1:][0])
+            most_recent_month = row['data']['Unemployment Historic']['Date'][-1:][0]
             acs_unemployment = float(row['data']['Unemployment Rate']['2019 Unemployment Rate'])
 
             # if geo_level == GeoLevels.CBSA or geo_level == GeoLevels.COUNTY:
-
-
-
 
             unemployment_rate_change = calculate_percent_change(starting_data=acs_unemployment,
                                                                 ending_data=current_unemployment,
                                                                 move_decimal=False,
                                                                 decimal_places=7)
-
-
-
 
             unemployment_update[row['geoid']] = {
                 'data': {
@@ -63,6 +61,7 @@ def update_regional_unemployment(geo_level):
                         'Unemployment Rate': current_unemployment,
                         '{} Unemployment Rate'.format(CENSUS_LATEST_YEAR): acs_unemployment,
                         'Unemployment Rate % Change'.format(CENSUS_LATEST_YEAR): unemployment_rate_change,
+                        'Last Update': most_recent_month,
                     }
                 }
             }

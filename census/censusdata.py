@@ -28,8 +28,10 @@ STATES2 = [
     '47','48','49','50','51','53','54','55','56'
 ]
 
+# STATES = ['01','02','04','05','06','08','09','10']
 
-STATES = ['11','12','13','15','16','17','18','19','20','21','22','23','24',
+#
+STATES = ['01','02','04','05','06','08','09','10','11','12','13','15','16','17','18','19','20','21','22','23','24',
     '25','26','27','28','29','30','31','32','33','34','35','36','37','38','39','40','41','42','44','45','46',
     '47','48','49','50','51','53','54','55','56']
 
@@ -119,8 +121,14 @@ def run_census_data_import(geo_level, prod_env):
 
     for i, stateid in enumerate(STATES):
         #usa and cbsa data does not need more than 1 iteration
-        if geo_level in [GeoLevels.CBSA, GeoLevels.USA] and i > 0:
+        if geo_level in [GeoLevels.USA, GeoLevels.CBSA] and i > 0:
             break
+
+        if geo_level == GeoLevels.USA:
+            stateid = DefaultGeoIds.USA.value
+
+        if geo_level == GeoLevels.CBSA:
+            stateid = DefaultGeoIds.CBSA.value
 
         geographies_df = mongoclient.query_geography(geo_level=geo_level, stateid=stateid)
 
@@ -135,6 +143,8 @@ def run_census_data_import(geo_level, prod_env):
                 print("Skipping category: " + category + ". State: ", stateid)
                 continue
 
+            if geo_level != GeoLevels.CBSA and category == 'Total Households':
+                continue
             # Filter look ups for current category
             variables_df = lookups[lookups['Category'] == category]
             # variables_df = lookups[lookups['Category'] == 'Housing Unit Growth']

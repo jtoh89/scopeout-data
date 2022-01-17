@@ -24,136 +24,158 @@ def create_neighborhood_profiles():
     :return:
     '''
 
+    collection_find_finished_runs = {
+        'category': 'neighborhoodprofiles',
+        'geo_level': GeoLevels.TRACT.value,
+    }
+    finished_runs = mongoclient.get_finished_runs(collection_find_finished_runs)
+
     for stategroupindex, stategroup in enumerate([STATES1, STATES2]):
         prod_env = ProductionEnvironment.CENSUS_DATA1
         if stategroupindex == 1:
             prod_env = ProductionEnvironment.CENSUS_DATA2
 
         for stateid in stategroup:
+            state_already_processed = False
 
-            census_tract_data_filter = {
-                'stateid': {'$eq': stateid},
-                'geolevel': {'$eq': 'tract'},
-            }
+            if len(finished_runs) > 0:
+                match_found = finished_runs[finished_runs['state_id'] == stateid]['category'].values
 
-
-
-            census_tract_data = mongoclient.query_collection(database_name=prod_env.value,
-                                                             collection_name="CensusData",
-                                                             collection_filter=census_tract_data_filter,
-                                                             prod_env=prod_env)
-
-            if len(census_tract_data) < 1:
-                print('Did not find any census_tract_data. Check which database state uses for censusdata')
-                sys.exit()
-
-            counties_to_get = []
-            for i, record in census_tract_data.iterrows():
-                countyfullcode = record.geoinfo['countyfullcode']
-
-                if countyfullcode not in counties_to_get:
-                    counties_to_get.append(countyfullcode)
+                if match_found:
+                    state_already_processed = True
 
 
-            census_county_data_filter = {
-                'stateid': {'$eq': stateid},
-                'geolevel': {'$eq': 'county'},
-                'geoid': {'$in': counties_to_get},
-            }
+            if not state_already_processed:
+                census_tract_data_filter = {
+                    'stateid': {'$eq': stateid},
+                    'geolevel': {'$eq': 'tract'},
+                }
 
-            county_data = mongoclient.query_collection(database_name="CensusData1",
-                                                       collection_name="CensusData",
-                                                       collection_filter=census_county_data_filter,
-                                                       prod_env=ProductionEnvironment.CENSUS_DATA1)
+                census_tract_data = mongoclient.query_collection(database_name=prod_env.value,
+                                                                 collection_name="CensusData",
+                                                                 collection_filter=census_tract_data_filter,
+                                                                 prod_env=prod_env)
 
-            county_cbsa_lookup = get_county_cbsa_lookup(state_id=stateid)
-
-            all_cbsa = list(county_cbsa_lookup['cbsacode'].drop_duplicates())
-
-            census_cbsa_data_filter = {
-                'geolevel': {'$eq': 'cbsa'},
-                'geoid': {'$in': all_cbsa}
-            }
-
-            cbsa_data = mongoclient.query_collection(database_name="CensusData1",
-                                                       collection_name="CensusData",
-                                                       collection_filter=census_cbsa_data_filter,
-                                                       prod_env=ProductionEnvironment.CENSUS_DATA1)
-
-            usa_data = mongoclient.query_collection(database_name="CensusData1",
-                                                     collection_name="CensusData",
-                                                     collection_filter={'geolevel': {'$eq': 'us'}},
-                                                     prod_env=ProductionEnvironment.CENSUS_DATA1)
-
-            market_profiles = mongoclient.query_collection(database_name="MarketTrends",
-                                                    collection_name="markettrendprofiles",
-                                                    collection_filter={'countyfullcode': {'$in': counties_to_get}},
-                                                    prod_env=ProductionEnvironment.MARKET_TRENDS)
-
-
-            neighborhood_profile_list = []
-
-            for i, tract_profile in census_tract_data.iterrows():
-                neighborhood_profile = neighborhoodprofile.NeighborhoodProfile()
-
-                # Set geoid and neighborhood shapes
-                neighborhood_profile.geoid = tract_profile.geoid
-                neighborhood_profile.countyfullcode = False
-                neighborhood_profile.countyname = ''
-                neighborhood_profile.cbsacode = False
-                neighborhood_profile.cbsaname = ''
-                neighborhood_profile.geoshapecoordinates = get_neighborhood_map_shape(tract_profile.geoinfo)
-
-                # County
-                countyfullcode = tract_profile.geoinfo['countyfullcode']
-                county_profile = county_data[county_data['geoid'] == countyfullcode]
-
-                if len(county_profile) > 1:
-                    print('!!!ERROR - Check why there is more than 1 county record for tractid: {}!!!'.format(tract_profile.geoid))
+                if len(census_tract_data) < 1:
+                    print('Did not find any census_tract_data. Check which database state uses for censusdata')
                     sys.exit()
-                elif len(county_profile) == 0:
-                    print('!!!ERROR - Check why there is there no county record for tractid: {}!!!'.format(tract_profile.geoid))
-                    sys.exit()
-                else:
-                    county_profile = county_profile.iloc[0]
-                    neighborhood_profile.countyfullcode = county_profile.geoid
-                    neighborhood_profile.countyname = county_profile.geoinfo['countyname']
 
-                cbsainfo = county_cbsa_lookup[county_cbsa_lookup['countyfullcode'] == countyfullcode]
+                counties_to_get = []
+                for i, record in census_tract_data.iterrows():
+                    countyfullcode = record.geoinfo['countyfullcode']
 
-                if len(cbsainfo) == 1:
-                    cbsacode = cbsainfo['cbsacode'].iloc[0]
-                    cbsa_profile = cbsa_data[cbsa_data['geoid'] == cbsacode]
+                    if countyfullcode not in counties_to_get:
+                        counties_to_get.append(countyfullcode)
 
-                    if len(cbsa_profile) != 1:
-                        print('!!!WARNING - Why do we have missing cbsaid for cbsa data for cbsacode: {}!!!'.format(cbsacode))
-                        cbsa_profile = None
+
+                census_county_data_filter = {
+                    'stateid': {'$eq': stateid},
+                    'geolevel': {'$eq': 'county'},
+                    'geoid': {'$in': counties_to_get},
+                }
+
+                county_data = mongoclient.query_collection(database_name="CensusData1",
+                                                           collection_name="CensusData",
+                                                           collection_filter=census_county_data_filter,
+                                                           prod_env=ProductionEnvironment.CENSUS_DATA1)
+
+                county_cbsa_lookup = get_county_cbsa_lookup(state_id=stateid)
+
+                all_cbsa = list(county_cbsa_lookup['cbsacode'].drop_duplicates())
+
+                census_cbsa_data_filter = {
+                    'geolevel': {'$eq': 'cbsa'},
+                    'geoid': {'$in': all_cbsa}
+                }
+
+                cbsa_data = mongoclient.query_collection(database_name="CensusData1",
+                                                           collection_name="CensusData",
+                                                           collection_filter=census_cbsa_data_filter,
+                                                           prod_env=ProductionEnvironment.CENSUS_DATA1)
+
+                usa_data = mongoclient.query_collection(database_name="CensusData1",
+                                                         collection_name="CensusData",
+                                                         collection_filter={'geolevel': {'$eq': 'us'}},
+                                                         prod_env=ProductionEnvironment.CENSUS_DATA1)
+
+                county_market_profiles = mongoclient.query_collection(database_name="MarketTrends",
+                                                        collection_name="countymarketprofile",
+                                                        collection_filter={'countyfullcode': {'$in': counties_to_get}},
+                                                        prod_env=ProductionEnvironment.MARKET_TRENDS)
+
+
+                neighborhood_profile_list = []
+
+                for i, tract_profile in census_tract_data.iterrows():
+                    print('Tract iteration: ', i)
+                    neighborhood_profile = neighborhoodprofile.NeighborhoodProfile()
+
+                    # Set geoid and neighborhood shapes
+                    neighborhood_profile.geoid = tract_profile.geoid
+                    neighborhood_profile.countyfullcode = False
+                    neighborhood_profile.countyname = ''
+                    neighborhood_profile.cbsacode = False
+                    neighborhood_profile.cbsaname = ''
+                    neighborhood_profile.geoshapecoordinates = get_neighborhood_map_shape(tract_profile.geoinfo)
+
+                    # County
+                    countyfullcode = tract_profile.geoinfo['countyfullcode']
+                    county_profile = county_data[county_data['geoid'] == countyfullcode]
+
+                    if len(county_profile) > 1:
+                        print('!!!ERROR - Check why there is more than 1 county record for tractid: {}!!!'.format(tract_profile.geoid))
+                        sys.exit()
+                    elif len(county_profile) == 0:
+                        print('!!!ERROR - Check why there is there no county record for tractid: {}!!!'.format(tract_profile.geoid))
+                        sys.exit()
                     else:
-                        cbsa_profile = cbsa_profile.iloc[0]
-                        neighborhood_profile.cbsacode = cbsa_profile.geoid
-                        neighborhood_profile.cbsaname = cbsa_profile.geoinfo['cbsaname']
+                        county_profile = county_profile.iloc[0]
+                        neighborhood_profile.countyfullcode = county_profile.geoid
+                        neighborhood_profile.countyname = county_profile.geoinfo['countyname']
 
-                elif len(cbsainfo) > 1:
-                    print('!!!ERROR - Check why there is more than 1 cbsa record for tractid: {}!!!'.format(tract_profile.geoid))
-                    sys.exit()
-                else:
-                    cbsa_profile = None
+                    cbsainfo = county_cbsa_lookup[county_cbsa_lookup['countyfullcode'] == countyfullcode]
 
-                usa_profile = usa_data.iloc[0]
+                    if len(cbsainfo) == 1:
+                        cbsacode = cbsainfo['cbsacode'].iloc[0]
+                        cbsa_profile = cbsa_data[cbsa_data['geoid'] == cbsacode]
 
-                neighborhood_profile = set_market_trends_section(tract_profile, neighborhood_profile, market_profiles)
-                neighborhood_profile = set_demographic_section(tract_profile, neighborhood_profile, cbsa_profile, county_profile, usa_profile)
-                neighborhood_profile = set_economy_section(tract_profile, neighborhood_profile, cbsa_profile, county_profile, usa_profile)
-                neighborhood_profile = set_housing_section(tract_profile, neighborhood_profile, cbsa_profile, county_profile, usa_profile)
+                        if len(cbsa_profile) != 1:
+                            print('!!!WARNING - Why do we have missing cbsaid for cbsa data for cbsacode: {}!!!'.format(cbsacode))
+                            cbsa_profile = None
+                        else:
+                            cbsa_profile = cbsa_profile.iloc[0]
+                            neighborhood_profile.cbsacode = cbsa_profile.geoid
+                            neighborhood_profile.cbsaname = cbsa_profile.geoinfo['cbsaname']
 
-                add_dict = neighborhood_profile_to_dict(neighborhood_profile, stateid)
-                neighborhood_profile_list.append(add_dict)
+                    elif len(cbsainfo) > 1:
+                        print('!!!ERROR - Check why there is more than 1 cbsa record for tractid: {}!!!'.format(tract_profile.geoid))
+                        sys.exit()
+                    else:
+                        cbsa_profile = None
 
-            success = mongoclient.store_neighborhood_data(stateid, neighborhood_profile_list)
+                    usa_profile = usa_data.iloc[0]
 
-            if success:
-                print('Successfully stored neighborhood profile for stateid: {}'.format(stateid))
+                    neighborhood_profile = set_demographic_section(tract_profile, neighborhood_profile, cbsa_profile, county_profile, usa_profile)
+                    neighborhood_profile = set_economy_section(tract_profile, neighborhood_profile, cbsa_profile, county_profile, usa_profile)
+                    neighborhood_profile = set_housing_section(tract_profile, neighborhood_profile, cbsa_profile, county_profile, usa_profile)
+                    neighborhood_profile = set_market_trends_section(tract_profile, neighborhood_profile, county_market_profiles)
 
+                    add_dict = neighborhood_profile_to_dict(neighborhood_profile, stateid)
+                    neighborhood_profile_list.append(add_dict)
+
+                success = mongoclient.store_neighborhood_data(stateid, neighborhood_profile_list)
+
+                if success:
+                    collection_add_finished_run = {
+                        'category': 'neighborhoodprofiles',
+                        'geo_level': GeoLevels.TRACT.value,
+                        'state_id': stateid,
+                    }
+
+                    print('Successfully stored neighborhood profile for stateid: {}'.format(stateid))
+                    mongoclient.add_finished_run(collection_add_finished_run)
+            else:
+                print('Skipping state {}. Neighborhood profiles already exists.'.format(stateid))
 
 def process_property_types(neighborhood_profile_object, market_profile, propertytype):
     if propertytype in market_profile.keys():
@@ -165,38 +187,38 @@ def process_property_types(neighborhood_profile_object, market_profile, property
         neighborhood_profile_object.data3 = market_profile[propertytype]['data3']
         neighborhood_profile_object.data3Name = market_profile[propertytype]['data3Name']
 
-def set_market_trends_section(tract_profile, neighborhood_profile, market_profiles):
-    market_profile = market_profiles[market_profiles['countyfullcode'] == tract_profile.countyfullcode].iloc[0]
+def set_market_trends_section(tract_profile, neighborhood_profile, county_market_profiles):
+    county_market_profiles = county_market_profiles[county_market_profiles['countyfullcode'] == tract_profile.countyfullcode].iloc[0]
 
-    if len(market_profile) < 1:
+    if len(county_market_profiles) < 1:
         print('No market trends')
         return
 
-    if market_profile.realestatedata:
-        if 'median_sale_price' in market_profile.realestatedata.keys():
-            process_property_types(neighborhood_profile.marketprofile.mediansaleprice.all, market_profile.realestatedata['median_sale_price'], 'allresidential')
-            process_property_types(neighborhood_profile.marketprofile.mediansaleprice.singlefamily, market_profile.realestatedata['median_sale_price'], 'singlefamily')
-            process_property_types(neighborhood_profile.marketprofile.mediansaleprice.multifamily, market_profile.realestatedata['median_sale_price'], 'multifamily')
+    if county_market_profiles.realestatedata:
+        if 'median_sale_price' in county_market_profiles.realestatedata.keys():
+            process_property_types(neighborhood_profile.marketprofile.mediansaleprice.all, county_market_profiles.realestatedata['median_sale_price'], 'allresidential')
+            process_property_types(neighborhood_profile.marketprofile.mediansaleprice.singlefamily, county_market_profiles.realestatedata['median_sale_price'], 'singlefamily')
+            process_property_types(neighborhood_profile.marketprofile.mediansaleprice.multifamily, county_market_profiles.realestatedata['median_sale_price'], 'multifamily')
 
-        if 'median_ppsf' in market_profile.realestatedata.keys():
-            process_property_types(neighborhood_profile.marketprofile.medianppsf.all, market_profile.realestatedata['median_ppsf'], 'allresidential')
-            process_property_types(neighborhood_profile.marketprofile.medianppsf.singlefamily, market_profile.realestatedata['median_ppsf'], 'singlefamily')
-            process_property_types(neighborhood_profile.marketprofile.medianppsf.multifamily, market_profile.realestatedata['median_ppsf'], 'multifamily')
+        if 'median_ppsf' in county_market_profiles.realestatedata.keys():
+            process_property_types(neighborhood_profile.marketprofile.medianppsf.all, county_market_profiles.realestatedata['median_ppsf'], 'allresidential')
+            process_property_types(neighborhood_profile.marketprofile.medianppsf.singlefamily, county_market_profiles.realestatedata['median_ppsf'], 'singlefamily')
+            process_property_types(neighborhood_profile.marketprofile.medianppsf.multifamily, county_market_profiles.realestatedata['median_ppsf'], 'multifamily')
 
-        if 'months_of_supply' in market_profile.realestatedata.keys():
-            process_property_types(neighborhood_profile.marketprofile.monthsofsupply.all, market_profile.realestatedata['months_of_supply'], 'allresidential')
-            process_property_types(neighborhood_profile.marketprofile.monthsofsupply.singlefamily, market_profile.realestatedata['months_of_supply'], 'singlefamily')
-            process_property_types(neighborhood_profile.marketprofile.monthsofsupply.multifamily, market_profile.realestatedata['months_of_supply'], 'multifamily')
+        if 'months_of_supply' in county_market_profiles.realestatedata.keys():
+            process_property_types(neighborhood_profile.marketprofile.monthsofsupply.all, county_market_profiles.realestatedata['months_of_supply'], 'allresidential')
+            process_property_types(neighborhood_profile.marketprofile.monthsofsupply.singlefamily, county_market_profiles.realestatedata['months_of_supply'], 'singlefamily')
+            process_property_types(neighborhood_profile.marketprofile.monthsofsupply.multifamily, county_market_profiles.realestatedata['months_of_supply'], 'multifamily')
 
-        if 'median_dom' in market_profile.realestatedata.keys():
-            process_property_types(neighborhood_profile.marketprofile.mediandom.all, market_profile.realestatedata['median_dom'], 'allresidential')
-            process_property_types(neighborhood_profile.marketprofile.mediandom.singlefamily, market_profile.realestatedata['median_dom'], 'singlefamily')
-            process_property_types(neighborhood_profile.marketprofile.mediandom.multifamily, market_profile.realestatedata['median_dom'], 'multifamily')
+        if 'median_dom' in county_market_profiles.realestatedata.keys():
+            process_property_types(neighborhood_profile.marketprofile.mediandom.all, county_market_profiles.realestatedata['median_dom'], 'allresidential')
+            process_property_types(neighborhood_profile.marketprofile.mediandom.singlefamily, county_market_profiles.realestatedata['median_dom'], 'singlefamily')
+            process_property_types(neighborhood_profile.marketprofile.mediandom.multifamily, county_market_profiles.realestatedata['median_dom'], 'multifamily')
 
-        if 'price_drops' in market_profile.realestatedata.keys():
-            process_property_types(neighborhood_profile.marketprofile.pricedrops.all, market_profile.realestatedata['price_drops'], 'allresidential')
-            process_property_types(neighborhood_profile.marketprofile.pricedrops.singlefamily, market_profile.realestatedata['price_drops'], 'singlefamily')
-            process_property_types(neighborhood_profile.marketprofile.pricedrops.multifamily, market_profile.realestatedata['price_drops'], 'multifamily')
+        if 'price_drops' in county_market_profiles.realestatedata.keys():
+            process_property_types(neighborhood_profile.marketprofile.pricedrops.all, county_market_profiles.realestatedata['price_drops'], 'allresidential')
+            process_property_types(neighborhood_profile.marketprofile.pricedrops.singlefamily, county_market_profiles.realestatedata['price_drops'], 'singlefamily')
+            process_property_types(neighborhood_profile.marketprofile.pricedrops.multifamily, county_market_profiles.realestatedata['price_drops'], 'multifamily')
     else:
         neighborhood_profile.marketprofile.mediansaleprice.hasData = False
         neighborhood_profile.marketprofile.medianppsf.hasData = False
@@ -204,13 +226,13 @@ def set_market_trends_section(tract_profile, neighborhood_profile, market_profil
         neighborhood_profile.marketprofile.mediandom.hasData = False
         neighborhood_profile.marketprofile.pricedrops.hasData = False
 
-    if market_profile.rentaldata:
-        neighborhood_profile.marketprofile.rentaltrends = market_profile.rentaldata
+    if county_market_profiles.rentaldata:
+        neighborhood_profile.marketprofile.rentaltrends = county_market_profiles.rentaldata
     else:
         neighborhood_profile.marketprofile.rentaltrends.hasData = False
 
-    if market_profile.unemploymentrate:
-        neighborhood_profile.marketprofile.unemploymentrate = market_profile.unemploymentrate
+    if county_market_profiles.unemploymentrate:
+        neighborhood_profile.marketprofile.unemploymentrate = county_market_profiles.unemploymentrate
     else:
         neighborhood_profile.marketprofile.unemploymentrate.hasData = False
 
@@ -239,8 +261,12 @@ def set_demographic_section(tract_profile, neighborhood_profile, cbsa_profile, c
     neighborhood_profile.demographics.familytype.data = list(tract_profile.data['Family Type'].values())
     neighborhood_profile.demographics.familytype.colors = COLORS[:len(tract_profile.data['Family Type'].values())]
 
-    population = tract_profile.data['Population Growth']['Total Population']
-    population_growth = calculate_historic_growth(population)
+    if 'Population Growth' in tract_profile.data.keys():
+        population = tract_profile.data['Population Growth']['Total Population']
+        population_growth = calculate_historic_growth(population)
+    else:
+        population = []
+        population_growth = []
 
     neighborhood_profile.demographics.populationtrends.data1 = population
     neighborhood_profile.demographics.populationtrends.labels1 = CENSUS_YEARS
@@ -356,7 +382,13 @@ def set_economy_section(tract_profile, neighborhood_profile, cbsa_profile, count
     neighborhood_profile.economy.unemploymentrate.labels= [TRACT_LABEL_NAME, county_name, cbsa_name, US_Name]
     neighborhood_unemployment = tract_profile.data['Unemployment Rate']['Unemployment Rate']
 
-    neighborhood_adjustment_rate = neighborhood_unemployment * county_profile.data['Unemployment Rate']['Unemployment Rate % Change']
+    if 'Unemployment Rate % Change' in county_profile.data['Unemployment Rate'].keys():
+        neighborhood_adjustment_rate = neighborhood_unemployment * county_profile.data['Unemployment Rate']['Unemployment Rate % Change']
+    elif 'Unemployment Rate % Change' in cbsa_profile.data['Unemployment Rate'].keys():
+        neighborhood_adjustment_rate = neighborhood_unemployment * cbsa_profile.data['Unemployment Rate']['Unemployment Rate % Change']
+    else:
+        neighborhood_adjustment_rate = 0
+
     neighborhood_unemployment = neighborhood_unemployment + neighborhood_adjustment_rate
 
     neighborhood_profile.economy.unemploymentrate.data = [
