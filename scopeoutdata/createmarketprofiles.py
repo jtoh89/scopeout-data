@@ -29,6 +29,7 @@ def create_county_market_profiles():
 
     for i, county_profile in county_profiles.iterrows():
         county_profile = county_profile.to_dict()
+
         final_county_profile = aggregate_all_to_county_profile(county_profile, county_cbsa_lookup, cbsa_profiles, us_profile)
         county_profile_list.append(final_county_profile)
 

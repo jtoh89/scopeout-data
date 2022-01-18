@@ -110,9 +110,9 @@ def generate_cbsa_market_profiles(prod_env, geoid_field):
             cbsa_market_profile.totalhousingunit.labels = census_cbsa_data_match['Housing Unit Growth']['years']
             cbsa_market_profile.totalhousingunit.data = census_cbsa_data_match['Housing Unit Growth']['Total Housing Units']
 
-            cbsa_market_profile.totalhouseholdgrowth.dataName = "Total Households"
-            cbsa_market_profile.totalhouseholdgrowth.labels = census_cbsa_data_match['Total Households']['years']
-            cbsa_market_profile.totalhouseholdgrowth.data = census_cbsa_data_match['Total Households']['Total Households']
+            cbsa_market_profile.totalpopulationgrowth.dataName = "Total Population"
+            cbsa_market_profile.totalpopulationgrowth.labels = census_cbsa_data_match['Population Growth']['years']
+            cbsa_market_profile.totalpopulationgrowth.data = census_cbsa_data_match['Population Growth']['Total Population']
 
         cbsa_market_profile.convert_to_dict()
         cbsa_market_profile_list.append(cbsa_market_profile.__dict__)

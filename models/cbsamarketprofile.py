@@ -13,8 +13,8 @@ class CbsaMarketProfile:
         self.rentaltrends = OneLineChart(title="Median Rent", datatype="DOLLAR")
         self.unemploymentrate = OneLineChart(title="Unemployment Rate", datatype="PERCENT")
         self.buildingpermits = BuildingPermits()
-        self.totalhouseholdgrowth = HouseholdGrowth()
         self.totalhousingunit = HousingUnitGrowth()
+        self.totalpopulationgrowth = PopulationGrowth()
 
 
     def convert_to_dict(self):
@@ -26,15 +26,15 @@ class CbsaMarketProfile:
         self.rentaltrends = json.loads(json.dumps(self.rentaltrends, default=lambda o: o.__dict__))
         self.unemploymentrate = json.loads(json.dumps(self.unemploymentrate, default=lambda o: o.__dict__))
         self.buildingpermits = json.loads(json.dumps(self.buildingpermits, default=lambda o: o.__dict__))
-        self.totalhouseholdgrowth = json.loads(json.dumps(self.totalhouseholdgrowth, default=lambda o: o.__dict__))
+        self.totalpopulationgrowth = json.loads(json.dumps(self.totalpopulationgrowth, default=lambda o: o.__dict__))
         self.totalhousingunit = json.loads(json.dumps(self.totalhousingunit, default=lambda o: o.__dict__))
 
         return self
 
 
-class HouseholdGrowth:
+class PopulationGrowth:
     def __init__(self):
-        self.title = "Total Household Growth"
+        self.title = "Total Population Growth"
         self.datatype = "INTEGER"
         self.labels = []
         self.dataName = ""

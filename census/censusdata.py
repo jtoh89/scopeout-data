@@ -28,8 +28,6 @@ STATES2 = [
     '47','48','49','50','51','53','54','55','56'
 ]
 
-# STATES = ['01','02','04','05','06','08','09','10']
-
 #
 STATES = ['01','02','04','05','06','08','09','10','11','12','13','15','16','17','18','19','20','21','22','23','24',
     '25','26','27','28','29','30','31','32','33','34','35','36','37','38','39','40','41','42','44','45','46',
@@ -102,7 +100,7 @@ def update_us_median_income_fred():
     print(us_med_income)
 
 
-def run_census_data_import(geo_level, prod_env):
+def run_census_data_import(geo_level, prod_env, force_run=False):
     '''
     Downloads census data variables. Function iterates through states, checks finished runs, and downloads
     data that are currently missing. Specify SCOPEOUT_YEAR when new year releases.
@@ -112,6 +110,14 @@ def run_census_data_import(geo_level, prod_env):
     '''
     lookups = censuslookups.get_census_lookup()
     all_categories = lookups['Category'].drop_duplicates()
+    STATES_RUN = STATES
+    if force_run:
+        STATES_RUN = [force_run['stateid']]
+        mongoclient.delete_finished_run({
+            'state_id': force_run['stateid'],
+                'geo_level': geo_level.value,
+                'category': force_run['category']
+            })
 
     collection_find_finished_runs = {
         'scopeout_year': SCOPEOUT_YEAR,
@@ -119,7 +125,8 @@ def run_census_data_import(geo_level, prod_env):
     }
     finished_runs = mongoclient.get_finished_runs(collection_find_finished_runs)
 
-    for i, stateid in enumerate(STATES):
+
+    for i, stateid in enumerate(STATES_RUN):
         #usa and cbsa data does not need more than 1 iteration
         if geo_level in [GeoLevels.USA, GeoLevels.CBSA] and i > 0:
             break

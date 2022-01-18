@@ -107,7 +107,6 @@ def create_neighborhood_profiles():
                 neighborhood_profile_list = []
 
                 for i, tract_profile in census_tract_data.iterrows():
-                    print('Tract iteration: ', i)
                     neighborhood_profile = neighborhoodprofile.NeighborhoodProfile()
 
                     # Set geoid and neighborhood shapes
@@ -158,7 +157,7 @@ def create_neighborhood_profiles():
                     neighborhood_profile = set_demographic_section(tract_profile, neighborhood_profile, cbsa_profile, county_profile, usa_profile)
                     neighborhood_profile = set_economy_section(tract_profile, neighborhood_profile, cbsa_profile, county_profile, usa_profile)
                     neighborhood_profile = set_housing_section(tract_profile, neighborhood_profile, cbsa_profile, county_profile, usa_profile)
-                    neighborhood_profile = set_market_trends_section(tract_profile, neighborhood_profile, county_market_profiles)
+                    # neighborhood_profile = set_market_trends_section(tract_profile, neighborhood_profile, county_market_profiles)
 
                     add_dict = neighborhood_profile_to_dict(neighborhood_profile, stateid)
                     neighborhood_profile_list.append(add_dict)
@@ -261,38 +260,38 @@ def set_demographic_section(tract_profile, neighborhood_profile, cbsa_profile, c
     neighborhood_profile.demographics.familytype.data = list(tract_profile.data['Family Type'].values())
     neighborhood_profile.demographics.familytype.colors = COLORS[:len(tract_profile.data['Family Type'].values())]
 
-    if 'Population Growth' in tract_profile.data.keys():
-        population = tract_profile.data['Population Growth']['Total Population']
-        population_growth = calculate_historic_growth(population)
-    else:
+    if 'Population Growth' not in tract_profile.data.keys():
         population = []
         population_growth = []
+        neighborhood_profile.demographics.oneyeargrowth.hasData = False
+    else:
+        population = tract_profile.data['Population Growth']['Total Population']
+        population_growth = calculate_historic_growth(population)
+
+        tract_population_oneyeargrowth = calculate_percent_change(tract_profile.data['Population Growth']['Total Population'][-2], tract_profile.data['Population Growth']['Total Population'][-1])
+        county_population_oneyeargrowth = calculate_percent_change(county_profile.data['Population Growth']['Total Population'][-2], county_profile.data['Population Growth']['Total Population'][-1],decimal_places=2)
+        us_population_oneyeargrowth = calculate_percent_change(usa_profile.data['Population Growth']['Total Population'][-2], usa_profile.data['Population Growth']['Total Population'][-1])
+
+        if cbsa_profile is not None:
+            cbsa_name = cbsa_profile.geoinfo['cbsaname']
+            cbsa_population_oneyeargrowth = calculate_percent_change(cbsa_profile.data['Population Growth']['Total Population'][-2], cbsa_profile.data['Population Growth']['Total Population'][-1])
+        else:
+            cbsa_name = "N/A"
+            cbsa_population_oneyeargrowth = 0
+
+        neighborhood_profile.demographics.oneyeargrowth.data = [tract_population_oneyeargrowth,
+                                                                county_population_oneyeargrowth,
+                                                                    cbsa_population_oneyeargrowth,
+                                                                    us_population_oneyeargrowth]
+
+        county_name = county_profile.geoinfo['countyname']
+        neighborhood_profile.demographics.oneyeargrowth.labels = [TRACT_LABEL_NAME, county_name, cbsa_name, US_Name]
+        neighborhood_profile.demographics.oneyeargrowth.colors = COLORS[:4]
 
     neighborhood_profile.demographics.populationtrends.data1 = population
     neighborhood_profile.demographics.populationtrends.labels1 = CENSUS_YEARS
     neighborhood_profile.demographics.populationtrends.data2 = population_growth
     neighborhood_profile.demographics.populationtrends.labels2 = GROWTH_YEAR_LABELS
-
-    county_name = county_profile.geoinfo['countyname']
-
-    tract_population_oneyeargrowth = calculate_percent_change(tract_profile.data['Population Growth']['Total Population'][-2], tract_profile.data['Population Growth']['Total Population'][-1])
-    county_population_oneyeargrowth = calculate_percent_change(county_profile.data['Population Growth']['Total Population'][-2], county_profile.data['Population Growth']['Total Population'][-1],decimal_places=2)
-    us_population_oneyeargrowth = calculate_percent_change(usa_profile.data['Population Growth']['Total Population'][-2], usa_profile.data['Population Growth']['Total Population'][-1])
-
-    if cbsa_profile is not None:
-        cbsa_name = cbsa_profile.geoinfo['cbsaname']
-        cbsa_population_oneyeargrowth = calculate_percent_change(cbsa_profile.data['Population Growth']['Total Population'][-2], cbsa_profile.data['Population Growth']['Total Population'][-1])
-    else:
-        cbsa_name = "N/A"
-        cbsa_population_oneyeargrowth = 0
-
-    neighborhood_profile.demographics.oneyeargrowth.data = [tract_population_oneyeargrowth,
-                                                            county_population_oneyeargrowth,
-                                                                cbsa_population_oneyeargrowth,
-                                                                us_population_oneyeargrowth]
-
-    neighborhood_profile.demographics.oneyeargrowth.labels = [TRACT_LABEL_NAME, county_name, cbsa_name, US_Name]
-    neighborhood_profile.demographics.oneyeargrowth.colors = COLORS[:4]
 
     return neighborhood_profile
 
@@ -384,7 +383,7 @@ def set_economy_section(tract_profile, neighborhood_profile, cbsa_profile, count
 
     if 'Unemployment Rate % Change' in county_profile.data['Unemployment Rate'].keys():
         neighborhood_adjustment_rate = neighborhood_unemployment * county_profile.data['Unemployment Rate']['Unemployment Rate % Change']
-    elif 'Unemployment Rate % Change' in cbsa_profile.data['Unemployment Rate'].keys():
+    elif cbsa_profile is not None and 'Unemployment Rate % Change' in cbsa_profile.data['Unemployment Rate'].keys():
         neighborhood_adjustment_rate = neighborhood_unemployment * cbsa_profile.data['Unemployment Rate']['Unemployment Rate % Change']
     else:
         neighborhood_adjustment_rate = 0

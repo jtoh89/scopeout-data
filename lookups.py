@@ -160,8 +160,8 @@ STATE_ABREV_TO_STATEID = {
 
 REDFIN_PROPERTY_TYPES_LOWERCASE_CONVERSION = {
     'All Residential': 'all',
-    'Single Family Residential': 'multifamily',
-    'Multi-Family (2-4 Unit)': 'singlefamily',
+    'Single Family Residential': 'singlefamily',
+    'Multi-Family (2-4 Unit)': 'multifamily',
     'Condo/Co-op': 'condos'
 }
 

@@ -32,13 +32,15 @@ from database import mongoclient
 #         'category': 'buildingpermits'
 #     })
 # print('Delete done')
-
+#
 # mongoclient.delete_finished_run({
-#     'state_id':"04",
-#         'geo_level': GeoLevels.COUNTY.value,
-#         'category': 'Unemployment Rate'
+#     'state_id':"27",
+#         'geo_level': GeoLevels.TRACT.value,
+#         'category': 'Poverty Rate'
 #     })
 # print('Delete done')
+
+
 
 
 # censusdata.run_census_data_import(GeoLevels.USA, ProductionEnvironment.CENSUS_DATA1)
@@ -48,6 +50,18 @@ from database import mongoclient
 # censusdata.run_census_data_import(GeoLevels.COUNTY, ProductionEnvironment.CENSUS_DATA1)
 # censusdata.run_census_data_import(GeoLevels.TRACT, ProductionEnvironment.CENSUS_DATA1)
 # censusdata.run_census_data_import(GeoLevels.TRACT, ProductionEnvironment.CENSUS_DATA2)
+
+
+#### FORCE CENSUS RUNS
+
+# force_run = {
+#     'stateid':'28',
+#     'category': 'Family Type'
+# }
+# censusdata.run_census_data_import(GeoLevels.TRACT, ProductionEnvironment.CENSUS_DATA1, force_run=force_run)
+
+####
+
 
 # mongoclient.create_county_to_cbsa_lookup()
 
@@ -66,7 +80,7 @@ from database import mongoclient
 #                           geoid_field=GeoIdField.USA.value,
 #                           geoname_field=GeoNameField.USA.value)
 
-#
+
 # redfin.import_redfin_data(geo_level=GeoLevels.CBSA,
 #                           default_geoid=DefaultGeoIds.CBSA.value,
 #                           geoid_field=GeoIdField.CBSA.value,
@@ -76,7 +90,7 @@ from database import mongoclient
 #                               default_geoid=DefaultGeoIds.COUNTY.value,
 #                               geoid_field=GeoIdField.COUNTY.value,
 #                               geoname_field=GeoNameField.COUNTY.value)
-
+#
 # zillow.import_zillow_msa_rental_data(geo_level=GeoLevels.USA,
 #                                      default_geoid=DefaultGeoIds.USA.value,
 #                                      geoid_field=GeoIdField.USA.value,

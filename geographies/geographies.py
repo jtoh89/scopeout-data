@@ -83,18 +83,18 @@ def dump_all_geographies():
     for _, v in state_dict.items():
         state_list.append(v)
 
-    mongoclient.insert_list_mongo(list_data=state_list,
-                                  dbname='Geographies',
-                                  collection_name='State',
-                                  prod_env=ProductionEnvironment.GEO_ONLY)
+    # mongoclient.insert_list_mongo(list_data=state_list,
+    #                               dbname='Geographies',
+    #                               collection_name='State',
+    #                               prod_env=ProductionEnvironment.GEO_ONLY)
 
     for _, v in county_dict.items():
         county_list.append(v)
 
-    mongoclient.insert_list_mongo(list_data=county_list,
-                                  dbname='Geographies',
-                                  collection_name='County',
-                                  prod_env=ProductionEnvironment.GEO_ONLY)
+    # mongoclient.insert_list_mongo(list_data=county_list,
+    #                               dbname='Geographies',
+    #                               collection_name='County',
+    #                               prod_env=ProductionEnvironment.GEO_ONLY)
 
     for _, v in cbsa_dict.items():
         cbsa_list.append(v)

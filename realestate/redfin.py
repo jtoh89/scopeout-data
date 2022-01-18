@@ -128,6 +128,7 @@ def import_redfin_data(geo_level, default_geoid, geoid_field, geoname_field):
                     print('Insert Market Trends failed')
                     sys.exit()
 
+
             median_sale_price = int(round(row.median_sale_price,0))
             median_ppsf = int(round(row.median_ppsf,0))
             months_of_supply = round(row.months_of_supply,2)

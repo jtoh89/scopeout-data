@@ -14,7 +14,7 @@ class NeighborhoodProfile:
         self.demographics = demographics.Demographics()
         self.economy = economy.Economy()
         self.housing = housing.Housing()
-        self.marketprofile = neighborhoodmarketprofile.NeighborhoodMarketProfile()
+        # self.marketprofile = neighborhoodmarketprofile.NeighborhoodMarketProfile()
 
     def convert_to_dict(self):
         self.demographics.demographicquickfacts = json.loads(json.dumps(self.demographics.demographicquickfacts, default=lambda o: o.__dict__))
@@ -45,18 +45,18 @@ class NeighborhoodProfile:
         self.housing.incomehousingcost = json.loads(json.dumps(self.housing.incomehousingcost, default=lambda o: o.__dict__))
 
 
-        self.marketprofile.mediansaleprice = json.loads(json.dumps( self.marketprofile.mediansaleprice, default=lambda o: o.__dict__))
-        self.marketprofile.medianppsf = json.loads(json.dumps(self.marketprofile.medianppsf, default=lambda o: o.__dict__))
-        self.marketprofile.monthsofsupply = json.loads(json.dumps(self.marketprofile.monthsofsupply, default=lambda o: o.__dict__))
-        self.marketprofile.mediandom = json.loads(json.dumps(self.marketprofile.mediandom, default=lambda o: o.__dict__))
-        self.marketprofile.pricedrops = json.loads(json.dumps(self.marketprofile.pricedrops, default=lambda o: o.__dict__))
-        self.marketprofile.rentaltrends = json.loads(json.dumps(self.marketprofile.rentaltrends, default=lambda o: o.__dict__))
-        self.marketprofile.unemploymentrate = json.loads(json.dumps(self.marketprofile.unemploymentrate, default=lambda o: o.__dict__))
+        # self.marketprofile.mediansaleprice = json.loads(json.dumps( self.marketprofile.mediansaleprice, default=lambda o: o.__dict__))
+        # self.marketprofile.medianppsf = json.loads(json.dumps(self.marketprofile.medianppsf, default=lambda o: o.__dict__))
+        # self.marketprofile.monthsofsupply = json.loads(json.dumps(self.marketprofile.monthsofsupply, default=lambda o: o.__dict__))
+        # self.marketprofile.mediandom = json.loads(json.dumps(self.marketprofile.mediandom, default=lambda o: o.__dict__))
+        # self.marketprofile.pricedrops = json.loads(json.dumps(self.marketprofile.pricedrops, default=lambda o: o.__dict__))
+        # self.marketprofile.rentaltrends = json.loads(json.dumps(self.marketprofile.rentaltrends, default=lambda o: o.__dict__))
+        # self.marketprofile.unemploymentrate = json.loads(json.dumps(self.marketprofile.unemploymentrate, default=lambda o: o.__dict__))
 
         self.demographics = json.loads(json.dumps(self.demographics, default=lambda o: o.__dict__))
         self.economy = json.loads(json.dumps(self.economy, default=lambda o: o.__dict__))
         self.housing = json.loads(json.dumps(self.housing, default=lambda o: o.__dict__))
-        self.marketprofile = json.loads(json.dumps(self.marketprofile, default=lambda o: o.__dict__))
+        # self.marketprofile = json.loads(json.dumps(self.marketprofile, default=lambda o: o.__dict__))
 
         return self
 
