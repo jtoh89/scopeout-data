@@ -126,5 +126,5 @@ from database import mongoclient
 #                                                        geoid_field=GeoIdField.CBSA.value)
 
 
-createneighborhoodprofiles.create_neighborhood_profiles()
+# createneighborhoodprofiles.create_neighborhood_profiles()
 

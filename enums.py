@@ -28,6 +28,7 @@ class DefaultGeoIds(Enum):
 
 class ProductionEnvironment(Enum):
     PRODUCTION = 'prod'
+    PRODUCTION2 = 'prod2'
     GEO_ONLY = 'geoonly'
     QA = 'qa'
     CENSUS_DATA1 = 'CensusData1'

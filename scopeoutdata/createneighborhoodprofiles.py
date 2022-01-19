@@ -162,7 +162,7 @@ def create_neighborhood_profiles():
                     add_dict = neighborhood_profile_to_dict(neighborhood_profile, stateid)
                     neighborhood_profile_list.append(add_dict)
 
-                success = mongoclient.store_neighborhood_data(stateid, neighborhood_profile_list)
+                success = mongoclient.store_neighborhood_data(stateid, neighborhood_profile_list, prod_env)
 
                 if success:
                     collection_add_finished_run = {
