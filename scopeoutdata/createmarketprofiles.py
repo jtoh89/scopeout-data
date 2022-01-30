@@ -4,7 +4,7 @@ from enums import ProductionEnvironment, GeoLevels, GeoIdField, GeoNameField
 from utils.utils import get_county_cbsa_lookup, check_dataframe_has_one_record, set_na_to_false_from_dict
 from math import nan
 import pandas as pd
-from realestate.redfin import REDFIN_PROPERTY_TYPES, REDFIN_DATA_CATEGORIES
+from realestate.redfin import REDFIN_PROPERTY_TYPES, REDFIN_DATA_CATEGORIES, REDFIN_PROPERTY_TYPES_LOWERCASE
 from models import cbsamarketprofile
 
 def create_county_market_profiles():
@@ -29,6 +29,7 @@ def create_county_market_profiles():
 
     for i, county_profile in county_profiles.iterrows():
         county_profile = county_profile.to_dict()
+
         final_county_profile = aggregate_all_to_county_profile(county_profile, county_cbsa_lookup, cbsa_profiles, us_profile)
         county_profile_list.append(final_county_profile)
 
@@ -70,8 +71,6 @@ def add_unemployment_to_county_profile(county_profile, us_profile):
         }
     else:
         county_profile['historicalunemploymentrate'] = False
-
-
 
 def add_realestate_rental_to_county_profile(county_profile, cbsa_profiles, cbsa_match, us_profile):
     # Check if cbsa exists for county
@@ -122,35 +121,34 @@ def group_geo_market_data(county_profile):
 
     if county_profile['historicalunemploymentrate']:
         data_dict = create_unemployment_dict(county_profile, countyname)
-        final_dict['unemploymentdata'] = data_dict
+        final_dict['unemploymentrate'] = data_dict
     else:
-        final_dict['unemploymentdata'] = False
+        final_dict['unemploymentrate'] = False
 
     return final_dict
 
-
 def create_redfin_dict(county_profile, countyname, cbsaname):
 
-    redfin_ptype_to_keys = {'All Residential': 'allresidential',
-                            'Single Family Residential': 'singlefamily',
-                            'Multi-Family (2-4 Unit)': 'multifamily'}
+    redfin_lowercase_ptype_to_keys = {'all': 'allresidential',
+                            'singlefamily': 'singlefamily',
+                            'multifamily': 'multifamily'}
 
-    redfin_ptype_to_title = {'All Residential': 'All',
-                            'Single Family Residential': 'Single Family',
-                            'Multi-Family (2-4 Unit)': '2-4 units'}
+    redfin_ptype_to_title = {'all': 'All',
+                            'singlefamily': 'Single Family',
+                            'multifamily': '2-4 units'}
 
     return_dict = {}
 
 
     for cat in REDFIN_DATA_CATEGORIES:
         return_dict[cat] = {}
-        for ptype in REDFIN_PROPERTY_TYPES:
+        for ptype in REDFIN_PROPERTY_TYPES_LOWERCASE:
             us_df = pd.DataFrame.from_dict(county_profile['usrealestatetrends'][ptype])
             county_df = pd.DataFrame.from_dict(county_profile['countyrealestatetrends'][ptype])
 
             combined_df = us_df.merge(county_df, on='dates', how='left', suffixes=('', '_county'))
 
-            return_dict[cat][redfin_ptype_to_keys[ptype]] = {
+            return_dict[cat][redfin_lowercase_ptype_to_keys[ptype]] = {
                     'title': redfin_ptype_to_title[ptype],
                     'charttype': 'line',
                     'labels': list(combined_df['dates']),
@@ -163,11 +161,11 @@ def create_redfin_dict(county_profile, countyname, cbsaname):
             if county_profile['cbsarealestatetrends']:
                 cbsa_df = pd.DataFrame.from_dict(county_profile['cbsarealestatetrends'][ptype])
                 combined_df = combined_df.merge(cbsa_df, on='dates', how='left', suffixes=('', '_cbsa'))
-                return_dict[cat][redfin_ptype_to_keys[ptype]]['data2Name'] = cbsaname
-                return_dict[cat][redfin_ptype_to_keys[ptype]]['data2'] = list_replace_nan_with_none(list(combined_df[cat + '_cbsa']))
+                return_dict[cat][redfin_lowercase_ptype_to_keys[ptype]]['data2Name'] = cbsaname
+                return_dict[cat][redfin_lowercase_ptype_to_keys[ptype]]['data2'] = list_replace_nan_with_none(list(combined_df[cat + '_cbsa']))
             else:
-                return_dict[cat][redfin_ptype_to_keys[ptype]]['data2Name'] = cbsaname
-                return_dict[cat][redfin_ptype_to_keys[ptype]]['data2'] = []
+                return_dict[cat][redfin_lowercase_ptype_to_keys[ptype]]['data2Name'] = cbsaname
+                return_dict[cat][redfin_lowercase_ptype_to_keys[ptype]]['data2'] = []
 
 
     return return_dict
@@ -238,7 +236,7 @@ def add_missing_redfin_keys(geo_real_estate_trend):
         return empty_dict
 
 
-    for redfin_key in REDFIN_PROPERTY_TYPES:
+    for redfin_key in REDFIN_PROPERTY_TYPES_LOWERCASE:
         if redfin_key not in geo_real_estate_trend.keys():
             geo_real_estate_trend[redfin_key] = empty_dict
 

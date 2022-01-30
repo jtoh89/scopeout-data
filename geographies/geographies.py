@@ -5,6 +5,109 @@ import pandas as pd
 from enums import ProductionEnvironment
 
 
+def dump_all_geographies():
+    currpath = os.path.dirname(os.path.abspath(__file__))
+    rootpath = os.path.dirname(os.path.abspath(currpath))
+
+    state_dict = {}
+    county_dict = {}
+
+    for geo_level in ['state', 'county']:
+        if geo_level == 'state' or geo_level == 'county':
+            file_dir = '/files/statecountyfips.csv'
+            geo_df = pd.read_csv(rootpath + file_dir)
+
+            geo_df = geo_df.rename(columns={'State Code (FIPS)':'stateid',
+                                            'County Code (FIPS)': 'countyid',
+                                            'Area Name (including legal/statistical area description)':'areaname',
+                                            'Abbreviation':'abbreviation'})
+
+            geo_df['stateid'] = geo_df['stateid'].apply(lambda x: str(x).zfill(2))
+            geo_df['countyid'] = geo_df['countyid'].apply(lambda x: str(x).zfill(3))
+
+            geo_df = geo_df[geo_df['stateid'] != '72']
+
+            for i, row in geo_df.iterrows():
+                if geo_level == 'state' and row['Summary Level'] == 40:
+                    state_dict[row['stateid']] = {
+                        'fipsstatecode': row['stateid'],
+                        'statename': row['areaname'],
+                        'stateabbreviation': row['abbreviation'],
+                    }
+                elif geo_level == 'county' and row['Summary Level'] == 50:
+                    countyfullcode = row['stateid'] + row['countyid']
+
+                    county_dict[countyfullcode] = {
+                        'countyfullcode': countyfullcode,
+                        'fipscountycode': row['countyid'],
+                        'countyname': row['areaname'],
+                        'stateinfo': state_dict[row['stateid']],
+                    }
+
+    file_dir = '/files/cbsafips.csv'
+    cbsa_df = pd.read_csv(rootpath + file_dir)
+
+    cbsa_dict = {}
+
+    for i, row in cbsa_df.iterrows():
+
+        if row['cbsacode'] == row['cbsacode']:
+            cbsacode = str(int(row['cbsacode']))
+            stateid = str(int(row['fipsstatecode'])).zfill(2)
+
+            if stateid == '72':
+                continue
+
+            fipscountycode = str(int(row['fipscountycode'])).zfill(3)
+            countyfullcode = stateid + fipscountycode
+
+            if countyfullcode in county_dict.keys():
+                county_data = county_dict[countyfullcode]
+            else:
+                print('Skipping county: ', row['countycountyequivalent'])
+                continue
+
+            if cbsacode in cbsa_dict.keys():
+                cbsa_dict[cbsacode]['counties'].append(county_data)
+            else:
+                cbsa_dict[cbsacode] = {
+                    'cbsacode': cbsacode,
+                    'cbsaname': row['cbsatitle'].replace('--','-'),
+                    'counties': [county_data]
+                }
+
+    state_list = []
+    county_list = []
+    cbsa_list = []
+
+    for _, v in state_dict.items():
+        state_list.append(v)
+
+    mongoclient.insert_list_mongo(list_data=state_list,
+                                  dbname='Geographies',
+                                  collection_name='State',
+                                  prod_env=ProductionEnvironment.GEO_ONLY)
+
+    for _, v in county_dict.items():
+        county_list.append(v)
+
+    mongoclient.insert_list_mongo(list_data=county_list,
+                                  dbname='Geographies',
+                                  collection_name='County',
+                                  prod_env=ProductionEnvironment.GEO_ONLY)
+
+    for _, v in cbsa_dict.items():
+        cbsa_list.append(v)
+
+    mongoclient.insert_list_mongo(list_data=cbsa_list,
+                                  dbname='Geographies',
+                                  collection_name='Cbsa',
+                                  prod_env=ProductionEnvironment.GEO_ONLY)
+
+
+
+    print('done')
+
 
 def dump_zillow_cbsa_mapping():
     '''

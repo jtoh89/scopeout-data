@@ -12,24 +12,26 @@ from census.censushelpers import calculate_category_percentage, check_percentage
 import time
 import os
 import sys
+from globals import SCOPEOUT_YEAR, CENSUS_LATEST_YEAR, CENSUS_YEARS
 from datetime import datetime
-
-CENSUS_LATEST_YEAR = 2019
-CENSUS_YEARS = [2012, 2013, 2014, 2015, 2016, 2017, 2018, CENSUS_LATEST_YEAR]
 
 # CENSUS_LATEST_YEAR = 2014
 # CENSUS_YEARS = [2013, CENSUS_LATEST_YEAR]
 
-SCOPEOUT_YEAR = 2021
+STATES1 = [
+    '01','02','04','05','06','08','09','10','11','12','13','15','16','17','18','19','20','21','22','23','24',
+    '25','26','27','28','29','30','31','32','33','34','35'
+]
 
-# STATES = [
-#     '01','02','04','05','06','08','09','10','11','12','13','15','16','17','18','19','20','21','22','23','24',
-#     '25','26','27','28','29','30','31','32','33','34','35','36','37','38','39','40','41','42','44','45','46',
-#     '47','48','49','50','51','53','54','55','56'
-# ]
+STATES2 = [
+    '36','37','38','39','40','41','42','44','45','46',
+    '47','48','49','50','51','53','54','55','56'
+]
 
-
-STATES = ['47','48','49','50','51','53','54','55','56']
+#
+STATES = ['01','02','04','05','06','08','09','10','11','12','13','15','16','17','18','19','20','21','22','23','24',
+    '25','26','27','28','29','30','31','32','33','34','35','36','37','38','39','40','41','42','44','45','46',
+    '47','48','49','50','51','53','54','55','56']
 
 def update_us_median_income_fred():
     '''
@@ -98,7 +100,7 @@ def update_us_median_income_fred():
     print(us_med_income)
 
 
-def run_census_data_import(geo_level, prod_env):
+def run_census_data_import(geo_level, prod_env, force_run=False):
     '''
     Downloads census data variables. Function iterates through states, checks finished runs, and downloads
     data that are currently missing. Specify SCOPEOUT_YEAR when new year releases.
@@ -108,6 +110,14 @@ def run_census_data_import(geo_level, prod_env):
     '''
     lookups = censuslookups.get_census_lookup()
     all_categories = lookups['Category'].drop_duplicates()
+    STATES_RUN = STATES
+    if force_run:
+        STATES_RUN = [force_run['stateid']]
+        mongoclient.delete_finished_run({
+            'state_id': force_run['stateid'],
+                'geo_level': geo_level.value,
+                'category': force_run['category']
+            })
 
     collection_find_finished_runs = {
         'scopeout_year': SCOPEOUT_YEAR,
@@ -115,19 +125,21 @@ def run_census_data_import(geo_level, prod_env):
     }
     finished_runs = mongoclient.get_finished_runs(collection_find_finished_runs)
 
-    for i, stateid in enumerate(STATES):
+
+    for i, stateid in enumerate(STATES_RUN):
         #usa and cbsa data does not need more than 1 iteration
-        if geo_level in [GeoLevels.CBSA, GeoLevels.USA] and i > 0:
+        if geo_level in [GeoLevels.USA, GeoLevels.CBSA] and i > 0:
             break
 
         if geo_level == GeoLevels.USA:
             stateid = DefaultGeoIds.USA.value
-        elif geo_level == GeoLevels.CBSA:
+
+        if geo_level == GeoLevels.CBSA:
             stateid = DefaultGeoIds.CBSA.value
 
         geographies_df = mongoclient.query_geography(geo_level=geo_level, stateid=stateid)
 
-        print('Starting import for stateid: ', stateid)
+        print('Starting import for stateid: {}. geolevel: {}'.format(stateid, geo_level.value))
 
         finished_cats = []
         if len(finished_runs) > 0:
@@ -138,6 +150,8 @@ def run_census_data_import(geo_level, prod_env):
                 print("Skipping category: " + category + ". State: ", stateid)
                 continue
 
+            if geo_level != GeoLevels.CBSA and category == 'Total Households':
+                continue
             # Filter look ups for current category
             variables_df = lookups[lookups['Category'] == category]
             # variables_df = lookups[lookups['Category'] == 'Housing Unit Growth']
@@ -305,7 +319,7 @@ def get_and_store_census_data(geo_level, state_id, variables_df, geographies_df,
                     results_dict[geo_id] = census_result_object
 
 
-    mongoclient.store_missing_geo_for_census_data(missing_geo, geo_level, state_id, category)
+    mongoclient.store_missing_geo(missing_geo, geo_level, state_id, category)
     filtered_dict = filter_existing_data(results_dict, geo_level, category, prod_env, state_id)
 
     if len(filtered_dict) < 1:

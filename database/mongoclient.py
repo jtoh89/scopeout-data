@@ -14,10 +14,15 @@ def connect_to_client(prod_env):
     load_dotenv()
 
     if prod_env == ProductionEnvironment.PRODUCTION:
-        host = os.getenv("MONGO_HOST")
-        database = os.getenv("MONGO_DATABASE")
-        un = os.getenv("MONGO_USERNAME")
-        pw = os.getenv("MONGO_PASSWORD")
+        host = os.getenv("PROD1_MONGO_HOST")
+        database = os.getenv("PROD1_MONGO_DATABASE")
+        un = os.getenv("PROD1_MONGO_USERNAME")
+        pw = os.getenv("PROD1_MONGO_PASSWORD")
+    elif prod_env == ProductionEnvironment.PRODUCTION2:
+        host = os.getenv("PROD2_MONGO_HOST")
+        database = os.getenv("PROD2_MONGO_DATABASE")
+        un = os.getenv("PROD2_MONGO_USERNAME")
+        pw = os.getenv("PROD2_MONGO_PASSWORD")
     elif prod_env == ProductionEnvironment.GEO_ONLY:
         host = os.getenv("GEO_ONLY_MONGO_HOST")
         database = os.getenv("GEO_ONLY_MONGO_DATABASE")
@@ -140,9 +145,14 @@ def create_county_to_cbsa_lookup():
                                   collection_name='CountyToCbsa',
                                   prod_env=ProductionEnvironment.GEO_ONLY)
 
-def store_neighborhood_data(state_id, neighborhood_profile_list):
-    prod_env = ProductionEnvironment.PRODUCTION
-    client = connect_to_client(prod_env=prod_env)
+def store_neighborhood_data(state_id, neighborhood_profile_list, prod_env):
+
+    if prod_env == ProductionEnvironment.CENSUS_DATA1:
+        use_prod_env = ProductionEnvironment.PRODUCTION
+    else:
+        use_prod_env = ProductionEnvironment.PRODUCTION2
+
+    client = connect_to_client(prod_env=use_prod_env)
     dbname = 'scopeout'
 
     db = client[dbname]
@@ -201,7 +211,7 @@ def store_census_data(geo_level, state_id, filtered_dict, prod_env=ProductionEnv
         existing_data = item_dict['data']
 
         if geoid not in filtered_dict.keys():
-            print('DID NOT FIND GEO IN FILTERED DICT. GEOID: ', geoid)
+            # print('DID NOT FIND GEO IN FILTERED DICT. GEOID: ', geoid)
             continue
 
         # append data to dict
@@ -363,6 +373,21 @@ def get_finished_runs(collection_find_finished_runs):
         df = pd.DataFrame(columns=['state_id'])
 
     return df
+
+
+def delete_finished_run(collection_delete_finished_run):
+    client = connect_to_client(prod_env=ProductionEnvironment.QA)
+    db = client['CensusDataInfo']
+    try:
+        collection = db['FinishedRuns']
+
+        collection.delete_many(collection_delete_finished_run)
+    except:
+        print("!!! ERROR storing finished run to Mongo!!!")
+        sys.exit()
+
+    print("Successfully deleted finished run into Mongo")
+
 
 def update_finished_run(collection_add_finished_run, geo_level, category):
     client = connect_to_client(prod_env=ProductionEnvironment.QA)

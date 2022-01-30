@@ -72,6 +72,7 @@ class OneYearGrowth:
         self.labels = []
         self.data = []
         self.colors = []
+        self.hasData = True
 
 class FamilyType:
     def __init__(self):
