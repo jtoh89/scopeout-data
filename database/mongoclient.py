@@ -64,7 +64,6 @@ def query_collection(database_name, collection_name, collection_filter, prod_env
 
     return df
 
-
 def query_geography(geo_level, stateid):
     '''
     Retrieves all geographies based on geo_level provided.
@@ -154,7 +153,7 @@ def store_neighborhood_data(state_id, neighborhood_profile_list):
         temp_insert_failed = store_temp_backup(key=tempkey,insert_list=neighborhood_profile_list)
 
         if temp_insert_failed:
-            perform_small_batch_inserts_census(neighborhood_profile_list, tempkey, collection, GeoLevels.TRACT)
+            perform_small_batch_inserts(neighborhood_profile_list, tempkey, collection, GeoLevels.TRACT)
         else:
             collection.delete_many({'stateid': state_id})
             collection.insert_many(neighborhood_profile_list)
@@ -162,13 +161,12 @@ def store_neighborhood_data(state_id, neighborhood_profile_list):
         delete_temp_backup(key=tempkey)
     except:
         print("!!! ERROR storing neighborhood profiles to Mongo. Try single inserts!!!")
-        perform_small_batch_inserts_census(neighborhood_profile_list, tempkey, collection, GeoLevels.TRACT)
+        perform_small_batch_inserts(neighborhood_profile_list, tempkey, collection, GeoLevels.TRACT)
         return False
 
     print("Successfully stored store_neighborhood_data into Mongo. Rows inserted: ", len(neighborhood_profile_list))
 
     return True
-
 
 def store_census_data(geo_level, state_id, filtered_dict, prod_env=ProductionEnvironment.PRODUCTION, county_batches=False):
     client = connect_to_client(prod_env=prod_env)
@@ -236,14 +234,14 @@ def store_census_data(geo_level, state_id, filtered_dict, prod_env=ProductionEnv
             use_single_inserts = store_temp_backup(key=tempkey,insert_list=data_list)
 
             if use_single_inserts:
-                perform_small_batch_inserts_census(data_list, tempkey, collection, geo_level)
+                perform_small_batch_inserts(data_list, tempkey, collection, geo_level)
             else:
                 collection.delete_many(collection_filter)
                 try:
                     collection.insert_many(data_list)
                 except Exception as e:
                     print("!!! Could not perform insert many into Census Data. Try again with single insert. Err: ", e)
-                    perform_small_batch_inserts_census(data_list, tempkey, collection, geo_level)
+                    perform_small_batch_inserts(data_list, tempkey, collection, geo_level)
 
             delete_temp_backup(key=tempkey)
             total_inserts += len(data_list)
@@ -270,14 +268,13 @@ def batch_inserts_with_list(data_list, collection, collection_filter, geoid_fiel
         tempkey = 'store_market_trends_data'
 
         insert_ids = []
-
         insert_list = []
+
         for i, data in enumerate(data_list, 1):
             insert_ids.append(data[geoid_field])
             insert_list.append(data)
             if i % 99 == 0:
                 insert_batch(insert_list, insert_ids, collection, collection_filter, tempkey, geoid_field)
-
                 insert_ids = []
                 insert_list = []
 
@@ -297,24 +294,22 @@ def insert_batch(insert_list, insert_ids, collection, collection_filter, tempkey
     insert_failed = store_temp_backup(key=tempkey,insert_list=insert_list)
 
     if not insert_failed:
-        collection.delete_many(collection_filter)
+        try:
+            collection.delete_many(collection_filter)
+            collection.insert_many(insert_list)
+        except Exception as e:
+            print("!!! insert_batch - Could not perform insert many. Err: ", e)
+            sys.exit()
 
-    try:
-        collection.insert_many(insert_list)
-    except Exception as e:
-        print("!!! insert_batch - Could not perform insert many. Err: ", e)
+        delete_temp_backup(key=tempkey)
+    else:
+        print("!!! ERROR - temp back up failed ")
         sys.exit()
 
 
-    delete_temp_backup(key=tempkey)
 
-
-def perform_small_batch_inserts_census(data_list, tempkey, collection, geo_level):
-    # if geo_level != GeoLevels.TRACT:
-    #     print('ERROR!!! SINGLE INSERTS IMPLEMENTED ONLY FOR TRACTS')
-    #     sys.exit()
-
-    print("Start single inserts. Num of records: ", len(data_list))
+def perform_small_batch_inserts(data_list, tempkey, collection, geo_level):
+    print("Start small batch inserts. Num of records: ", len(data_list))
 
     remove_list = []
     insert_list = []
@@ -337,7 +332,7 @@ def perform_small_batch_inserts_census(data_list, tempkey, collection, geo_level
             insert_list.append(row)
             remove_list.append(tractid)
 
-    print("Finished single inserts. Num of records: ", len(data_list) )
+    print("Finished small batch. Num of records: ", len(data_list) )
 
 def add_finished_run(collection_add_finished_run):
     client = connect_to_client(prod_env=ProductionEnvironment.QA)
@@ -387,7 +382,7 @@ def update_finished_run(collection_add_finished_run, geo_level, category):
 
     print("Successfully stored finished run into Mongo")
 
-def store_missing_geo(missing_geo, geo_level, state_id, category):
+def store_missing_geo_for_census_data(missing_geo, geo_level, state_id, category):
     print("!!! STORING MISSING GEO !!! COUNT: ".format(len(missing_geo)))
     client = connect_to_client(prod_env=ProductionEnvironment.QA)
     db = client['CensusDataInfo']
@@ -456,15 +451,18 @@ def delete_temp_backup(key):
         collection.delete_one(collection_delete)
     except:
         print("!!! ERROR could not delete backup Mongo!!!")
-        sys.exit()
+        # sys.exit()
 
 
-def insert_list_mongo(list_data, dbname, collection_name, prod_env):
+def insert_list_mongo(list_data, dbname, collection_name, prod_env, collection_update_existing=False):
     client = connect_to_client(prod_env=prod_env)
     db = client[dbname]
+    collection = db[collection_name]
 
     try:
-        collection = db[collection_name]
+        if collection_update_existing:
+            collection.delete_many(collection_update_existing)
+
         collection.insert_many(list_data)
     except:
         print("!!! ERROR could not store insert_list_mongo to Mongo!!!")

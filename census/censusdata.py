@@ -29,8 +29,7 @@ SCOPEOUT_YEAR = 2021
 # ]
 
 
-STATES = ['36','37','38','39','40','41','42','44','45','46',
-          '47','48','49','50','51','53','54','55','56']
+STATES = ['47','48','49','50','51','53','54','55','56']
 
 def update_us_median_income_fred():
     '''
@@ -306,7 +305,7 @@ def get_and_store_census_data(geo_level, state_id, variables_df, geographies_df,
                     results_dict[geo_id] = census_result_object
 
 
-    mongoclient.store_missing_geo(missing_geo, geo_level, state_id, category)
+    mongoclient.store_missing_geo_for_census_data(missing_geo, geo_level, state_id, category)
     filtered_dict = filter_existing_data(results_dict, geo_level, category, prod_env, state_id)
 
     if len(filtered_dict) < 1:

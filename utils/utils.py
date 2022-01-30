@@ -1,6 +1,11 @@
 from database import mongoclient
 from enums import ProductionEnvironment
 
+def list_length_okay(list, limit):
+    if len(list) > limit:
+        return False
+    return True
+
 def calculate_percent_change(starting_data, ending_data, move_decimal=True, decimal_places=1):
     if starting_data == 0 or ending_data == 0:
         return 0
