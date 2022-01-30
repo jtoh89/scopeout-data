@@ -34,6 +34,7 @@ class ProductionEnvironment(Enum):
     CENSUS_DATA1 = 'CensusData1'
     CENSUS_DATA2 = 'CensusData2'
     MARKET_TRENDS = 'markettrends'
+    MARKET_MAPS = 'MarketMaps'
 
 class CensusDataByEnvironment(Enum):
     CENSUS_DATA1 = 'CensusData1'

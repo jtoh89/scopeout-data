@@ -1,6 +1,14 @@
 from database import mongoclient
 from enums import ProductionEnvironment
 
+def create_url_slug(cbsacode, marketname):
+    urlslug = marketname.split(", ")[0].replace('--','-').replace(' ','-').lower() + "-real-estate-market-trends"
+
+    if (cbsacode) == "17980":
+        urlslug = marketname.split(", ")[0].replace('--','-').replace(' ','-').lower() + "GA-AL-real-estate-market-trends"
+
+    return urlslug
+
 def list_length_okay(list, limit):
     if len(list) > limit:
         return False

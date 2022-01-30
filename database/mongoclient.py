@@ -48,6 +48,11 @@ def connect_to_client(prod_env):
         database = os.getenv("MARKET_TRENDS_MONGO_DATABASE")
         un = os.getenv("MARKET_TRENDS_MONGO_USERNAME")
         pw = os.getenv("MARKET_TRENDS_MONGO_PASSWORD")
+    elif prod_env == ProductionEnvironment.MARKET_MAPS:
+        host = os.getenv("MARKET_MAPS_HOST")
+        database = os.getenv("MARKET_MAPS_DATABASE")
+        un = os.getenv("MARKET_MAPS_USERNAME")
+        pw = os.getenv("MARKET_MAPS_PASSWORD")
 
     connection_string = 'mongodb+srv://{}:{}@{}/{}?retryWrites=true&w=majority' \
         .format(un, pw, host, database)
@@ -485,7 +490,7 @@ def insert_list_mongo(list_data, dbname, collection_name, prod_env, collection_u
     collection = db[collection_name]
 
     try:
-        if collection_update_existing:
+        if collection_update_existing or collection_update_existing == {}:
             collection.delete_many(collection_update_existing)
 
         collection.insert_many(list_data)

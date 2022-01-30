@@ -1,11 +1,10 @@
-from scopeoutdata import createneighborhoodprofiles, createmarketprofiles, createcbsamarketprofiles
+from scopeoutdata import createneighborhoodprofiles, createmarketprofiles, createcbsamarketprofiles, createmarketmaps
 from unemployment import unemploymentdownload, unemploymentupdates
 from enums import GeoLevels, DefaultGeoIds, ProductionEnvironment, GeoIdField, GeoNameField
 from census import censusdata, censuslookups
 from realestate import redfin, buildingpermits, initialize, zillow
-from geographies import geographies
+from geographies import geographies, topmarkets, esrigeographies
 from database import mongoclient
-
 
 ##################################################
 ##################################################
@@ -19,8 +18,13 @@ from database import mongoclient
 # # dump state, county, cbsa geographies
 # geographies.dump_all_geographies()
 
+# topmarkets.store_top_200_markets()
+
 # # dump zipcodes to geographies
 # geographies.dump_zipcode()
+
+# esrigeographies.dump_geographies_by_cbsa()
+
 
 # # dump zillow to cbsa mapping
 # geographies.dump_zillow_cbsa_mapping()
@@ -128,3 +132,4 @@ from database import mongoclient
 
 # createneighborhoodprofiles.create_neighborhood_profiles()
 
+createmarketmaps.generate_market_maps()

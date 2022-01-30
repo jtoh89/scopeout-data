@@ -37,7 +37,7 @@ def dump_geographies_by_cbsa():
         cbsa_ziplist = get_zip_list_for_cbsacode(cbsacode=cbsacode, auth_token=auth_token)
         mongoclient.insert_list_mongo(list_data=[cbsa_ziplist],
                                       dbname='Geographies',
-                                      collection_name='Zipcodes',
+                                      collection_name='EsriZipcodes',
                                       prod_env=ProductionEnvironment.GEO_ONLY,
                                       collection_update_existing={"cbsacode": cbsacode})
 

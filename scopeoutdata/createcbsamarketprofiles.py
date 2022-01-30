@@ -1,7 +1,7 @@
 import sys
 from database import mongoclient
 from enums import ProductionEnvironment, GeoLevels, GeoIdField, GeoNameField
-from utils.utils import get_county_cbsa_lookup, check_dataframe_has_one_record, set_na_to_false_from_dict
+from utils.utils import get_county_cbsa_lookup, check_dataframe_has_one_record, set_na_to_false_from_dict, create_url_slug
 from math import nan
 import pandas as pd
 from realestate.redfin import REDFIN_PROPERTY_TYPES, REDFIN_DATA_CATEGORIES
@@ -28,7 +28,8 @@ def generate_cbsa_market_profiles(prod_env, geoid_field):
         cbsa_market_profile = cbsamarketprofile.CbsaMarketProfile()
         cbsa_market_profile.cbsacode = row[geoid_field]
         cbsa_market_profile.cbsaname = row['geoname']
-        cbsa_market_profile.urlslug = row['geoname'].split(", ")[0].replace('--','-').replace(' ','-').lower() + "-real-estate-market-trends"
+
+        cbsa_market_profile.urlslug = create_url_slug(marketname=row['geoname'], cbsacode=cbsa_market_profile.cbsacode)
 
         census_cbsa_data_match = census_cbsa_data[census_cbsa_data['geoid'] == row[geoid_field]]
 
