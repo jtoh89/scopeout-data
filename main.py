@@ -23,7 +23,6 @@ from database import mongoclient
 # # dump zipcodes to geographies
 # geographies.dump_zipcode()
 
-# esrigeographies.dump_geographies_by_cbsa()
 
 
 # # dump zillow to cbsa mapping
@@ -132,4 +131,5 @@ from database import mongoclient
 
 # createneighborhoodprofiles.create_neighborhood_profiles()
 
-createmarketmaps.generate_market_maps()
+esrigeographies.dump_geographies_by_cbsa()
+# createmarketmaps.generate_market_maps()

@@ -48,6 +48,10 @@ def get_zip_list_for_cbsacode(cbsacode, auth_token):
     zipcode_list = []
 
     for geo_dict in geo_features:
+
+        if geo_dict['attributes']['AreaID'] == "92804" or geo_dict['attributes']['AreaID'] == "90280":
+            print("")
+
         zipcode_list.append(
             {
                 "zipcode":geo_dict['attributes']['AreaID'],
