@@ -131,5 +131,5 @@ from database import mongoclient
 
 # createneighborhoodprofiles.create_neighborhood_profiles()
 
-esrigeographies.dump_geographies_by_cbsa()
-# createmarketmaps.generate_market_maps()
+esrigeographies.dump_zipcodes_by_cbsa()
+createmarketmaps.generate_market_maps()

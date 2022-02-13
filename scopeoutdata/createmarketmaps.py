@@ -20,30 +20,42 @@ def generate_market_maps():
         marketname = top_200_msas[top_200_msas['cbsacode'] == cbsa_data.cbsacode]["cbsaname"].iloc[0]
         marketmap_data = marketmap.MarketMap()
         marketmap_data.cbsacode = cbsa_data.cbsacode
-        marketmap_data.urlslug = create_url_slug( marketname=marketname, cbsacode=cbsa_data.cbsacode)
-
+        marketmap_data.urlslug = create_url_slug(marketname=marketname, cbsacode=cbsa_data.cbsacode)
+        # marketmap_data.urlslug += '-test'
 
         for zipcode_data in cbsa_data.zipcodes:
             geometry = []
 
-            if zipcode_data['zipcode'] == "92804" or zipcode_data['zipcode'] == "90280":
-                print("")
+            if zipcode_data['zipcode'] != "92683" :
+                continue
+            else:
+                print('')
 
             if not list_length_okay(zipcode_data['geometry'], 1):
                 print('zipcode geo length >1: ', zipcode_data['zipcode'])
                 for zipcode_subgeo in zipcode_data['geometry']:
+                    # geometry.append({
+                    #     "lng": zipcode_subgeo[0],
+                    #     "lat": zipcode_subgeo[1],
+                    # })
+
+                    add_list = []
                     for zipcode_subgeo_latlng in zipcode_subgeo:
-                        geometry.append({
+                        add_list.append({
                             "lng": zipcode_subgeo_latlng[0],
                             "lat": zipcode_subgeo_latlng[1],
                         })
 
+                    geometry.append(add_list)
             else:
+                add_list = []
                 for latlng in zipcode_data['geometry'][0]:
-                    geometry.append({
+                    add_list.append({
                         "lng": latlng[0],
                         "lat": latlng[1],
                     })
+
+                geometry = [add_list]
 
             marketmap_data.zipprofiles.append({
                 'zipcode': zipcode_data['zipcode'],
