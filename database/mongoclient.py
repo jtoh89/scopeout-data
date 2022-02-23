@@ -494,8 +494,8 @@ def insert_list_mongo(list_data, dbname, collection_name, prod_env, collection_u
             collection.delete_many(collection_update_existing)
 
         collection.insert_many(list_data)
-    except:
-        print("!!! ERROR could not store insert_list_mongo to Mongo!!!")
+    except Exception as e:
+        print("!!! ERROR could not store insert_list_mongo to Mongo.!!!\nError: ", e)
         sys.exit()
 
 def test_mongo(data_dict):

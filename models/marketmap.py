@@ -1,4 +1,6 @@
 import json
+from models import demographics
+
 
 class MarketMap:
     def __init__(self):
@@ -15,3 +17,4 @@ class MarketMapData:
         self.medianhouseholdincome = 0
         self.demographics = {}
         self.hasData = True
+

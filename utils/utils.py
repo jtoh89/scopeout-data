@@ -1,5 +1,12 @@
 from database import mongoclient
 from enums import ProductionEnvironment
+from census.censusdata import STATES1, STATES2
+
+def get_prod_by_stateid(stateid):
+    if stateid in STATES1:
+        return ProductionEnvironment.PRODUCTION
+    else:
+        return ProductionEnvironment.PRODUCTION2
 
 def create_url_slug(cbsacode, marketname):
     urlslug = marketname.split(", ")[0].replace('--','-').replace(' ','-').lower() + "-real-estate-market-trends"
