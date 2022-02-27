@@ -1,6 +1,25 @@
 from database import mongoclient
 from enums import ProductionEnvironment
 from census.censusdata import STATES1, STATES2
+import numpy as np
+
+def number_to_string(data_type, value):
+    if data_type == "dollar":
+        return "${:,.0f}".format(value)
+    elif data_type == "percent":
+        return str(value) + "%"
+    elif data_type == "dollar":
+        return value
+
+
+def calculate_percentiles_from_list(list_data):
+    np_list = np.array(list_data)
+    return {
+        "percentile_20": int(round(np.percentile(np_list, 20), 0)),
+        "percentile_40": int(round(np.percentile(np_list, 40), 0)),
+        "percentile_60": int(round(np.percentile(np_list, 60), 0)),
+        "percentile_80": int(round(np.percentile(np_list, 80), 0))
+    }
 
 def get_prod_by_stateid(stateid):
     if stateid in STATES1:
