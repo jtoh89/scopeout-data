@@ -9,6 +9,8 @@ import requests as r
 from shapely.geometry import shape, Point, Polygon, mapping, MultiPolygon
 from shapely.ops import split
 import geopandas
+from census.censusdata import STATES1, STATES2
+
 
 CBSA_LIST = ["31080"]
 
@@ -31,6 +33,39 @@ def esri_auth():
     return response['access_token']
 
 
+
+def dump_tracts_by_county():
+    """
+    Iterates through list of CBSA Ids. Queries Esri Standard Geography for polygon rings and stores into mongo
+    :return:
+    """
+    auth_token = esri_auth()
+
+    existing_tract_counties = mongoclient.query_collection(database_name="Geographies",
+                                            collection_name="EsriTracts",
+                                            collection_filter={},
+                                            prod_env=ProductionEnvironment.GEO_ONLY)
+    existing_tract_counties = list(existing_tract_counties['countyfullcode'])
+
+    counties = mongoclient.query_collection(database_name="Geographies",
+                                            collection_name="County",
+                                            collection_filter={},
+                                            prod_env=ProductionEnvironment.GEO_ONLY)
+
+    print("{} counties left to process".format(len(counties) - len(existing_tract_counties)))
+
+    for countyid in counties['countyfullcode']:
+        if countyid in existing_tract_counties:
+            continue
+
+        cbsa_tract_list = get_spatial_data_for_tract(geoid=countyid, auth_token=auth_token, geo_layer="US.Counties", geo_level=GeoLevels.TRACT)
+
+        mongoclient.insert_list_mongo(list_data=cbsa_tract_list,
+                                      dbname='Geographies',
+                                      collection_name='EsriTracts',
+                                      prod_env=ProductionEnvironment.GEO_ONLY,
+                                      collection_update_existing={"countyfullcode": countyid})
+
 def dump_tracts_by_cbsa():
     """
     Iterates through list of CBSA Ids. Queries Esri Standard Geography for polygon rings and stores into mongo
@@ -39,22 +74,22 @@ def dump_tracts_by_cbsa():
     auth_token = esri_auth()
 
     for cbsacode in CBSA_LIST:
-        cbsa_tract_list = get_spatial_data_for_tract_by_cbsa(cbsacode=cbsacode, auth_token=auth_token)
+        cbsa_tract_list = get_spatial_data_for_tract(geoid=cbsacode, auth_token=auth_token, geo_layer="US.Cbsa", geo_level=GeoLevels.TRACT)
         mongoclient.insert_list_mongo(list_data=cbsa_tract_list,
                                       dbname='Geographies',
-                                      collection_name='EsriTracts',
+                                      collection_name='EsriTractsByCbsa',
                                       prod_env=ProductionEnvironment.GEO_ONLY,
                                       collection_update_existing={"cbsacode": cbsacode})
 
 
-def get_spatial_data_for_tract_by_cbsa(cbsacode, auth_token):
-    geo_features = esri_standard_geography_api(geoid=cbsacode, auth_token=auth_token, geo_level=GeoLevels.TRACT)
+def get_spatial_data_for_tract(geoid, auth_token, geo_layer, geo_level):
+    geo_features = esri_standard_geography_api(geoid=geoid, auth_token=auth_token, geo_layer=geo_layer, geo_level=geo_level)
 
     tract_spatial_list = []
 
     for geo_dict in geo_features:
         tract_id = geo_dict['attributes']['AreaID']
-        county_id = tract_id[2:5]
+        county_full_code = tract_id[0:5]
         state_id = tract_id[0:2]
 
         if len(geo_dict['geometry']['rings']) > 1:
@@ -65,8 +100,8 @@ def get_spatial_data_for_tract_by_cbsa(cbsacode, auth_token):
 
             tract_spatial_list.append({
                 "tractcode": tract_id,
-                "{}".format(GeoIdField.CBSA.value): cbsacode,
-                "{}".format(GeoIdField.COUNTY.value): county_id,
+                "{}".format(GeoIdField.CBSA.value): geoid,
+                "{}".format(GeoIdField.COUNTY.value): county_full_code,
                 "{}".format(GeoIdField.STATE.value): state_id,
                 "geometry": multi_polygon_list
             })
@@ -76,8 +111,8 @@ def get_spatial_data_for_tract_by_cbsa(cbsacode, auth_token):
 
             tract_spatial_list.append({
                     "tractcode": tract_id,
-                    "{}".format(GeoIdField.CBSA.value): cbsacode,
-                    "{}".format(GeoIdField.COUNTY.value): county_id,
+                    "{}".format(GeoIdField.CBSA.value): geoid,
+                    "{}".format(GeoIdField.COUNTY.value): county_full_code,
                     "{}".format(GeoIdField.STATE.value): state_id,
                     "geometry": [polygon_lat_lng]
                 })
@@ -101,7 +136,7 @@ def dump_zipcodes_by_cbsa():
 
 
 def get_zip_list_for_cbsacode(cbsacode, auth_token):
-    geo_features = esri_standard_geography_api(geoid=cbsacode, auth_token=auth_token, geo_level=GeoLevels.ZIPCODE)
+    geo_features = esri_standard_geography_api(geoid=cbsacode, auth_token=auth_token, geolayer="US.CBSA", geo_level=GeoLevels.ZIPCODE)
 
     zipcode_list = []
 
@@ -179,21 +214,24 @@ def get_zip_list_for_cbsacode(cbsacode, auth_token):
     return cbsa_ziplist
 
 
-def esri_standard_geography_api(geoid, auth_token, geo_level):
-    geolayer = ""
+def esri_standard_geography_api(geoid, auth_token, geo_layer, geo_level):
+    # geolayer = ""
     subgeolayer = ""
     if geo_level == GeoLevels.ZIPCODE:
-        geolayer = "US.CBSA"
+        # geolayer = "US.CBSA"
         subgeolayer = "US.ZIP5"
+    elif geo_level == GeoLevels.COUNTY:
+        # geolayer = "US.Counties"
+        subgeolayer = "US.Counties"
     elif geo_level == GeoLevels.TRACT:
-        geolayer = "US.CBSA"
+        # geolayer = "US.CBSA"
         subgeolayer = "US.Tracts"
 
     url = "https://geoenrich.arcgis.com/arcgis/rest/services/World/geoenrichmentserver/StandardGeographyQuery/execute"
 
     params = {
         "sourceCountry": "US",
-        "geographylayers": [geolayer],
+        "geographylayers": [geo_layer],
         "geographyids": [geoid],
         "returnGeometry": True,
         "returnSubGeographyLayer": True,
