@@ -115,8 +115,8 @@ def run_census_data_import(geo_level, prod_env, force_run=False):
         STATES_RUN = [force_run['stateid']]
         mongoclient.delete_finished_run({
             'state_id': force_run['stateid'],
-                'geo_level': geo_level.value,
-                'category': force_run['category']
+            'geo_level': geo_level.value,
+            'category': force_run['category']
             })
 
     collection_find_finished_runs = {
@@ -264,6 +264,7 @@ def get_and_store_census_data(geo_level, state_id, variables_df, geographies_df,
                 geo_id = DefaultGeoIds.USA.value
                 geo_info = geographies_df
 
+
             if len(geo_info) < 1:
                 if geo_level == GeoLevels.COUNTY:
                     geo_id = row.county
@@ -319,7 +320,7 @@ def get_and_store_census_data(geo_level, state_id, variables_df, geographies_df,
                     results_dict[geo_id] = census_result_object
 
 
-    mongoclient.store_missing_geo(missing_geo, geo_level, state_id, category)
+    mongoclient.store_missing_geo_for_census_data(missing_geo, geo_level, state_id, category)
     filtered_dict = filter_existing_data(results_dict, geo_level, category, prod_env, state_id)
 
     if len(filtered_dict) < 1:

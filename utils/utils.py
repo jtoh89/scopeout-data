@@ -61,7 +61,7 @@ def get_county_cbsa_lookup(state_id):
         collection_filter = {'stateid': {'$eq': state_id}}
 
     counties_to_cbsa = mongoclient.query_collection(database_name="Geographies",
-                                                    collection_name="CountyToCbsa",
+                                                    collection_name="CountyByCbsa",
                                                     collection_filter=collection_filter,
                                                     prod_env=ProductionEnvironment.GEO_ONLY)
 

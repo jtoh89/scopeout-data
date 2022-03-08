@@ -106,7 +106,7 @@ def query_geography(geo_level, stateid):
             collection_filter = {}
 
     elif geo_level == GeoLevels.TRACT:
-        collection = db['EsriTracts']
+        collection = db['EsriTractLookup']
         collection_filter = {
             'fipsstatecode': stateid,
         }
@@ -122,33 +122,6 @@ def query_geography(geo_level, stateid):
 
     return df
 
-def create_county_to_cbsa_lookup():
-    '''
-    Function creates lookup for counties to cbsa ids
-    :return: None
-    '''
-    cbsa_data = query_collection(database_name="Geographies",
-                                             collection_name="Cbsa",
-                                             collection_filter={},
-                                             prod_env=ProductionEnvironment.GEO_ONLY)
-
-    counties_to_cbsa = []
-    for i, cbsa in cbsa_data.iterrows():
-        cbsaid = cbsa['cbsacode']
-        cbsaname = cbsa['cbsaname']
-        for county in cbsa['counties']:
-            stateid = county['stateinfo']['fipsstatecode']
-            counties_to_cbsa.append({
-                'countyfullcode': county['countyfullcode'],
-                'cbsacode': cbsaid,
-                'cbsaname': cbsaname,
-                'stateid': stateid
-            })
-
-    insert_list_mongo(list_data=counties_to_cbsa,
-                                  dbname='Geographies',
-                                  collection_name='CountyToCbsa',
-                                  prod_env=ProductionEnvironment.GEO_ONLY)
 
 def store_neighborhood_data(state_id, neighborhood_profile_list, prod_env):
 
@@ -413,15 +386,14 @@ def update_finished_run(collection_add_finished_run, geo_level, category):
     print("Successfully stored finished run into Mongo")
 
 def store_missing_geo_for_census_data(missing_geo, geo_level, state_id, category):
-    print("!!! STORING MISSING GEO !!! COUNT: ".format(len(missing_geo)))
+    print("!!! STORING MISSING GEO !!! COUNT: {}".format(len(missing_geo)))
     client = connect_to_client(prod_env=ProductionEnvironment.QA)
     db = client['CensusDataInfo']
 
     collection = db['CensusDataMissingInEsri']
 
     delete_filter = {
-        'stateid': state_id,
-        'geolevel': geo_level.value,
+        'geo_level': geo_level.value,
         'category': category,
     }
 

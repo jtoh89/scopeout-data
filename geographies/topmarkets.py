@@ -2,30 +2,30 @@ from database import mongoclient
 from enums import ProductionEnvironment
 
 
-def store_top_200_markets():
+def store_scopeout_markets():
     collection_filter = {
-        'cbsacode': {'$in': top_200_msa_list},
+        'cbsacode': {'$in': scopeout_market_list},
     }
 
-    top_200_msas = mongoclient.query_collection(database_name="Geographies",
+    scopeout_markets = mongoclient.query_collection(database_name="Geographies",
                                                  collection_name="Cbsa",
                                                  collection_filter=collection_filter,
                                                  prod_env=ProductionEnvironment.GEO_ONLY)
     insert_list = []
 
-    for i, row in top_200_msas.iterrows():
+    for i, row in scopeout_markets.iterrows():
         insert_list.append({
             'cbsacode': row['cbsacode'],
             'cbsaname': row['cbsaname'],
         })
 
     mongoclient.insert_list_mongo(list_data=insert_list,
-                                  dbname='Geographies',
-                                  collection_name='Top200Msa',
+                                  dbname='ScopeOut',
+                                  collection_name='ScopeOutMarkets',
                                   prod_env=ProductionEnvironment.GEO_ONLY,
                                   collection_update_existing={})
 
-top_200_msa_list = [
+scopeout_market_list = [
     "35620",
     "35620",
     "31080",

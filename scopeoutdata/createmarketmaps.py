@@ -17,8 +17,8 @@ COLOR_LEVEL_4 = "#004c00"
 COLOR_LEVEL_5 = "#00ff01"
 
 def generate_tract_maps():
-    top_200_msas = mongoclient.query_collection(database_name="Geographies",
-                                              collection_name="Top200Msa",
+    scopeout_markets = mongoclient.query_collection(database_name="ScopeOut",
+                                              collection_name="ScopeOutMarkets",
                                               collection_filter={},
                                               prod_env=ProductionEnvironment.GEO_ONLY)
 
@@ -29,7 +29,7 @@ def generate_tract_maps():
         #                                             prod_env=ProductionEnvironment.CENSUS_DATA1).iloc[0].data
 
         cbsa_tracts_geo_df = mongoclient.query_collection(database_name="Geographies",
-                                                    collection_name="EsriTracts",
+                                                    collection_name="EsriTractLookup",
                                                     collection_filter={"cbsacode": cbsacode},
                                                     prod_env=ProductionEnvironment.GEO_ONLY)
 
@@ -45,7 +45,7 @@ def generate_tract_maps():
         tracts_data_df.append(tracts_data2_df)
 
 
-        marketname = top_200_msas[top_200_msas['cbsacode'] == cbsacode]["cbsaname"].iloc[0]
+        marketname = scopeout_markets[scopeout_markets['cbsacode'] == cbsacode]["cbsaname"].iloc[0]
         tract_map = tractmarketmaps.TractMarketMap()
         tract_map.cbsacode = cbsacode
         tract_map.urlslug = create_url_slug(marketname=marketname, cbsacode=cbsacode)
@@ -191,8 +191,8 @@ def calculate_percentiles_from_all_tracts(tracts_data_df):
 
 
 def generate_zipcode_maps():
-    top_200_msas = mongoclient.query_collection(database_name="Geographies",
-                                              collection_name="Top200Msa",
+    scopeout_markets = mongoclient.query_collection(database_name="ScopeOut",
+                                              collection_name="ScopeOutMarkets",
                                               collection_filter={},
                                               prod_env=ProductionEnvironment.GEO_ONLY)
 
@@ -203,7 +203,7 @@ def generate_zipcode_maps():
 
     insert_list = []
     for i, cbsa_data in cbsa_zip_df.iterrows():
-        marketname = top_200_msas[top_200_msas['cbsacode'] == cbsa_data.cbsacode]["cbsaname"].iloc[0]
+        marketname = scopeout_markets[scopeout_markets['cbsacode'] == cbsa_data.cbsacode]["cbsaname"].iloc[0]
         marketmap_data = marketmap.MarketMap()
         marketmap_data.cbsacode = cbsa_data.cbsacode
         marketmap_data.urlslug = create_url_slug(marketname=marketname, cbsacode=cbsa_data.cbsacode)

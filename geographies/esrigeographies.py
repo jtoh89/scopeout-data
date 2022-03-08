@@ -34,7 +34,7 @@ def esri_auth():
 
 
 
-def dump_tracts_by_county():
+def dump_tract_by_county(batch_size=100):
     """
     Iterates through list of CBSA Ids. Queries Esri Standard Geography for polygon rings and stores into mongo
     :return:
@@ -42,10 +42,14 @@ def dump_tracts_by_county():
     auth_token = esri_auth()
 
     existing_tract_counties = mongoclient.query_collection(database_name="Geographies",
-                                            collection_name="EsriTracts",
+                                            collection_name="EsriTractLookup",
                                             collection_filter={},
                                             prod_env=ProductionEnvironment.GEO_ONLY)
-    existing_tract_counties = list(existing_tract_counties['countyfullcode'])
+
+    if len(existing_tract_counties) == 0:
+        existing_tract_counties = []
+    else:
+        existing_tract_counties = list(existing_tract_counties['countyfullcode'].drop_duplicates())
 
     counties = mongoclient.query_collection(database_name="Geographies",
                                             collection_name="County",
@@ -54,19 +58,31 @@ def dump_tracts_by_county():
 
     print("{} counties left to process".format(len(counties) - len(existing_tract_counties)))
 
+    count = 0
     for countyid in counties['countyfullcode']:
         if countyid in existing_tract_counties:
             continue
+        if count > batch_size:
+            print("Finished batch.")
+            break
+        if count != 0 and count % 10 == 0:
+            print("{} / {} counties processed so far".format(count, batch_size))
 
-        cbsa_tract_list = get_spatial_data_for_tract(geoid=countyid, auth_token=auth_token, geo_layer="US.Counties", geo_level=GeoLevels.TRACT)
+        county_tract_list = get_tract_info(geoid=countyid, auth_token=auth_token, geo_layer="US.Counties", geo_level=GeoLevels.TRACT)
 
-        mongoclient.insert_list_mongo(list_data=cbsa_tract_list,
+        if len(county_tract_list) < 1:
+            print("No tracts found. Skipping countyid: {}".format(countyid))
+            continue
+
+        mongoclient.insert_list_mongo(list_data=county_tract_list,
                                       dbname='Geographies',
-                                      collection_name='EsriTracts',
+                                      collection_name='EsriTractLookup',
                                       prod_env=ProductionEnvironment.GEO_ONLY,
                                       collection_update_existing={"countyfullcode": countyid})
 
-def dump_tracts_by_cbsa():
+        count += 1
+
+def dump_tract_spatial_data_by_cbsa():
     """
     Iterates through list of CBSA Ids. Queries Esri Standard Geography for polygon rings and stores into mongo
     :return:
@@ -80,7 +96,6 @@ def dump_tracts_by_cbsa():
                                       collection_name='EsriTractsByCbsa',
                                       prod_env=ProductionEnvironment.GEO_ONLY,
                                       collection_update_existing={"cbsacode": cbsacode})
-
 
 def get_spatial_data_for_tract(geoid, auth_token, geo_layer, geo_level):
     geo_features = esri_standard_geography_api(geoid=geoid, auth_token=auth_token, geo_layer=geo_layer, geo_level=geo_level)
@@ -98,18 +113,33 @@ def get_spatial_data_for_tract(geoid, auth_token, geo_layer, geo_level):
                 polygon_lat_lng = create_polygon_lat_lng_values(lat_lng_array)
                 multi_polygon_list.append(polygon_lat_lng)
 
-            tract_spatial_list.append({
-                "tractcode": tract_id,
-                "{}".format(GeoIdField.CBSA.value): geoid,
-                "{}".format(GeoIdField.COUNTY.value): county_full_code,
-                "{}".format(GeoIdField.STATE.value): state_id,
-                "geometry": multi_polygon_list
-            })
-
+            if geo_layer == "US.Counties":
+                tract_spatial_list.append({
+                    "tractcode": tract_id,
+                    "{}".format(GeoIdField.COUNTY.value): county_full_code,
+                    "{}".format(GeoIdField.STATE.value): state_id,
+                    "geometry": multi_polygon_list
+                })
+            else:
+                tract_spatial_list.append({
+                    "tractcode": tract_id,
+                    "{}".format(GeoIdField.CBSA.value): geoid,
+                    "{}".format(GeoIdField.COUNTY.value): county_full_code,
+                    "{}".format(GeoIdField.STATE.value): state_id,
+                    "geometry": multi_polygon_list
+                })
         else:
             polygon_lat_lng = create_polygon_lat_lng_values(geo_dict['geometry']['rings'][0])
 
-            tract_spatial_list.append({
+            if geo_layer == "US.Counties":
+                tract_spatial_list.append({
+                    "tractcode": tract_id,
+                    "{}".format(GeoIdField.COUNTY.value): county_full_code,
+                    "{}".format(GeoIdField.STATE.value): state_id,
+                    "geometry": [polygon_lat_lng]
+                })
+            else:
+                tract_spatial_list.append({
                     "tractcode": tract_id,
                     "{}".format(GeoIdField.CBSA.value): geoid,
                     "{}".format(GeoIdField.COUNTY.value): county_full_code,
@@ -117,13 +147,40 @@ def get_spatial_data_for_tract(geoid, auth_token, geo_layer, geo_level):
                     "geometry": [polygon_lat_lng]
                 })
 
+    return tract_spatial_list
+
+def get_tract_info(geoid, auth_token, geo_layer, geo_level):
+    geo_features = esri_standard_geography_api(geoid=geoid,
+                                               auth_token=auth_token,
+                                               geo_layer=geo_layer,
+                                               geo_level=geo_level,
+                                               return_geography=False)
+
+    tract_spatial_list = []
+
+    for geo_dict in geo_features:
+        tract_id = geo_dict['attributes']['AreaID']
+        county_full_code = tract_id[0:5]
+        state_id = tract_id[0:2]
+
+        if geo_layer == "US.Counties":
+            tract_spatial_list.append({
+                "tractcode": tract_id,
+                "{}".format(GeoIdField.COUNTY.value): county_full_code,
+                "{}".format(GeoIdField.STATE.value): state_id,
+            })
+        else:
+            tract_spatial_list.append({
+                "tractcode": tract_id,
+                "{}".format(GeoIdField.CBSA.value): geoid,
+                "{}".format(GeoIdField.COUNTY.value): county_full_code,
+                "{}".format(GeoIdField.STATE.value): state_id,
+            })
+
 
     return tract_spatial_list
 
-
-
-
-def dump_zipcodes_by_cbsa():
+def dump_zipcodes_spatial_by_cbsa():
     auth_token = esri_auth()
 
     for cbsacode in CBSA_LIST:
@@ -135,8 +192,10 @@ def dump_zipcodes_by_cbsa():
                                       collection_update_existing={"cbsacode": cbsacode})
 
 
+
+
 def get_zip_list_for_cbsacode(cbsacode, auth_token):
-    geo_features = esri_standard_geography_api(geoid=cbsacode, auth_token=auth_token, geolayer="US.CBSA", geo_level=GeoLevels.ZIPCODE)
+    geo_features = esri_standard_geography_api(geoid=cbsacode, auth_token=auth_token, geo_layer="US.CBSA", geo_level=GeoLevels.ZIPCODE)
 
     zipcode_list = []
 
@@ -214,17 +273,14 @@ def get_zip_list_for_cbsacode(cbsacode, auth_token):
     return cbsa_ziplist
 
 
-def esri_standard_geography_api(geoid, auth_token, geo_layer, geo_level):
+def esri_standard_geography_api(geoid, auth_token, geo_layer, geo_level, return_geography=True):
     # geolayer = ""
     subgeolayer = ""
     if geo_level == GeoLevels.ZIPCODE:
-        # geolayer = "US.CBSA"
         subgeolayer = "US.ZIP5"
     elif geo_level == GeoLevels.COUNTY:
-        # geolayer = "US.Counties"
         subgeolayer = "US.Counties"
     elif geo_level == GeoLevels.TRACT:
-        # geolayer = "US.CBSA"
         subgeolayer = "US.Tracts"
 
     url = "https://geoenrich.arcgis.com/arcgis/rest/services/World/geoenrichmentserver/StandardGeographyQuery/execute"
@@ -233,7 +289,7 @@ def esri_standard_geography_api(geoid, auth_token, geo_layer, geo_level):
         "sourceCountry": "US",
         "geographylayers": [geo_layer],
         "geographyids": [geoid],
-        "returnGeometry": True,
+        "returnGeometry": return_geography,
         "returnSubGeographyLayer": True,
         "subGeographyLayer": subgeolayer,
         "generalizationLevel": 0,
@@ -253,61 +309,53 @@ def esri_standard_geography_api(geoid, auth_token, geo_layer, geo_level):
     return geo_features
 
 
-def get_zip_list_for_cbsacode_BACKUP(cbsacode, auth_token):
-    geo_features = esri_standard_geography_api(geoid=cbsacode, auth_token=auth_token, geo_level=GeoLevels.ZIPCODE)
+def dump_zipcodes_by_scopeout_markets(batch_size=50):
+    """
+    Stores data to EsriZipcodesByCbsa
+    """
+    auth_token = esri_auth()
 
-    zipcode_list = []
+    scopeout_markets = list(mongoclient.query_collection(database_name="ScopeOut",
+                                                collection_name="ScopeOutMarkets",
+                                                collection_filter={},
+                                                prod_env=ProductionEnvironment.GEO_ONLY)['cbsacode'])
 
-    for geo_dict in geo_features:
-        zipcode_test = geo_dict['attributes']['AreaID']
-        if zipcode_test != "92683":
+
+    existing_data = list(mongoclient.query_collection(database_name="Geographies",
+                                                    collection_name="EsriZipcodesBySOMarkets",
+                                                    collection_filter={},
+                                                    prod_env=ProductionEnvironment.GEO_ONLY)['cbsacode'])
+    count = 0
+    for cbsacode in scopeout_markets:
+        if cbsacode in existing_data:
             continue
 
-        geometry = []
-        if len(geo_dict['geometry']['rings']) > 1 and (zipcode_test == "92683"):
-            parentPolygon = ""
-            subPolygonList = []
-            for i, lat_lng_array in enumerate(geo_dict['geometry']['rings']):
-                if parentPolygon == "":
-                    parentPolygon = Polygon(lat_lng_array)
-                    continue
+        if count > batch_size:
+            print("Finished batch")
+            break
 
-                subPolygon = Polygon(lat_lng_array)
+        cbsa_zipcode_lookup = []
+        zipcode_list = []
 
-                if (parentPolygon.intersects(subPolygon) is True):
-                    subPolygonList.append(subPolygon)
-                # else:
-                #     outmulti.append(parentPolygon)
+        geo_features = esri_standard_geography_api(geoid=cbsacode, auth_token=auth_token, geo_layer="US.CBSA", geo_level=GeoLevels.ZIPCODE)
 
+        for geo_dict in geo_features:
+            zipcode = geo_dict['attributes']['AreaID']
+            zipcode_list.append(zipcode)
 
-            difference_poly = parentPolygon.difference(MultiPolygon(subPolygonList))
-            poly_mapped = mapping(difference_poly)
+        cbsa_zipcode_lookup.append({
+            "cbsacode": cbsacode,
+            "zipcodes": zipcode_list
+        })
 
-            geo_list = []
-            for i, polyTupleList in enumerate(poly_mapped['coordinates']):
-                for polytuple in polyTupleList:
-                    geo_list.append(polytuple)
-            geometry.append(geo_list)
+        print("Writing zipcodes for cbsa: ", cbsacode)
+        mongoclient.insert_list_mongo(list_data=cbsa_zipcode_lookup,
+                                      dbname='Geographies',
+                                      collection_name='EsriZipcodesBySOMarkets',
+                                      prod_env=ProductionEnvironment.GEO_ONLY,
+                                      collection_update_existing={"cbsacode": cbsacode})
+        count += 1
 
-        ### ADD AFTER TESTING
-        # else:
-        #     geometry = geo_dict['geometry']['rings']
-
-
-        zipcode_list.append(
-            {
-                "zipcode":geo_dict['attributes']['AreaID'],
-                # "geometry": geo_dict['geometry']['rings']
-                "geometry": geometry
-            }
-        )
-
-    cbsa_ziplist = {
-        "cbsacode": cbsacode,
-        "zipcodes": zipcode_list
-    }
-
-    return cbsa_ziplist
 
 def create_polygon_lat_lng_values(polygon_x_y):
     polygon_lat_lng = []

@@ -53,6 +53,10 @@ def sum_categories(variable_data_dict, variables_df):
             continue
 
         value = int(data)
+
+        if value <= -666666666:
+            value = 0
+
         category = col_dict[k]
 
         # Create dictionary with categories and sum up values

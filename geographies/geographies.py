@@ -3,9 +3,95 @@ import sys
 from database import mongoclient
 import pandas as pd
 from enums import ProductionEnvironment
+from database import mongoclient
+import json
+from shapely.geometry import Polygon, mapping
 
+def dump_zipcode_spatial_by_scopeout_markets():
+    scopeout_markets = list(mongoclient.query_collection(database_name="ScopeOut",
+                                                         collection_name="ScopeOutMarkets",
+                                                         collection_filter={},
+                                                         prod_env=ProductionEnvironment.GEO_ONLY)['cbsacode'])
+
+    for cbsacode in scopeout_markets:
+        zipcode_list = []
+        with open('test_zip2.json', 'r') as f:
+            data = json.load(f)
+            for zipcode_data in data['features']:
+                geometry = []
+                zipcode = zipcode_data['properties']['ZIP_CODE']
+
+                top_level_coordinates = zipcode_data['geometry']['coordinates']
+
+                if len(top_level_coordinates) > 1:
+                    print("check length 1")
+
+                for i, poly_tuple_list in enumerate(top_level_coordinates):
+
+                    # multiple polygons - shouldn't overlap
+                    if len(poly_tuple_list) > 1:
+                        print("check length 2")
+
+                    geo_list = []
+
+
+                    parentPolygon = ""
+                    for i2, poly_tuple_ll in enumerate(poly_tuple_list):
+                        if parentPolygon == "":
+                            parentPolygon = Polygon(poly_tuple_ll)
+                            continue
+                        else:
+                            parentPolygon = parentPolygon.difference(Polygon(poly_tuple_ll))
+
+                    poly_mapped = mapping(parentPolygon)
+                    for i, poly_tuple_list in enumerate(poly_mapped['coordinates']):
+                        for poly_tuple in poly_tuple_list:
+                            geo_list.append({
+                                "lng": poly_tuple[0],
+                                "lat": poly_tuple[1],
+                            })
+                    geometry.append(geo_list)
+
+                zipcode_list.append(
+                    {
+                        "zipcode": zipcode_data['properties']['ZIP_CODE'],
+                        "geometry": geometry
+                    }
+                )
+
+        cbsa_ziplist = {
+            "cbsacode": cbsacode,
+            "urlslug":"los-angeles-long-beach-anaheim-real-estate-market-trends",
+            "zipprofiles": zipcode_list
+        }
+
+        mongoclient.insert_list_mongo(list_data=[cbsa_ziplist],
+                             dbname='Geographies',
+                             collection_name='ZipcodeSpatialData',
+                              prod_env=ProductionEnvironment.GEO_ONLY,
+                              collection_update_existing={"cbsacode": cbsacode})
+
+
+def dump_testziplist():
+    with open('./files/test_zip.json', 'r') as f:
+        data = json.load(f)
+
+        insert_list = []
+        for zipcode_data in data['features']:
+            geometry = []
+            zipcode = zipcode_data['properties']['ZIP_CODE']
+            insert_list.append({"zipcode": zipcode})
+
+
+        mongoclient.insert_list_mongo(list_data=insert_list,
+                                      dbname='Geographies',
+                                      collection_name='TestZipList',
+                                      prod_env=ProductionEnvironment.GEO_ONLY)
 
 def dump_all_geographies():
+    """
+    Stores data to State, County, Cbsa tables
+    """
     currpath = os.path.dirname(os.path.abspath(__file__))
     rootpath = os.path.dirname(os.path.abspath(currpath))
 
@@ -108,6 +194,32 @@ def dump_all_geographies():
 
     print('done')
 
+def dump_county_by_cbsa():
+    '''
+    Stores data to CountyByCbsa table. Function creates lookup for counties to cbsa ids
+    '''
+    cbsa_data = mongoclient.query_collection(database_name="Geographies",
+                                 collection_name="Cbsa",
+                                 collection_filter={},
+                                 prod_env=ProductionEnvironment.GEO_ONLY)
+
+    counties_to_cbsa = []
+    for i, cbsa in cbsa_data.iterrows():
+        cbsaid = cbsa['cbsacode']
+        cbsaname = cbsa['cbsaname']
+        for county in cbsa['counties']:
+            stateid = county['stateinfo']['fipsstatecode']
+            counties_to_cbsa.append({
+                'countyfullcode': county['countyfullcode'],
+                'cbsacode': cbsaid,
+                'cbsaname': cbsaname,
+                'stateid': stateid
+            })
+
+    mongoclient.insert_list_mongo(list_data=counties_to_cbsa,
+                      dbname='Geographies',
+                      collection_name='CountyByCbsa2',
+                      prod_env=ProductionEnvironment.GEO_ONLY)
 
 def dump_zillow_cbsa_mapping():
     '''
@@ -147,16 +259,11 @@ def dump_zillow_cbsa_mapping():
 
     mongoclient.insert_list_mongo(list_data=zillow_cbsa_mapping_list,
                                   dbname='Geographies',
-                                  collection_name='Zillow_Cbsa_Mapping',
+                                  collection_name='ZillowCbsaMapping',
                                   prod_env=ProductionEnvironment.GEO_ONLY)
 
-
-
-ZIP_FILE_YEARS = ['10','15','19','20']
-# ZIP_FILE_YEARS = ['20']
-
 # Get zip files from: https://www.huduser.gov/portal/datasets/usps_crosswalk.html
-def dump_zipcode():
+def DEPRECATED_dump_zipcode():
     '''
     Function stores all USPS zipcodes from various years.
     :return:
@@ -166,6 +273,7 @@ def dump_zipcode():
 
     final_df = pd.DataFrame()
 
+    ZIP_FILE_YEARS = ['10','15','19','20']
     for year in ZIP_FILE_YEARS:
         file_dir = '/files/zipcodes/ZIP_COUNTY_1220{}.xlsx'.format(year)
         print('Reading zip file: {}'.format(file_dir))
@@ -195,7 +303,7 @@ def dump_zipcode():
                                               ignore_index=True)
 
     counties_to_cbsa = mongoclient.query_collection(database_name="Geographies",
-                                                    collection_name="CountyToCbsa",
+                                                    collection_name="CountyByCbsa",
                                                     collection_filter={},
                                                     prod_env=ProductionEnvironment.GEO_ONLY)
 
