@@ -6,16 +6,23 @@ from enums import ProductionEnvironment
 from database import mongoclient
 import json
 from shapely.geometry import Polygon, mapping
+from utils.utils import create_url_slug
 
 def dump_zipcode_spatial_by_scopeout_markets():
-    scopeout_markets = list(mongoclient.query_collection(database_name="ScopeOut",
+    currpath = os.path.dirname(os.path.abspath(__file__))
+    rootpath = os.path.dirname(os.path.abspath(currpath))
+
+    scopeout_markets = mongoclient.query_collection(database_name="ScopeOut",
                                                          collection_name="ScopeOutMarkets",
                                                          collection_filter={},
-                                                         prod_env=ProductionEnvironment.GEO_ONLY)['cbsacode'])
+                                                         prod_env=ProductionEnvironment.GEO_ONLY)
 
-    for cbsacode in scopeout_markets:
+    for i, cbsa in scopeout_markets.iterrows():
         zipcode_list = []
-        with open('test_zip2.json', 'r') as f:
+        cbsacode = cbsa['cbsacode']
+
+
+        with open(rootpath + '/files/test_zip.json') as f:
             data = json.load(f)
             for zipcode_data in data['features']:
                 geometry = []
@@ -23,17 +30,9 @@ def dump_zipcode_spatial_by_scopeout_markets():
 
                 top_level_coordinates = zipcode_data['geometry']['coordinates']
 
-                if len(top_level_coordinates) > 1:
-                    print("check length 1")
-
                 for i, poly_tuple_list in enumerate(top_level_coordinates):
 
-                    # multiple polygons - shouldn't overlap
-                    if len(poly_tuple_list) > 1:
-                        print("check length 2")
-
                     geo_list = []
-
 
                     parentPolygon = ""
                     for i2, poly_tuple_ll in enumerate(poly_tuple_list):
@@ -54,14 +53,14 @@ def dump_zipcode_spatial_by_scopeout_markets():
 
                 zipcode_list.append(
                     {
-                        "zipcode": zipcode_data['properties']['ZIP_CODE'],
+                        "zipcode": zipcode,
                         "geometry": geometry
                     }
                 )
 
         cbsa_ziplist = {
             "cbsacode": cbsacode,
-            "urlslug":"los-angeles-long-beach-anaheim-real-estate-market-trends",
+            "urlslug": create_url_slug(cbsacode, cbsa['cbsaname']),
             "zipprofiles": zipcode_list
         }
 
