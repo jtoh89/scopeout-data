@@ -67,7 +67,7 @@ def get_county_cbsa_lookup(state_id):
 
     county_cbsa_lookup = counties_to_cbsa[['countyfullcode', 'cbsacode', 'cbsaname']]
 
-    return  county_cbsa_lookup
+    return county_cbsa_lookup
 
 
 def check_dataframe_has_one_record(df):

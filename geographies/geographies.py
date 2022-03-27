@@ -217,7 +217,7 @@ def dump_county_by_cbsa():
 
     mongoclient.insert_list_mongo(list_data=counties_to_cbsa,
                       dbname='Geographies',
-                      collection_name='CountyByCbsa2',
+                      collection_name='CountyByCbsa',
                       prod_env=ProductionEnvironment.GEO_ONLY)
 
 def dump_zillow_cbsa_mapping():

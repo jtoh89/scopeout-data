@@ -1,4 +1,4 @@
-from scopeoutdata import createneighborhoodprofiles, createmarketprofiles, createcbsamarketprofiles, createmarketmaps
+from scopeoutdata import createneighborhoodprofiles, createmarketprofiles, createcbsamarketprofiles, createtractmaps
 from unemployment import unemploymentdownload, unemploymentupdates
 from enums import GeoLevels, DefaultGeoIds, ProductionEnvironment, GeoIdField, GeoNameField
 from census import censusdata, censuslookups
@@ -26,11 +26,14 @@ from database import mongoclient
 # # dump zillow to cbsa lookup
 # geographies.dump_zillow_cbsa_mapping()
 
+# # dump tract rings from esri for all scopeout markets
+# esrigeographies.dump_tract_geojson_for_scopeout_markets()
+
 # # dump cbsa zipcode lookup
 # esrigeographies.dump_zipcodes_by_scopeout_markets(batch_size=20)
 
 # # dump zipcodes by scopeout markets
-geographies.dump_zipcode_spatial_by_scopeout_markets()
+# geographies.dump_zipcode_spatial_by_scopeout_markets()
 
 ##################################################################
 ##################################################################
@@ -152,8 +155,8 @@ geographies.dump_zipcode_spatial_by_scopeout_markets()
 
 
 
-# esrigeographies.dump_tract_spatial_data_by_cbsa()
-# createmarketmaps.generate_tract_maps()
+############## CREATE PRODUCTION MAP DATA ############
+createtractmaps.generate_tract_maps()
 
 
 # esrigeographies.dump_zipcodes_spatial_by_cbsa()
