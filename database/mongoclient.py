@@ -123,18 +123,20 @@ def query_geography(geo_level, stateid):
     return df
 
 
-def store_neighborhood_data(state_id, neighborhood_profile_list, prod_env):
+def store_neighborhood_data(state_id, neighborhood_profile_list, prod_env, table_name="neighborhoodprofiles"):
 
     if prod_env == ProductionEnvironment.CENSUS_DATA1:
         use_prod_env = ProductionEnvironment.PRODUCTION
-    else:
+    elif prod_env == ProductionEnvironment.CENSUS_DATA2:
         use_prod_env = ProductionEnvironment.PRODUCTION2
+    else:
+        use_prod_env = ProductionEnvironment.PRODUCTION
 
     client = connect_to_client(prod_env=use_prod_env)
     dbname = 'scopeout'
 
     db = client[dbname]
-    collection = db['neighborhoodprofiles']
+    collection = db[table_name]
 
     tempkey = 'store_neighborhood_data. state_id: {}'.format(state_id)
     try:

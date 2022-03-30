@@ -1,4 +1,4 @@
-from scopeoutdata import createneighborhoodprofiles, createmarketprofiles, createcbsamarketprofiles, createtractmaps
+from scopeoutdata import createneighborhoodprofiles, createmarketprofiles, createcbsamarketprofiles, createtractmaps, createshortneighborhoodprofiles
 from unemployment import unemploymentdownload, unemploymentupdates
 from enums import GeoLevels, DefaultGeoIds, ProductionEnvironment, GeoIdField, GeoNameField
 from census import censusdata, censuslookups
@@ -34,7 +34,8 @@ from database import mongoclient
 
 # # dump zipcodes by scopeout markets
 # geographies.dump_zipcode_spatial_by_scopeout_markets()
-
+#
+esrigeographies.dump_zipcodes_spatial_by_cbsa()
 ##################################################################
 ##################################################################
 
@@ -43,7 +44,7 @@ from database import mongoclient
 #         'category': 'buildingpermits'
 #     })
 # print('Delete done')
-#
+
 # mongoclient.delete_finished_run({
 #     'state_id':"27",
 #         'geo_level': GeoLevels.TRACT.value,
@@ -152,12 +153,12 @@ from database import mongoclient
 
 
 # createneighborhoodprofiles.create_neighborhood_profiles()
+createshortneighborhoodprofiles.create_short_neighborhood_profiles()
 
 
 
 ############## CREATE PRODUCTION MAP DATA ############
-createtractmaps.generate_tract_maps()
+# createtractmaps.generate_tract_maps()
 
 
-# esrigeographies.dump_zipcodes_spatial_by_cbsa()
-# createmarketmaps.generate_zipcode_maps()
+# createtractmaps.generate_zipcode_maps()

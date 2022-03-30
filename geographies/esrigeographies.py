@@ -6,9 +6,8 @@ import pandas as pd
 from enums import ProductionEnvironment, GeoLevels, GeoIdField, GeoNameField
 from utils.utils import list_length_okay
 import requests as r
+import geojson
 from shapely.geometry import shape, Point, Polygon, mapping, MultiPolygon
-from shapely.ops import split
-import geopandas
 from census.censusdata import STATES1, STATES2
 
 
@@ -104,7 +103,7 @@ def dump_tract_geojson_for_scopeout_markets():
         finished_runs = list(finished_runs["cbsacode"])
 
 
-    for cbsacode in ["31080"]:
+    for cbsacode in list(scopeout_markets['cbsacode']):
         if cbsacode in finished_runs:
             print("Skipping cbsacode: ", cbsacode)
             continue
@@ -183,89 +182,74 @@ def get_tract_info(geoid, auth_token, geo_layer, geo_level):
     return tract_spatial_list
 
 def dump_zipcodes_spatial_by_cbsa():
-    auth_token = esri_auth()
-
     for cbsacode in CBSA_LIST:
-        cbsa_ziplist = get_zip_list_for_cbsacode(cbsacode=cbsacode, auth_token=auth_token)
+        cbsa_ziplist = get_zip_list_for_cbsacode(cbsacode=cbsacode)
         mongoclient.insert_list_mongo(list_data=[cbsa_ziplist],
-                                      dbname='Geographies',
-                                      collection_name='EsriZipcodes',
+                                      dbname='ScopeOut',
+                                      collection_name='GeoJsonZipcodesBySOMarkets',
                                       prod_env=ProductionEnvironment.GEO_ONLY,
                                       collection_update_existing={"cbsacode": cbsacode})
 
 
 
 
-def get_zip_list_for_cbsacode(cbsacode, auth_token):
-    geo_features = esri_standard_geography_api(geoid=cbsacode, auth_token=auth_token, main_geo_layer=GeoLevels.CBSA, return_geo_level=GeoLevels.ZIPCODE)
-
+def get_zip_list_for_cbsacode(cbsacode):
     zipcode_list = []
 
-    for geo_dict in geo_features:
-        zipcode_test = geo_dict['attributes']['AreaID']
-        # if zipcode_test != "92683":
-        #     continue
+    scopeout_markets = mongoclient.query_collection(database_name="Geographies",
+                                                    collection_name="Cbsa",
+                                                    collection_filter={"cbsacode": cbsacode},
+                                                    prod_env=ProductionEnvironment.GEO_ONLY)
 
-        geometry = []
-        if len(geo_dict['geometry']['rings']) > 1:
-            parentPolygon = ""
-            diff_poly = ""
-            subPolygonList = []
-            for i, lat_lng_array in enumerate(geo_dict['geometry']['rings']):
-                geometry.append(lat_lng_array)
-                continue
+    zipcodes_for_cbsa = mongoclient.query_collection(database_name="ScopeOut",
+                                                    collection_name="EsriZipcodesBySOMarkets",
+                                                    collection_filter={"cbsacode": cbsacode},
+                                                    prod_env=ProductionEnvironment.GEO_ONLY).iloc[0].zipcodes
 
-                if parentPolygon == "":
-                    parentPolygon = Polygon(lat_lng_array)
-                    # s = geopandas.GeoSeries([parentPolygon])
+    counties_in_cbsa = scopeout_markets.iloc[0].counties
+
+    states_in_cbsa = []
+
+    for county_info in counties_in_cbsa:
+        state_info = county_info['stateinfo']
+        states_in_cbsa.append(state_info["stateabbreviation"])
+
+    unique_states = list(set(states_in_cbsa))
+
+    directory = 'zipcodedata'
+
+    for foldername in os.listdir(directory):
+        if foldername not in unique_states:
+            continue
+
+        for geojsonfile in os.listdir(os.path.join(directory, foldername)):
+            # f = os.path.join(directory, geojsonfile)
+            cwd = os.getcwd()
+            with open(cwd + "/" + directory + "/" + foldername + "/" + geojsonfile, 'r') as gfile:
+                gj = geojson.load(gfile)
+                zipcode_data = gj['features'][1]
+
+                geometry = []
+                zipcode = zipcode_data['properties']['postal-code']
+
+                if zipcode not in zipcodes_for_cbsa:
                     continue
 
-                subPolygon = Polygon(lat_lng_array)
-
-                if (parentPolygon.intersects(subPolygon) is True):
-                    subPolygonList.append(subPolygon)
-                    # s2 = geopandas.GeoSeries([subPolygon])
-
-                    # if i == 1:
-                    #     subPolygonList.append(subPolygon)
-                    #     diff_poly = s.difference(s2, align=True)
-                    # elif i == 2:
-                    #     subPolygonList.append(subPolygon)
-                    #     diff_poly = diff_poly.difference(s2, align=True)
-
-                # else:
-                #     outmulti.append(parentPolygon)
 
 
 
-        else:
-            geometry = geo_dict['geometry']['rings']
+        cbsa_ziplist = {
+            "cbsacode": "31080",
+            "urlslug":"los-angeles-long-beach-anaheim-real-estate-market-trends",
+            "zipprofiles": zipcode_list
+        }
 
+        mongoclient.insert_list_mongo(list_data=[cbsa_ziplist],
+                             dbname='ScopeOutMaps',
+                             collection_name='z',
+                             prod_env=ProductionEnvironment.GEO_ONLY,
+                             collection_update_existing={"cbsacode": "31080"})
 
-            # difference_poly = parentPolygon.difference(MultiPolygon(subPolygonList))
-            # poly_mapped = mapping(difference_poly)
-            # geo_list = []
-            # for i, polyTupleList in enumerate(poly_mapped['coordinates']):
-            #     for polytuple in polyTupleList:
-            #         geo_list.append(polytuple)
-            # geometry.append(geo_list)
-
-
-            # poly_mapped = mapping(diff_poly[0])
-            #
-            # geo_list = []
-            # for i, polyTupleList in enumerate(poly_mapped['coordinates']):
-            #     for polytuple in polyTupleList:
-            #         geo_list.append(polytuple)
-            # geometry.append(geo_list)
-
-        zipcode_list.append(
-            {
-                "zipcode":geo_dict['attributes']['AreaID'],
-                # "geometry": geo_dict['geometry']['rings']
-                "geometry": geometry
-            }
-        )
 
     cbsa_ziplist = {
         "cbsacode": cbsacode,

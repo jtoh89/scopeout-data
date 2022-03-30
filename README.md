@@ -9,7 +9,7 @@ libs
 -requests
 -fredapi
 -openpyxl
-
+-shapely
 
 
 files
