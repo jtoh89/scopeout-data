@@ -1,11 +1,11 @@
-from scopeoutdata import createneighborhoodprofiles, createmarketprofiles, createcbsamarketprofiles, createtractmaps, createshortneighborhoodprofiles
+from scopeoutdata import createneighborhoodprofiles, createmarketprofiles, createcbsamarketprofiles, createshortneighborhoodprofiles
+from scopeoutdata import createzipcodemaps, createtractmaps
 from unemployment import unemploymentdownload, unemploymentupdates
 from enums import GeoLevels, DefaultGeoIds, ProductionEnvironment, GeoIdField, GeoNameField
 from census import censusdata, censuslookups
 from realestate import redfin, buildingpermits, initialize, zillow
 from geographies import geographies, topmarkets, esrigeographies
 from database import mongoclient
-
 
 ##################################################################
 ###### GEOGRAPHIES
@@ -33,9 +33,8 @@ from database import mongoclient
 # esrigeographies.dump_zipcodes_by_scopeout_markets(batch_size=20)
 
 # # dump zipcodes by scopeout markets
-# geographies.dump_zipcode_spatial_by_scopeout_markets()
-#
-esrigeographies.dump_zipcodes_spatial_by_cbsa()
+# geographies.dump_zipcode_geojson_by_scopeout_markets()
+
 ##################################################################
 ##################################################################
 
@@ -115,7 +114,14 @@ esrigeographies.dump_zipcodes_spatial_by_cbsa()
 #                               default_geoid=DefaultGeoIds.COUNTY.value,
 #                               geoid_field=GeoIdField.COUNTY.value,
 #                               geoname_field=GeoNameField.COUNTY.value)
-#
+
+# redfin.import_redfin_zipcode_data(geo_level=GeoLevels.ZIPCODE,
+#                               default_geoid=DefaultGeoIds.ZIPCODE.value,
+#                               geoid_field=GeoIdField.ZIPCODE.value)
+
+
+
+
 # zillow.import_zillow_msa_rental_data(geo_level=GeoLevels.USA,
 #                                      default_geoid=DefaultGeoIds.USA.value,
 #                                      geoid_field=GeoIdField.USA.value,
@@ -153,12 +159,11 @@ esrigeographies.dump_zipcodes_spatial_by_cbsa()
 
 
 # createneighborhoodprofiles.create_neighborhood_profiles()
-createshortneighborhoodprofiles.create_short_neighborhood_profiles()
+# createshortneighborhoodprofiles.create_short_neighborhood_profiles()
 
+# createzipcodemaps.generate_zipcode_maps()
 
 
 ############## CREATE PRODUCTION MAP DATA ############
 # createtractmaps.generate_tract_maps()
 
-
-# createtractmaps.generate_zipcode_maps()

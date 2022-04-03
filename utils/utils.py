@@ -4,12 +4,24 @@ from census.censusdata import STATES1, STATES2
 import numpy as np
 
 def number_to_string(data_type, value):
+    if value != value or value is None:
+        return None
+
+
     if data_type == "dollar":
         return "${:,.0f}".format(value)
     elif data_type == "percent":
         return str(value) + "%"
-    elif data_type == "dollar":
-        return value
+    # elif data_type == "dollar":
+    #     return value
+
+
+def string_to_float(value, decimal_places):
+    if value == '':
+        return None
+
+    return round(float(value), decimal_places)
+
 
 
 def calculate_percentiles_from_list(list_data):
@@ -20,6 +32,77 @@ def calculate_percentiles_from_list(list_data):
         "percentile_60": int(round(np.percentile(np_list, 60), 0)),
         "percentile_80": int(round(np.percentile(np_list, 80), 0))
     }
+
+
+COLOR_LEVEL_NA = "#999999"
+COLOR_LEVEL_1 = "#ff0000"
+COLOR_LEVEL_2 = "#ff7f01"
+COLOR_LEVEL_3 = "#ffff01"
+COLOR_LEVEL_4 = "#004c00"
+COLOR_LEVEL_5 = "#00ff01"
+
+
+def assign_legend_details(legend_details, percentiles_dict, data_type, order):
+    if data_type == "dollar":
+        legend_details.level1description = "Under " + number_to_string(data_type, percentiles_dict['percentile_20'])
+        legend_details.level2description = number_to_string(data_type, percentiles_dict['percentile_20']) + " to " + number_to_string(data_type, percentiles_dict['percentile_40'])
+        legend_details.level3description = number_to_string(data_type, percentiles_dict['percentile_40']) + " to " + number_to_string(data_type, percentiles_dict['percentile_60'])
+        legend_details.level4description = number_to_string(data_type, percentiles_dict['percentile_60']) + " to " + number_to_string(data_type, percentiles_dict['percentile_80'])
+        legend_details.level5description = number_to_string(data_type, percentiles_dict['percentile_80']) + " or More"
+    elif data_type == "percent":
+        legend_details.level1description = "Under " + number_to_string(data_type, percentiles_dict['percentile_20'])
+        legend_details.level2description = number_to_string(data_type, percentiles_dict['percentile_20']) + " to " + number_to_string(data_type, percentiles_dict['percentile_40'])
+        legend_details.level3description = number_to_string(data_type, percentiles_dict['percentile_40']) + " to " + number_to_string(data_type, percentiles_dict['percentile_60'])
+        legend_details.level4description = number_to_string(data_type, percentiles_dict['percentile_60']) + " to " + number_to_string(data_type, percentiles_dict['percentile_80'])
+        legend_details.level5description = number_to_string(data_type, percentiles_dict['percentile_80']) + " or More"
+    else:
+        legend_details.level1description = "Under " + str(percentiles_dict['percentile_20'])
+        legend_details.level2description = str(percentiles_dict['percentile_20']) + " to " + str(percentiles_dict['percentile_40'])
+        legend_details.level3description = str(percentiles_dict['percentile_40']) + " to " + str(percentiles_dict['percentile_60'])
+        legend_details.level4description = str(percentiles_dict['percentile_60']) + " to " + str(percentiles_dict['percentile_80'])
+        legend_details.level5description = str(percentiles_dict['percentile_80']) + " or More"
+
+    if order == "ascending":
+        legend_details.level1color = COLOR_LEVEL_1
+        legend_details.level2color = COLOR_LEVEL_2
+        legend_details.level3color = COLOR_LEVEL_3
+        legend_details.level4color = COLOR_LEVEL_4
+        legend_details.level5color = COLOR_LEVEL_5
+    elif order == "descending":
+        legend_details.level1color = COLOR_LEVEL_5
+        legend_details.level2color = COLOR_LEVEL_4
+        legend_details.level3color = COLOR_LEVEL_3
+        legend_details.level4color = COLOR_LEVEL_2
+        legend_details.level5color = COLOR_LEVEL_1
+
+def assign_color(value, percentiles_dict, order):
+    if value != value or value is None:
+        return COLOR_LEVEL_NA
+
+    if order == "ascending":
+        if value < percentiles_dict['percentile_20']:
+            return COLOR_LEVEL_1
+        elif value < percentiles_dict['percentile_40']:
+            return COLOR_LEVEL_2
+        elif value < percentiles_dict['percentile_60']:
+            return COLOR_LEVEL_3
+        elif value < percentiles_dict['percentile_80']:
+            return COLOR_LEVEL_4
+        else:
+            return COLOR_LEVEL_5
+    elif order == "descending":
+        if value < percentiles_dict['percentile_20']:
+            return COLOR_LEVEL_5
+        if value < percentiles_dict['percentile_40']:
+            return COLOR_LEVEL_4
+        if value < percentiles_dict['percentile_60']:
+            return COLOR_LEVEL_3
+        if value < percentiles_dict['percentile_80']:
+            return COLOR_LEVEL_2
+        else:
+            return COLOR_LEVEL_1
+
+
 
 def get_prod_by_stateid(stateid):
     if stateid in STATES1:

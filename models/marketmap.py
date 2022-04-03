@@ -1,5 +1,4 @@
 import json
-from models import demographics
 
 
 class MarketMap:

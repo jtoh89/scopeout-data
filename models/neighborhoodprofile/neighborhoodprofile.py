@@ -1,7 +1,4 @@
-from models import demographics
-from models import economy
-from models import housing
-from models import neighborhoodmarketprofile
+from models.neighborhoodprofile import economy, housing, demographics
 import json
 
 class NeighborhoodProfile:

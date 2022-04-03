@@ -1,7 +1,6 @@
 from models.shortneighborhoorprofile import shortdemographics
 from models.shortneighborhoorprofile import shorteconomy
 from models.shortneighborhoorprofile import shorthousing
-from models import neighborhoodmarketprofile
 import json
 
 class ShortNeighborhoodProfile:

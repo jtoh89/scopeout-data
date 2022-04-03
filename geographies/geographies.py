@@ -5,10 +5,12 @@ import pandas as pd
 from enums import ProductionEnvironment
 from database import mongoclient
 import json
+import geojson
+from models.geojson import GeoJson, GeoJsonFeature, GeoJsonGeometry
 from shapely.geometry import Polygon, mapping
 from utils.utils import create_url_slug
 
-def dump_zipcode_spatial_by_scopeout_markets():
+def dump_zipcode_geojson_by_scopeout_markets():
     currpath = os.path.dirname(os.path.abspath(__file__))
     rootpath = os.path.dirname(os.path.abspath(currpath))
 
@@ -21,55 +23,81 @@ def dump_zipcode_spatial_by_scopeout_markets():
         zipcode_list = []
         cbsacode = cbsa['cbsacode']
 
+        store_zip_geojson_for_cbsacode(cbsacode=cbsacode)
 
-        with open(rootpath + '/files/test_zip.json') as f:
-            data = json.load(f)
-            for zipcode_data in data['features']:
-                geometry = []
-                zipcode = zipcode_data['properties']['ZIP_CODE']
 
-                top_level_coordinates = zipcode_data['geometry']['coordinates']
+def store_zip_geojson_for_cbsacode(cbsacode):
+    cbsa_market = mongoclient.query_collection(database_name="Geographies",
+                                                    collection_name="Cbsa",
+                                                    collection_filter={"cbsacode": cbsacode},
+                                                    prod_env=ProductionEnvironment.GEO_ONLY)
 
-                for i, poly_tuple_list in enumerate(top_level_coordinates):
+    zipcodes_for_cbsa = mongoclient.query_collection(database_name="ScopeOut",
+                                                     collection_name="EsriZipcodesBySOMarkets",
+                                                     collection_filter={"cbsacode": cbsacode},
+                                                     prod_env=ProductionEnvironment.GEO_ONLY).iloc[0].zipcodes
 
-                    geo_list = []
+    counties_in_cbsa = cbsa_market.iloc[0].counties
+    cbsa_name = cbsa_market.iloc[0].cbsaname
+    states_in_cbsa = []
 
-                    parentPolygon = ""
-                    for i2, poly_tuple_ll in enumerate(poly_tuple_list):
-                        if parentPolygon == "":
-                            parentPolygon = Polygon(poly_tuple_ll)
-                            continue
-                        else:
-                            parentPolygon = parentPolygon.difference(Polygon(poly_tuple_ll))
+    for county_info in counties_in_cbsa:
+        state_info = county_info['stateinfo']
+        states_in_cbsa.append(state_info["stateabbreviation"])
 
-                    poly_mapped = mapping(parentPolygon)
-                    for i, poly_tuple_list in enumerate(poly_mapped['coordinates']):
-                        for poly_tuple in poly_tuple_list:
-                            geo_list.append({
-                                "lng": poly_tuple[0],
-                                "lat": poly_tuple[1],
-                            })
-                    geometry.append(geo_list)
+    unique_states = list(set(states_in_cbsa))
 
-                zipcode_list.append(
-                    {
-                        "zipcode": zipcode,
-                        "geometry": geometry
-                    }
-                )
+    geojson_model = GeoJson()
+    geojson_model.name = cbsa_name
 
-        cbsa_ziplist = {
-            "cbsacode": cbsacode,
-            "urlslug": create_url_slug(cbsacode, cbsa['cbsaname']),
-            "zipprofiles": zipcode_list
-        }
+    directory = 'zipcodedata'
+    for foldername in os.listdir(directory):
+        if foldername not in unique_states:
+            continue
 
-        mongoclient.insert_list_mongo(list_data=[cbsa_ziplist],
-                             dbname='Geographies',
-                             collection_name='ZipcodeSpatialData',
-                              prod_env=ProductionEnvironment.GEO_ONLY,
-                              collection_update_existing={"cbsacode": cbsacode})
+        for geojsonfile in os.listdir(os.path.join(directory, foldername)):
+            cwd = os.getcwd()
+            with open(cwd + "/" + directory + "/" + foldername + "/" + geojsonfile, 'r') as gfile:
+                gj = geojson.load(gfile)
+                zipcode_data = gj['features'][1]
 
+                zipcode = zipcode_data['properties']['postal-code']
+
+                if zipcode not in zipcodes_for_cbsa:
+                    continue
+
+                geojson_feature = GeoJsonFeature()
+                geojson_feature.id = zipcode
+
+                geo_json_geometry = GeoJsonGeometry()
+                geo_json_geometry.coordinates = zipcode_data['geometry']['coordinates']
+                geo_json_geometry.type = zipcode_data['geometry']['type']
+
+                geojson_feature.geometry = geo_json_geometry.__dict__
+
+                geojson_model.features.append(geojson_feature.__dict__)
+
+
+    cbsa_ziplist = {
+        "cbsacode": cbsacode,
+        "geojson": geojson_model.__dict__
+    }
+
+    mongoclient.insert_list_mongo(list_data=[cbsa_ziplist],
+                                  dbname='ScopeOut',
+                                  collection_name='GeojsonZipcodesBySOMarkets',
+                                  prod_env=ProductionEnvironment.GEO_ONLY,
+                                  collection_update_existing={"cbsacode": cbsacode})
+
+    collection_add_finished_run = {
+        'hosttype': 'Geography',
+        'dbname': 'ScopeOut',
+        'tablename': 'GeojsonZipcodesBySOMarkets',
+        'cbsacode': cbsacode,
+    }
+
+    print('Successfully stored zipcode geojson for cbsacode: {}'.format(cbsacode))
+    mongoclient.add_finished_run(collection_add_finished_run)
 
 def dump_testziplist():
     with open('./files/test_zip.json', 'r') as f:

@@ -6,7 +6,7 @@ from pandas import DataFrame
 import pandas as pd
 import json
 from bson import json_util
-from enums import GeoLevels
+from enums import GeoLevels, GeoNameField, GeoIdField
 from enums import ProductionEnvironment
 from enums import DefaultGeoIds
 
@@ -111,7 +111,8 @@ def query_geography(geo_level, stateid):
             'fipsstatecode': stateid,
         }
     elif geo_level == GeoLevels.ZIPCODE:
-        collection = db['ZipCountyCbsa']
+        db = client['ScopeOut']
+        collection = db['EsriZipcodesBySOMarkets']
         collection_filter = {}
     else:
         return pd.DataFrame()
@@ -120,6 +121,16 @@ def query_geography(geo_level, stateid):
     df = DataFrame(data)
     df = df.drop(columns=['_id'])
 
+
+    if geo_level == GeoLevels.ZIPCODE:
+        zipcode_df = pd.DataFrame(columns=[GeoNameField.ZIPCODE.value, GeoIdField.ZIPCODE.value])
+        for i, row in df.iterrows():
+            for zipcode in row.zipcodes:
+                zipcode_df = zipcode_df.append({GeoNameField.ZIPCODE.value: zipcode,
+                                                GeoLevels.ZIPCODE.value: zipcode
+                                                }, ignore_index=True)
+
+        df = zipcode_df
     return df
 
 

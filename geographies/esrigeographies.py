@@ -7,7 +7,6 @@ from enums import ProductionEnvironment, GeoLevels, GeoIdField, GeoNameField
 from utils.utils import list_length_okay
 import requests as r
 import geojson
-from shapely.geometry import shape, Point, Polygon, mapping, MultiPolygon
 from census.censusdata import STATES1, STATES2
 
 
@@ -181,83 +180,6 @@ def get_tract_info(geoid, auth_token, geo_layer, geo_level):
 
     return tract_spatial_list
 
-def dump_zipcodes_spatial_by_cbsa():
-    for cbsacode in CBSA_LIST:
-        cbsa_ziplist = get_zip_list_for_cbsacode(cbsacode=cbsacode)
-        mongoclient.insert_list_mongo(list_data=[cbsa_ziplist],
-                                      dbname='ScopeOut',
-                                      collection_name='GeoJsonZipcodesBySOMarkets',
-                                      prod_env=ProductionEnvironment.GEO_ONLY,
-                                      collection_update_existing={"cbsacode": cbsacode})
-
-
-
-
-def get_zip_list_for_cbsacode(cbsacode):
-    zipcode_list = []
-
-    scopeout_markets = mongoclient.query_collection(database_name="Geographies",
-                                                    collection_name="Cbsa",
-                                                    collection_filter={"cbsacode": cbsacode},
-                                                    prod_env=ProductionEnvironment.GEO_ONLY)
-
-    zipcodes_for_cbsa = mongoclient.query_collection(database_name="ScopeOut",
-                                                    collection_name="EsriZipcodesBySOMarkets",
-                                                    collection_filter={"cbsacode": cbsacode},
-                                                    prod_env=ProductionEnvironment.GEO_ONLY).iloc[0].zipcodes
-
-    counties_in_cbsa = scopeout_markets.iloc[0].counties
-
-    states_in_cbsa = []
-
-    for county_info in counties_in_cbsa:
-        state_info = county_info['stateinfo']
-        states_in_cbsa.append(state_info["stateabbreviation"])
-
-    unique_states = list(set(states_in_cbsa))
-
-    directory = 'zipcodedata'
-
-    for foldername in os.listdir(directory):
-        if foldername not in unique_states:
-            continue
-
-        for geojsonfile in os.listdir(os.path.join(directory, foldername)):
-            # f = os.path.join(directory, geojsonfile)
-            cwd = os.getcwd()
-            with open(cwd + "/" + directory + "/" + foldername + "/" + geojsonfile, 'r') as gfile:
-                gj = geojson.load(gfile)
-                zipcode_data = gj['features'][1]
-
-                geometry = []
-                zipcode = zipcode_data['properties']['postal-code']
-
-                if zipcode not in zipcodes_for_cbsa:
-                    continue
-
-
-
-
-        cbsa_ziplist = {
-            "cbsacode": "31080",
-            "urlslug":"los-angeles-long-beach-anaheim-real-estate-market-trends",
-            "zipprofiles": zipcode_list
-        }
-
-        mongoclient.insert_list_mongo(list_data=[cbsa_ziplist],
-                             dbname='ScopeOutMaps',
-                             collection_name='z',
-                             prod_env=ProductionEnvironment.GEO_ONLY,
-                             collection_update_existing={"cbsacode": "31080"})
-
-
-    cbsa_ziplist = {
-        "cbsacode": cbsacode,
-        "zipcodes": zipcode_list
-    }
-
-    return cbsa_ziplist
-
 
 def esri_standard_geography_api(geoid, auth_token, main_geo_layer, return_geo_level, return_geography=True):
     if main_geo_layer == GeoLevels.CBSA:
@@ -307,55 +229,6 @@ def esri_standard_geography_api(geoid, auth_token, main_geo_layer, return_geo_le
         sys.exit()
 
     return geo_features
-
-
-def dump_zipcodes_by_scopeout_markets(batch_size=50):
-    """
-    Stores data to EsriZipcodesByCbsa
-    """
-    auth_token = esri_auth()
-
-    scopeout_markets = list(mongoclient.query_collection(database_name="ScopeOut",
-                                                collection_name="ScopeOutMarkets",
-                                                collection_filter={},
-                                                prod_env=ProductionEnvironment.GEO_ONLY)['cbsacode'])
-
-
-    existing_data = list(mongoclient.query_collection(database_name="ScopeOut",
-                                                    collection_name="EsriZipcodesBySOMarkets",
-                                                    collection_filter={},
-                                                    prod_env=ProductionEnvironment.GEO_ONLY)['cbsacode'])
-    count = 0
-    for cbsacode in scopeout_markets:
-        if cbsacode in existing_data:
-            continue
-
-        if count > batch_size:
-            print("Finished batch")
-            break
-
-        cbsa_zipcode_lookup = []
-        zipcode_list = []
-
-        geo_features = esri_standard_geography_api(geoid=cbsacode, auth_token=auth_token, main_geo_layer=GeoLevels.CBSA, return_geo_level=GeoLevels.ZIPCODE)
-
-        for geo_dict in geo_features:
-            zipcode = geo_dict['attributes']['AreaID']
-            zipcode_list.append(zipcode)
-
-        cbsa_zipcode_lookup.append({
-            "cbsacode": cbsacode,
-            "zipcodes": zipcode_list
-        })
-
-        print("Writing zipcodes for cbsa: ", cbsacode)
-        mongoclient.insert_list_mongo(list_data=cbsa_zipcode_lookup,
-                                      dbname='ScopeOut',
-                                      collection_name='EsriZipcodesBySOMarkets',
-                                      prod_env=ProductionEnvironment.GEO_ONLY,
-                                      collection_update_existing={"cbsacode": cbsacode})
-        count += 1
-
 
 def create_polygon_lat_lng_values(polygon_x_y):
     polygon_lat_lng = []
