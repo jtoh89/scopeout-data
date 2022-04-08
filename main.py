@@ -159,7 +159,7 @@ from database import mongoclient
 
 
 # createneighborhoodprofiles.create_neighborhood_profiles()
-# createshortneighborhoodprofiles.create_short_neighborhood_profiles()
+createshortneighborhoodprofiles.create_short_neighborhood_profiles()
 
 
 

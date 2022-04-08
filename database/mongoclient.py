@@ -141,7 +141,7 @@ def store_neighborhood_data(state_id, neighborhood_profile_list, prod_env, table
     elif prod_env == ProductionEnvironment.CENSUS_DATA2:
         use_prod_env = ProductionEnvironment.PRODUCTION2
     else:
-        use_prod_env = ProductionEnvironment.PRODUCTION
+        use_prod_env = ProductionEnvironment.PRODUCTION2
 
     client = connect_to_client(prod_env=use_prod_env)
     dbname = 'scopeout'
