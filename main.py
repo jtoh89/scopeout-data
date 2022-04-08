@@ -161,9 +161,9 @@ from database import mongoclient
 # createneighborhoodprofiles.create_neighborhood_profiles()
 # createshortneighborhoodprofiles.create_short_neighborhood_profiles()
 
-# createzipcodemaps.generate_zipcode_maps()
 
 
 ############## CREATE PRODUCTION MAP DATA ############
 # createtractmaps.generate_tract_maps()
+# createzipcodemaps.generate_zipcode_maps()
 

@@ -12,6 +12,7 @@ class ZipcodeGeoJsonProperties:
 class ZipcodeMarketMap:
     def __init__(self):
         self.cbsacode = ""
+        self.cbsaname = ""
         self.urlslug = ""
         self.geojson = None
         self.mediansalepricecolors = ["match", ["get", "geoid"]]

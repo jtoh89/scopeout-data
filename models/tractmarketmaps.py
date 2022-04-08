@@ -15,6 +15,7 @@ class TractMarketGeoJsonProperties:
 class TractMarketMap:
     def __init__(self):
         self.cbsacode = ""
+        self.cbsaname = ""
         self.urlslug = ""
         self.geojson = GeoJson()
         self.medianhouseholdincomecolors = ["match", ["get", "geoid"]]

@@ -44,6 +44,7 @@ def generate_tract_maps():
         marketname = scopeout_markets[scopeout_markets['cbsacode'] == cbsacode]["cbsaname"].iloc[0]
         tract_map = tractmarketmaps.TractMarketMap()
         tract_map.cbsacode = cbsacode
+        tract_map.cbsaname = marketname
         tract_map.urlslug = create_url_slug(marketname=marketname, cbsacode=cbsacode)
 
         tract_data_percentiles_dict = calculate_percentiles_from_all_tracts(tracts_data_df)
@@ -110,7 +111,7 @@ def generate_tract_maps():
 
         mongoclient.insert_list_mongo(list_data=[tract_map.__dict__],
                                       dbname='ScopeOutMaps',
-                                      collection_name='TractsMarketMapsV2',
+                                      collection_name='TractsMarketMaps',
                                       prod_env=ProductionEnvironment.MARKET_MAPS,
                                       collection_update_existing={"cbsacode": cbsacode})
 

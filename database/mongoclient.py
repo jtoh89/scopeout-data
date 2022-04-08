@@ -134,7 +134,7 @@ def query_geography(geo_level, stateid):
     return df
 
 
-def store_neighborhood_data(state_id, neighborhood_profile_list, prod_env, table_name="neighborhoodprofiles"):
+def store_neighborhood_data(state_id, neighborhood_profile_list, prod_env, table_name="fullneighborhoodprofiles"):
 
     if prod_env == ProductionEnvironment.CENSUS_DATA1:
         use_prod_env = ProductionEnvironment.PRODUCTION

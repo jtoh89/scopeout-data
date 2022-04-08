@@ -1,6 +1,6 @@
 import sys
 from database import mongoclient
-from models import neighborhoodprofile
+from models.neighborhoodprofile import neighborhoodprofile
 from database import mongoclient
 import json
 from enums import GeoLevels
@@ -8,6 +8,7 @@ from enums import ProductionEnvironment
 from utils.utils import calculate_percent_change, get_county_cbsa_lookup
 import os
 from realestate.redfin import REDFIN_PROPERTY_TYPES
+from scopeoutdata import helpers
 from census.censusdata import STATES1, STATES2
 from globals import SCOPEOUT_YEAR, CENSUS_LATEST_YEAR, CENSUS_YEARS
 
@@ -25,7 +26,7 @@ def create_neighborhood_profiles():
     '''
 
     collection_find_finished_runs = {
-        'category': 'neighborhoodprofiles',
+        'category': "fullneighborhoodprofiles",
         'geo_level': GeoLevels.TRACT.value,
     }
     finished_runs = mongoclient.get_finished_runs(collection_find_finished_runs)
@@ -46,63 +47,15 @@ def create_neighborhood_profiles():
 
 
             if not state_already_processed:
-                census_tract_data_filter = {
-                    'stateid': {'$eq': stateid},
-                    'geolevel': {'$eq': 'tract'},
-                }
+                print("Processing stateid: ", stateid)
 
-                census_tract_data = mongoclient.query_collection(database_name=prod_env.value,
-                                                                 collection_name="CensusData",
-                                                                 collection_filter=census_tract_data_filter,
-                                                                 prod_env=prod_env)
-
-                if len(census_tract_data) < 1:
-                    print('Did not find any census_tract_data. Check which database state uses for censusdata')
-                    sys.exit()
-
-                counties_to_get = []
-                for i, record in census_tract_data.iterrows():
-                    countyfullcode = record.geoinfo['countyfullcode']
-
-                    if countyfullcode not in counties_to_get:
-                        counties_to_get.append(countyfullcode)
-
-
-                census_county_data_filter = {
-                    'stateid': {'$eq': stateid},
-                    'geolevel': {'$eq': 'county'},
-                    'geoid': {'$in': counties_to_get},
-                }
-
-                county_data = mongoclient.query_collection(database_name="CensusData1",
-                                                           collection_name="CensusData",
-                                                           collection_filter=census_county_data_filter,
-                                                           prod_env=ProductionEnvironment.CENSUS_DATA1)
-
-                county_cbsa_lookup = get_county_cbsa_lookup(state_id=stateid)
-
-                all_cbsa = list(county_cbsa_lookup['cbsacode'].drop_duplicates())
-
-                census_cbsa_data_filter = {
-                    'geolevel': {'$eq': 'cbsa'},
-                    'geoid': {'$in': all_cbsa}
-                }
-
-                cbsa_data = mongoclient.query_collection(database_name="CensusData1",
-                                                           collection_name="CensusData",
-                                                           collection_filter=census_cbsa_data_filter,
-                                                           prod_env=ProductionEnvironment.CENSUS_DATA1)
-
-                usa_data = mongoclient.query_collection(database_name="CensusData1",
-                                                         collection_name="CensusData",
-                                                         collection_filter={'geolevel': {'$eq': 'us'}},
-                                                         prod_env=ProductionEnvironment.CENSUS_DATA1)
-
-                county_market_profiles = mongoclient.query_collection(database_name="MarketTrends",
-                                                        collection_name="countymarketprofile",
-                                                        collection_filter={'countyfullcode': {'$in': counties_to_get}},
-                                                        prod_env=ProductionEnvironment.MARKET_TRENDS)
-
+                all_dict = helpers.get_all_geo_data_for_neighborhoods(stateid, prod_env)
+                census_tract_data = all_dict['census_tract_data']
+                county_data = all_dict['county_data']
+                county_market_profiles = all_dict['county_market_profiles']
+                county_cbsa_lookup = all_dict['county_cbsa_lookup']
+                cbsa_data = all_dict['cbsa_data']
+                usa_data = all_dict['usa_data']
 
                 neighborhood_profile_list = []
 
@@ -117,42 +70,12 @@ def create_neighborhood_profiles():
                     neighborhood_profile.cbsaname = ''
                     neighborhood_profile.geoshapecoordinates = get_neighborhood_map_shape(tract_profile.geoinfo)
 
-                    # County
-                    countyfullcode = tract_profile.geoinfo['countyfullcode']
-                    county_profile = county_data[county_data['geoid'] == countyfullcode]
+                    all_geo_profiles = helpers.process_all_geo_profiles(tract_profile, neighborhood_profile, county_data, cbsa_data, usa_data, county_cbsa_lookup)
 
-                    if len(county_profile) > 1:
-                        print('!!!ERROR - Check why there is more than 1 county record for tractid: {}!!!'.format(tract_profile.geoid))
-                        sys.exit()
-                    elif len(county_profile) == 0:
-                        print('!!!ERROR - Check why there is there no county record for tractid: {}!!!'.format(tract_profile.geoid))
-                        sys.exit()
-                    else:
-                        county_profile = county_profile.iloc[0]
-                        neighborhood_profile.countyfullcode = county_profile.geoid
-                        neighborhood_profile.countyname = county_profile.geoinfo['countyname']
-
-                    cbsainfo = county_cbsa_lookup[county_cbsa_lookup['countyfullcode'] == countyfullcode]
-
-                    if len(cbsainfo) == 1:
-                        cbsacode = cbsainfo['cbsacode'].iloc[0]
-                        cbsa_profile = cbsa_data[cbsa_data['geoid'] == cbsacode]
-
-                        if len(cbsa_profile) != 1:
-                            print('!!!WARNING - Why do we have missing cbsaid for cbsa data for cbsacode: {}!!!'.format(cbsacode))
-                            cbsa_profile = None
-                        else:
-                            cbsa_profile = cbsa_profile.iloc[0]
-                            neighborhood_profile.cbsacode = cbsa_profile.geoid
-                            neighborhood_profile.cbsaname = cbsa_profile.geoinfo['cbsaname']
-
-                    elif len(cbsainfo) > 1:
-                        print('!!!ERROR - Check why there is more than 1 cbsa record for tractid: {}!!!'.format(tract_profile.geoid))
-                        sys.exit()
-                    else:
-                        cbsa_profile = None
-
-                    usa_profile = usa_data.iloc[0]
+                    neighborhood_profile = all_geo_profiles['neighborhood_profile']
+                    cbsa_profile = all_geo_profiles['cbsa_profile']
+                    county_profile = all_geo_profiles['county_profile']
+                    usa_profile = all_geo_profiles['usa_profile']
 
                     neighborhood_profile = set_demographic_section(tract_profile, neighborhood_profile, cbsa_profile, county_profile, usa_profile)
                     neighborhood_profile = set_economy_section(tract_profile, neighborhood_profile, cbsa_profile, county_profile, usa_profile)
@@ -166,13 +89,13 @@ def create_neighborhood_profiles():
 
                 if success:
                     collection_add_finished_run = {
-                        'category': 'neighborhoodprofiles',
+                        'category': "fullneighborhoodprofiles",
                         'geo_level': GeoLevels.TRACT.value,
                         'state_id': stateid,
                     }
 
-                    print('Successfully stored neighborhood profile for stateid: {}'.format(stateid))
                     mongoclient.add_finished_run(collection_add_finished_run)
+                    print('Successfully stored neighborhood profile for stateid: {}'.format(stateid))
             else:
                 print('Skipping state {}. Neighborhood profiles already exists.'.format(stateid))
 

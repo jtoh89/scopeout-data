@@ -39,6 +39,7 @@ def generate_zipcode_maps():
         # create zipcode market map
         zipcode_market_map = zipcodemarketmap.ZipcodeMarketMap()
         zipcode_market_map.cbsacode = cbsacode
+        zipcode_market_map.cbsaname = cbsaname
         zipcode_market_map.urlslug = create_url_slug(cbsacode, cbsaname)
         # iterate through geojson features to add property and build metric lists
         for zip_geojson_feature in scopeout_market.geojson['features']:

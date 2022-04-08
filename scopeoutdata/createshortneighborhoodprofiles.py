@@ -6,6 +6,7 @@ from enums import ProductionEnvironment
 from utils.utils import calculate_percent_change, get_county_cbsa_lookup
 from census.censusdata import STATES1, STATES2
 from globals import CENSUS_YEARS
+from scopeoutdata import helpers
 
 
 COLORS = ["green", "red", "yellow", "blue", "brown", "teal", "purple", "#65AFFF", "#4F6D7A", "#828489", "#D81E5B", "#FDF0D5", "#D4F2DB"]
@@ -42,62 +43,13 @@ def create_short_neighborhood_profiles():
 
 
             if not state_already_processed:
-                census_tract_data_filter = {
-                    'stateid': {'$eq': stateid},
-                    'geolevel': {'$eq': 'tract'},
-                }
-
-                census_tract_data = mongoclient.query_collection(database_name=prod_env.value,
-                                                                 collection_name="CensusData",
-                                                                 collection_filter=census_tract_data_filter,
-                                                                 prod_env=prod_env)
-
-                if len(census_tract_data) < 1:
-                    print('Did not find any census_tract_data. Check which database state uses for censusdata')
-                    sys.exit()
-
-                counties_to_get = []
-                for i, record in census_tract_data.iterrows():
-                    countyfullcode = record.geoinfo['countyfullcode']
-
-                    if countyfullcode not in counties_to_get:
-                        counties_to_get.append(countyfullcode)
-
-
-                census_county_data_filter = {
-                    'stateid': {'$eq': stateid},
-                    'geolevel': {'$eq': 'county'},
-                    'geoid': {'$in': counties_to_get},
-                }
-
-                county_data = mongoclient.query_collection(database_name="CensusData1",
-                                                           collection_name="CensusData",
-                                                           collection_filter=census_county_data_filter,
-                                                           prod_env=ProductionEnvironment.CENSUS_DATA1)
-
-                county_cbsa_lookup = get_county_cbsa_lookup(state_id=stateid)
-
-                all_cbsa = list(county_cbsa_lookup['cbsacode'].drop_duplicates())
-
-                census_cbsa_data_filter = {
-                    'geolevel': {'$eq': 'cbsa'},
-                    'geoid': {'$in': all_cbsa}
-                }
-
-                cbsa_data = mongoclient.query_collection(database_name="CensusData1",
-                                                         collection_name="CensusData",
-                                                         collection_filter=census_cbsa_data_filter,
-                                                         prod_env=ProductionEnvironment.CENSUS_DATA1)
-
-                usa_data = mongoclient.query_collection(database_name="CensusData1",
-                                                        collection_name="CensusData",
-                                                        collection_filter={'geolevel': {'$eq': 'us'}},
-                                                        prod_env=ProductionEnvironment.CENSUS_DATA1)
-
-                county_market_profiles = mongoclient.query_collection(database_name="MarketTrends",
-                                                                      collection_name="countymarketprofile",
-                                                                      collection_filter={'countyfullcode': {'$in': counties_to_get}},
-                                                                      prod_env=ProductionEnvironment.MARKET_TRENDS)
+                all_dict = helpers.get_all_geo_data_for_neighborhoods(stateid, prod_env)
+                census_tract_data = all_dict['census_tract_data']
+                county_data = all_dict['county_data']
+                county_market_profiles = all_dict['county_market_profiles']
+                county_cbsa_lookup = all_dict['county_cbsa_lookup']
+                cbsa_data = all_dict['cbsa_data']
+                usa_data = all_dict['usa_data']
 
 
                 neighborhood_profile_list = []
