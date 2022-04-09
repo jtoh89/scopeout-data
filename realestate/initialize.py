@@ -6,17 +6,6 @@ from enums import DefaultGeoIds
 from enums import ProductionEnvironment
 
 
-def initialize_zipcodes():
-    collection_filter = {
-        'geolevel': GeoLevels.ZIPCODE.value,
-    }
-
-
-    current_collection = mongoclient.query_collection(database_name="MarketTrends",
-                                                      collection_name="markettrends",
-                                                      collection_filter=collection_filter,
-                                                      prod_env=ProductionEnvironment.CENSUS_DATA1)
-
 
 def initialize_market_trends(geo_level, default_geoid, geoid_field, geoname_field):
     '''

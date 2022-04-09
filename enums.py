@@ -29,8 +29,9 @@ class DefaultGeoIds(Enum):
     ZIPCODE = '99999'
 
 class ProductionEnvironment(Enum):
-    PRODUCTION = 'prod'
-    PRODUCTION2 = 'prod2'
+    PROD = 'prod'
+    FULL_NEIGHBORHOOD_PROFILES_1 = 'fullneighborhoodprofiles1'
+    FULL_NEIGHBORHOOD_PROFILES_2 = 'fullneighborhoodprofiles2'
     GEO_ONLY = 'geoonly'
     QA = 'qa'
     CENSUS_DATA1 = 'CensusData1'

@@ -2,6 +2,7 @@ import sys
 import pandas as pd
 import os
 import csv
+import math
 from database import mongoclient
 from lookups import MONTH_FORMAT, INDEX_TO_MONTH, REDFIN_PROPERTY_TYPES_LOWERCASE_CONVERSION, REDFIN_MSA_TO_CBSA, REDFIN_COUNTYID_TO_FIPS, REDFIN_USA_TO_FIPS, MONTH_TO_INDEX, INDEX_TO_MONTH
 from database import mongoclient
@@ -12,8 +13,9 @@ import datetime
 from utils.utils import calculate_percentiles_from_list, string_to_float, assign_legend_details, assign_color
 from models import zipcodemarketmap
 
+
 REDFIN_MIN_YEAR = 2015
-REDFIN_MAX_YEAR = 2021
+REDFIN_MAX_YEAR = 2022
 REDFIN_PROPERTY_TYPES = ['All Residential', 'Single Family Residential', 'Multi-Family (2-4 Unit)']
 REDFIN_PROPERTY_TYPES_LOWERCASE = ['all', 'singlefamily', 'multifamily']
 REDFIN_DATA_CATEGORIES = ['median_sale_price', 'median_ppsf', 'months_of_supply', 'median_dom', 'price_drops']
@@ -119,8 +121,6 @@ def import_redfin_zipcode_data(geo_level, default_geoid, geoid_field):
         if v['date'] != most_recent_date:
             continue
 
-
-
         insert_list.append({'zipcode': k,
                              'date': INDEX_TO_MONTH[v['date'].month] + ' ' + str(v['date'].year),
                             'median_sale_price': v['median_sale_price'],
@@ -143,7 +143,7 @@ def import_redfin_zipcode_data(geo_level, default_geoid, geoid_field):
     print('')
 
 
-def import_redfin_data(geo_level, default_geoid, geoid_field, geoname_field):
+def import_historical_redfin_data(geo_level, default_geoid, geoid_field, geoname_field):
     initialize_geo(geo_level)
     currpath = os.path.dirname(os.path.abspath(__file__))
     rootpath = os.path.dirname(os.path.abspath(currpath))
@@ -159,9 +159,9 @@ def import_redfin_data(geo_level, default_geoid, geoid_field, geoname_field):
     finished_runs = mongoclient.get_finished_runs(collection_find_finished_runs)
 
     if len(finished_runs) > 0:
-        last_finished_year = finished_runs.year.iloc[0]
+        last_full_finished_year = finished_runs.last_full_download_year.iloc[0]
     else:
-        last_finished_year = 0
+        last_full_finished_year = 0
 
     redfin_dict = {}
 
@@ -174,6 +174,8 @@ def import_redfin_data(geo_level, default_geoid, geoid_field, geoname_field):
         file_dir = '/files/county_market_tracker.tsv'
     elif geo_level == GeoLevels.ZIPCODE:
         file_dir = '/files/zip_code_market_tracker.tsv'
+        print("!!! This function does not importer historicals for ZIPCODE!!!")
+        sys.exit()
 
     with open(rootpath + file_dir) as file:
         category_name = 'realestatetrends'
@@ -196,24 +198,32 @@ def import_redfin_data(geo_level, default_geoid, geoid_field, geoname_field):
             df['table_id'] = df['table_id'].astype(str).replace(REDFIN_MSA_TO_CBSA)
         elif geo_level == GeoLevels.COUNTY:
             df['table_id'] = df['table_id'].astype(str).replace(REDFIN_COUNTYID_TO_FIPS)
+        # elif geo_level == GeoLevels.ZIPCODE:
+        #     df['table_id'] = df['table_id'].astype(str).replace(REDFIN_COUNTYID_TO_FIPS)
 
         print('Create redfin data dictionaries')
         download_year = 0
         last_row = False
+        insert_last_row = True
         for i, row in df.iterrows():
-
             geoid = row.table_id
 
             if i == (len(df) - 1):
                 last_row = True
 
             if geoid not in geo_list:
-                continue
+                if last_row:
+                    insert_last_row = False
+                else:
+                    continue
 
             property_type = row.property_type
 
             if property_type not in ['All Residential', 'Multi-Family (2-4 Unit)', 'Single Family Residential']:
-                continue
+                if last_row:
+                    insert_last_row = False
+                else:
+                    continue
 
             property_type = REDFIN_PROPERTY_TYPES_LOWERCASE_CONVERSION[property_type]
 
@@ -225,13 +235,16 @@ def import_redfin_data(geo_level, default_geoid, geoid_field, geoname_field):
 
             if not last_row and REDFIN_MIN_YEAR > current_year:
                 continue
-            elif not last_row and last_finished_year >= current_year:
+            elif not last_row and last_full_finished_year >= current_year:
                 continue
 
             if download_year == 0:
                 download_year = current_year
 
             if download_year != current_year or last_row:
+                if last_row and insert_last_row:
+                    append_last_row_to_redfin_dict(row, redfin_dict, geoid, category_name, property_type, date_string)
+
                 check_full_year(redfin_dict, category_name, download_year, last_month_in_dataset, geoid_field)
 
                 success = store_market_trends_redfin_data(redfin_dict,
@@ -247,7 +260,7 @@ def import_redfin_data(geo_level, default_geoid, geoid_field, geoname_field):
                     collection_add_finished_run = {
                         'category': category_name,
                         'geo_level': geo_level.value,
-                        'year': download_year
+                        'last_full_download_year': download_year
                     }
 
                     mongoclient.update_finished_run(collection_add_finished_run, geo_level=geo_level, category=category_name)
@@ -258,6 +271,8 @@ def import_redfin_data(geo_level, default_geoid, geoid_field, geoname_field):
                     print('Insert Market Trends failed')
                     sys.exit()
 
+            if last_row:
+                continue
 
             median_sale_price = int(round(row.median_sale_price,0))
             median_ppsf = int(round(row.median_ppsf,0))
@@ -309,6 +324,31 @@ def import_redfin_data(geo_level, default_geoid, geoid_field, geoname_field):
                 }
 
 
+def append_last_row_to_redfin_dict(row, redfin_dict, geoid, category_name, property_type, date_string):
+    median_sale_price = int(round(row.median_sale_price,0))
+    median_ppsf = int(round(row.median_ppsf,0))
+    months_of_supply = round(row.months_of_supply,2)
+    median_dom = row.median_dom
+    price_drops = round(row.price_drops * 100, 1)
+
+    redfin_data = redfin_dict[geoid][category_name]
+    if property_type in redfin_data.keys():
+        redfin_data[property_type]['dates'].append(date_string)
+        redfin_data[property_type]['median_sale_price'].append(median_sale_price)
+        redfin_data[property_type]['median_ppsf'].append(median_ppsf)
+        redfin_data[property_type]['months_of_supply'].append(months_of_supply)
+        redfin_data[property_type]['median_dom'].append(median_dom)
+        redfin_data[property_type]['price_drops'].append(price_drops)
+    else:
+        redfin_data[property_type] = {
+            'dates': [date_string],
+            'median_sale_price': [median_sale_price],
+            'median_ppsf': [median_ppsf],
+            'months_of_supply': [months_of_supply],
+            'median_dom': [median_dom],
+            'price_drops': [price_drops]
+        }
+
 def check_full_year(redfin_dict, category_name, download_year, last_month_in_dataset, geoid_field):
     last_month_in_dataset_string = MONTH_FORMAT[last_month_in_dataset]
     copy_redfin_dict = deepcopy(redfin_dict)
@@ -322,10 +362,10 @@ def check_full_year(redfin_dict, category_name, download_year, last_month_in_dat
 
             dates_length = len(realestatetrenddata[property_type]['dates'])
 
-            # if there are less than 7 data points, just delete record. Too many dates to fill in.
-            if download_year != REDFIN_MAX_YEAR and dates_length < 7 or download_year == REDFIN_MAX_YEAR and dates_length < 5:
-                redfin_dict[k][category_name].pop(property_type)
-                continue
+            # # if there are less than 7 data points, just delete record. Too many dates to fill in.
+            # if download_year != REDFIN_MAX_YEAR and dates_length < 7:
+            #     redfin_dict[k][category_name].pop(property_type)
+            #     continue
 
             if dates_length < 12:
                 print('Filling missing months for geoid: {}'.format(data[geoid_field]))
@@ -439,7 +479,6 @@ def update_existing_market_trends(existing_list, market_trends_dict, download_ye
         # If geoid does not exist in market trends, then check if the existing data has realestatetrends.
         # If so, delete realestatetrends because it will result in a time gap. For example, 2012-2013, then jumping to 2015.
         if geoid not in market_trends_dict.keys():
-            # print('DID NOT FIND EXISTING GEOID IN MARKET TRENDS. GEOID: {}'.format(geoid))
             if category_name in existing_item.keys():
                 print('!!! DELETING REALESTATETRENDS BECAUSE THERE IS A TIME GAP IN HISTORICAL DATA. GEOID: {}'.format(geoid))
                 del existing_item[category_name]

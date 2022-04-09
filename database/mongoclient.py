@@ -13,16 +13,21 @@ from enums import DefaultGeoIds
 def connect_to_client(prod_env):
     load_dotenv()
 
-    if prod_env == ProductionEnvironment.PRODUCTION:
-        host = os.getenv("PROD1_MONGO_HOST")
-        database = os.getenv("PROD1_MONGO_DATABASE")
-        un = os.getenv("PROD1_MONGO_USERNAME")
-        pw = os.getenv("PROD1_MONGO_PASSWORD")
-    elif prod_env == ProductionEnvironment.PRODUCTION2:
-        host = os.getenv("PROD2_MONGO_HOST")
-        database = os.getenv("PROD2_MONGO_DATABASE")
-        un = os.getenv("PROD2_MONGO_USERNAME")
-        pw = os.getenv("PROD2_MONGO_PASSWORD")
+    if prod_env == ProductionEnvironment.PROD:
+        host = os.getenv("PROD_MONGO_HOST")
+        database = os.getenv("PROD_MONGO_DATABASE")
+        un = os.getenv("PROD_MONGO_USERNAME")
+        pw = os.getenv("PROD_MONGO_PASSWORD")
+    elif prod_env == ProductionEnvironment.FULL_NEIGHBORHOOD_PROFILES_1:
+        host = os.getenv("FULL_NEIGHBORHOOD_PROFILES_1_MONGO_HOST")
+        database = os.getenv("FULL_NEIGHBORHOOD_PROFILES_1_MONGO_DATABASE")
+        un = os.getenv("FULL_NEIGHBORHOOD_PROFILES_1_MONGO_USERNAME")
+        pw = os.getenv("FULL_NEIGHBORHOOD_PROFILES_1_MONGO_PASSWORD")
+    elif prod_env == ProductionEnvironment.FULL_NEIGHBORHOOD_PROFILES_2:
+        host = os.getenv("FULL_NEIGHBORHOOD_PROFILES_2_MONGO_HOST")
+        database = os.getenv("FULL_NEIGHBORHOOD_PROFILES_2_MONGO_DATABASE")
+        un = os.getenv("FULL_NEIGHBORHOOD_PROFILES_2_MONGO_USERNAME")
+        pw = os.getenv("FULL_NEIGHBORHOOD_PROFILES_2_MONGO_PASSWORD")
     elif prod_env == ProductionEnvironment.GEO_ONLY:
         host = os.getenv("GEO_ONLY_MONGO_HOST")
         database = os.getenv("GEO_ONLY_MONGO_DATABASE")
@@ -74,7 +79,7 @@ def query_collection(database_name, collection_name, collection_filter, prod_env
 
     return df
 
-def query_geography(geo_level, stateid):
+def query_geography(geo_level, stateid=None):
     '''
     Retrieves all geographies based on geo_level provided.
     :param geo_level:
@@ -136,15 +141,16 @@ def query_geography(geo_level, stateid):
 
 def store_neighborhood_data(state_id, neighborhood_profile_list, prod_env, table_name="fullneighborhoodprofiles"):
 
+    dbname = 'FullNeighborhoodProfiles'
     if prod_env == ProductionEnvironment.CENSUS_DATA1:
-        use_prod_env = ProductionEnvironment.PRODUCTION
+        use_prod_env = ProductionEnvironment.FULL_NEIGHBORHOOD_PROFILES_1
     elif prod_env == ProductionEnvironment.CENSUS_DATA2:
-        use_prod_env = ProductionEnvironment.PRODUCTION2
+        use_prod_env = ProductionEnvironment.FULL_NEIGHBORHOOD_PROFILES_2
     else:
-        use_prod_env = ProductionEnvironment.PRODUCTION2
+        use_prod_env = ProductionEnvironment.PROD
+        dbname = 'ShortNeighborhoodProfiles'
 
     client = connect_to_client(prod_env=use_prod_env)
-    dbname = 'scopeout'
 
     db = client[dbname]
     collection = db[table_name]
@@ -161,7 +167,7 @@ def store_neighborhood_data(state_id, neighborhood_profile_list, prod_env, table
 
         delete_temp_backup(key=tempkey)
     except:
-        print("!!! ERROR storing neighborhood profiles to Mongo. Try single inserts!!!")
+        print("!!! ERROR storing full neighborhood profiles to Mongo. Try single inserts!!!")
         perform_small_batch_inserts(neighborhood_profile_list, tempkey, collection, GeoLevels.TRACT)
         return False
 
@@ -169,7 +175,7 @@ def store_neighborhood_data(state_id, neighborhood_profile_list, prod_env, table
 
     return True
 
-def store_census_data(geo_level, state_id, filtered_dict, prod_env=ProductionEnvironment.PRODUCTION, county_batches=False):
+def store_census_data(geo_level, state_id, filtered_dict, prod_env=ProductionEnvironment.FULL_NEIGHBORHOOD_PROFILES_1, county_batches=False):
     client = connect_to_client(prod_env=prod_env)
 
     if prod_env == ProductionEnvironment.CENSUS_DATA1:
@@ -484,7 +490,7 @@ def insert_list_mongo(list_data, dbname, collection_name, prod_env, collection_u
         sys.exit()
 
 def test_mongo(data_dict):
-    client = connect_to_client(prod_env=ProductionEnvironment.PRODUCTION)
+    client = connect_to_client(prod_env=ProductionEnvironment.FULL_NEIGHBORHOOD_PROFILES_1)
     db = client['scopeout']
 
     collection = db['test']

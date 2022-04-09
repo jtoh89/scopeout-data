@@ -162,7 +162,9 @@ REDFIN_PROPERTY_TYPES_LOWERCASE_CONVERSION = {
     'All Residential': 'all',
     'Single Family Residential': 'singlefamily',
     'Multi-Family (2-4 Unit)': 'multifamily',
-    'Condo/Co-op': 'condos'
+    'Condo/Co-op': 'condos',
+    'Townhouse': 'townhouse',
+    'Single Units Only': 'singleunitsonly',
 }
 
 REDFIN_USA_TO_FIPS = {

@@ -187,27 +187,6 @@ def set_market_trends_section(tract_profile, neighborhood_profile, county_market
 
 
 def set_demographic_section(tract_profile, neighborhood_profile, cbsa_profile, county_profile, usa_profile):
-    # neighborhood_profile.demographics.demographicquickfacts.value1 = str(tract_profile.zipcodedata['Poverty Rate']['Poverty Rate']) + '%'
-    # neighborhood_profile.demographics.demographicquickfacts.value2 = str(tract_profile.zipcodedata['% of Children (under 18)']['% of Children (under 18)']) + '%'
-    # neighborhood_profile.demographics.demographicquickfacts.value3 = str(tract_profile.zipcodedata['College Population']['College Population']) + '%'
-    # neighborhood_profile.demographics.demographicquickfacts.value4 = str(tract_profile.zipcodedata['Veteran']['Veteran']) + '%'
-
-    # neighborhood_profile.demographics.highesteducation.labels = list(tract_profile.zipcodedata['Highest Education'].keys())
-    # neighborhood_profile.demographics.highesteducation.zipcodedata = list(tract_profile.zipcodedata['Highest Education'].values())
-    # neighborhood_profile.demographics.highesteducation.colors = COLORS[:len(tract_profile.zipcodedata['Highest Education'].values())]
-
-    # neighborhood_profile.demographics.race.labels = list(tract_profile.zipcodedata['Race/Ethnicity'].keys())
-    # neighborhood_profile.demographics.race.zipcodedata = list(tract_profile.zipcodedata['Race/Ethnicity'].values())
-    # neighborhood_profile.demographics.race.colors = COLORS[:len(tract_profile.zipcodedata['Race/Ethnicity'].values())]
-
-    # neighborhood_profile.demographics.agegroups.labels = list(tract_profile.zipcodedata['Age Groups'].keys())
-    # neighborhood_profile.demographics.agegroups.zipcodedata = list(tract_profile.zipcodedata['Age Groups'].values())
-    # neighborhood_profile.demographics.agegroups.colors = COLORS[:len(tract_profile.zipcodedata['Age Groups'].values())]
-    #
-    # neighborhood_profile.demographics.familytype.labels = list(tract_profile.zipcodedata['Family Type'].keys())
-    # neighborhood_profile.demographics.familytype.zipcodedata = list(tract_profile.zipcodedata['Family Type'].values())
-    # neighborhood_profile.demographics.familytype.colors = COLORS[:len(tract_profile.zipcodedata['Family Type'].values())]
-
     if 'Population Growth' not in tract_profile.data.keys():
         population = []
         population_growth = []

@@ -2,6 +2,7 @@ from database import mongoclient
 from enums import ProductionEnvironment
 from census.censusdata import STATES1, STATES2
 import numpy as np
+import math
 
 def number_to_string(data_type, value):
     if value != value or value is None:
@@ -14,6 +15,12 @@ def number_to_string(data_type, value):
         return str(value) + "%"
     # elif data_type == "dollar":
     #     return value
+
+def string_to_int(value):
+    if value == '':
+        return None
+
+    return math.trunc(float(value))
 
 
 def string_to_float(value, decimal_places):
@@ -106,9 +113,9 @@ def assign_color(value, percentiles_dict, order):
 
 def get_prod_by_stateid(stateid):
     if stateid in STATES1:
-        return ProductionEnvironment.PRODUCTION
+        return ProductionEnvironment.FULL_NEIGHBORHOOD_PROFILES_1
     else:
-        return ProductionEnvironment.PRODUCTION2
+        return ProductionEnvironment.FULL_NEIGHBORHOOD_PROFILES_2
 
 def create_url_slug(cbsacode, marketname):
     urlslug = marketname.split(", ")[0].replace('--','-').replace(' ','-').lower() + "-real-estate-market-trends"

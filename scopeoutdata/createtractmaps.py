@@ -32,12 +32,12 @@ def generate_tract_maps():
         tracts_data_df = mongoclient.query_collection(database_name="scopeout",
                                                       collection_name="neighborhoodprofiles",
                                                       collection_filter={"cbsacode": cbsacode},
-                                                      prod_env=ProductionEnvironment.PRODUCTION)
+                                                      prod_env=ProductionEnvironment.FULL_NEIGHBORHOOD_PROFILES_1)
 
         tracts_data2_df = mongoclient.query_collection(database_name="scopeout",
                                                        collection_name="neighborhoodprofiles",
                                                        collection_filter={"cbsacode": cbsacode},
-                                                       prod_env=ProductionEnvironment.PRODUCTION2)
+                                                       prod_env=ProductionEnvironment.FULL_NEIGHBORHOOD_PROFILES_2)
         tracts_data_df.append(tracts_data2_df)
 
 
