@@ -35,7 +35,7 @@ class CbsaMarketProfile:
 class PopulationGrowth:
     def __init__(self):
         self.title = "Total Population Growth"
-        self.datatype = "INTEGER"
+        self.datatype = ModelsDataTypes.INTEGER.value
         self.labels = []
         self.dataName = ""
         self.data = []
@@ -43,7 +43,7 @@ class PopulationGrowth:
 class HousingUnitGrowth:
     def __init__(self):
         self.title = "Total Housing Unit Growth"
-        self.datatype = "INTEGER"
+        self.datatype = ModelsDataTypes.INTEGER.value
         self.labels = []
         self.dataName = ""
         self.data = []
@@ -51,7 +51,7 @@ class HousingUnitGrowth:
 class BuildingPermits:
     def __init__(self):
         self.title = "Building Permits"
-        self.datatype = "INTEGER"
+        self.datatype = ModelsDataTypes.INTEGER.value
         self.labels = []
         self.dataName = ""
         self.data = []
@@ -60,16 +60,16 @@ class BuildingPermits:
 class UnemploymentData:
     def __init__(self):
         self.title = "Unemployment Rate"
-        self.charttype = "line"
+        self.charttype = ModelsChartTypes.LINE.value
         self.labels = []
         self.dataName = ""
         self.data = []
-        self.datatype = "PERCENT"
+        self.datatype = ModelsDataTypes.PERCENT.value
 
 class OneLineChart():
     def __init__(self, title, datatype):
         self.title = title
-        self.charttype = "line"
+        self.charttype = ModelsChartTypes.LINE.value
         self.labels = []
         self.dataName = ""
         self.data = []
@@ -91,7 +91,7 @@ class PropertyTypeDataObject:
 class MedianSalePrice:
     def __init__(self):
         self.title = "Median Sale Price"
-        self.datatype = "DOLLAR"
+        self.datatype = ModelsDataTypes.DOLLAR.value
         self.labels = []
         self.data1Name = "All"
         self.data1 = []
@@ -103,7 +103,7 @@ class MedianSalePrice:
 class Median_PPSF:
     def __init__(self):
         self.title = "Median Price Per SqFt"
-        self.datatype = "DOLLAR"
+        self.datatype =  ModelsDataTypes.DOLLAR.value
         self.labels = []
         self.data1Name = "All"
         self.data1 = []
@@ -116,7 +116,7 @@ class Median_PPSF:
 class MonthsOfSupply:
     def __init__(self):
         self.title = "Months Of Supply"
-        self.datatype = "FLOAT"
+        self.datatype = ModelsDataTypes.FLOAT.value
         self.labels = []
         self.data1Name = "All"
         self.data1 = []
@@ -129,7 +129,7 @@ class MonthsOfSupply:
 class MedianDOM:
     def __init__(self):
         self.title = "Median Days On Market"
-        self.datatype = "INTEGER"
+        self.datatype = ModelsDataTypes.INTEGER.value
         self.labels = []
         self.data1Name = "All"
         self.data1 = []
@@ -142,7 +142,7 @@ class MedianDOM:
 class PriceDrops:
     def __init__(self):
         self.title = "% of Listings With Price Drops"
-        self.datatype = "PERCENT"
+        self.datatype = ModelsDataTypes.PERCENT.value
         self.labels = []
         self.data1Name = "All"
         self.data1 = []

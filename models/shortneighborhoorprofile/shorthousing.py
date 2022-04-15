@@ -1,3 +1,6 @@
+from enums import ModelsDataTypes, ModelsChartTypes
+
+
 class Housing:
     def __init__(self):
         # self.housingquickfacts = HousingQuickFacts()
@@ -14,7 +17,7 @@ class Housing:
 class HousingQuickFacts:
     def __init__(self):
         self.title = "Quick Facts",
-        self.charttype = "summary",
+        self.charttype = ModelsChartTypes.SUMMARY.value,
         self.label1 = "5 Year Homeowner Growth",
         self.value1 = "",
         self.label2 = "5 Year Renter Household Growth",
@@ -30,8 +33,8 @@ class OccupancyRate:
     def __init__(self):
         self.hascolors = True,
         self.title = "Occupancy rate"
-        self.datatype = "PERCENT"
-        self.charttype = "donut"
+        self.datatype = ModelsDataTypes.PERCENT.value
+        self.charttype = ModelsChartTypes.DONUT.value
         self.labels = []
         self.data = []
         self.colors = []
@@ -41,8 +44,8 @@ class UtilitiesIncluded:
     def __init__(self):
         self.hascolors = True,
         self.title = "Utilities in Rent"
-        self.datatype = "PERCENT"
-        self.charttype = "donut"
+        self.datatype = ModelsDataTypes.PERCENT.value
+        self.charttype = ModelsChartTypes.DONUT.value
         self.labels = []
         self.data = []
         self.colors = []
@@ -51,8 +54,8 @@ class UtilitiesIncluded:
 class HousingUnitGrowth:
     def __init__(self):
         self.title = "Housing Unit Growth"
-        self.charttype = "line"
-        self.datatype = "INTEGER"
+        self.charttype = ModelsChartTypes.LINE.value
+        self.datatype = ModelsDataTypes.INTEGER.value
         self.data1Name = "# of Housing Units"
         self.labels1 = []
         self.data1 = []
@@ -64,8 +67,8 @@ class HousingUnitGrowth:
 class PropertyTypes:
     def __init__(self):
         self.title = "Property Types"
-        self.charttype = "piecharttoggle"
-        self.datatype = "PERCENT"
+        self.charttype = ModelsChartTypes.PIE_CHART_TOGGLE.value
+        self.datatype = ModelsDataTypes.PERCENT.value
         self.labels = []
         self.colors = []
         self.data1Name = "All"
@@ -80,16 +83,16 @@ class YearBuilt:
     def __init__(self):
         self.hascolors = True
         self.title = "Year Built"
-        self.datatype = "PERCENT"
-        self.charttype = "verticalbar"
+        self.datatype = ModelsDataTypes.PERCENT.value
+        self.charttype = ModelsChartTypes.VERTICAL_BAR.value
         self.labels = []
         self.data = []
 
 class NumberOfBedrooms:
     def __init__(self):
         self.title = "Number of Bedrooms"
-        self.datatype = "PERCENT"
-        self.charttype = "piecharttoggle"
+        self.datatype = ModelsDataTypes.PERCENT.value
+        self.charttype = ModelsChartTypes.PIE_CHART_TOGGLE.value
         self.labels = []
         self.colors = []
         self.data1Name = "All"
@@ -104,8 +107,8 @@ class NumberOfBedrooms:
 class YearMovedIn:
     def __init__(self):
         self.title = "Year Moved In"
-        self.datatype = "PERCENT"
-        self.charttype = "piecharttoggle"
+        self.datatype = ModelsDataTypes.PERCENT.value
+        self.charttype = ModelsChartTypes.PIE_CHART_TOGGLE.value
         self.labels = []
         self.colors = []
         self.data1Name = "All"
@@ -120,8 +123,8 @@ class YearMovedIn:
 class IncomeHousingCost:
     def __init__(self):
         self.title = "% Income on Housing Costs"
-        self.datatype = "PERCENT"
-        self.charttype = "piecharttoggle"
+        self.datatype = ModelsDataTypes.PERCENT.value
+        self.charttype = ModelsChartTypes.PIE_CHART_TOGGLE.value
         self.labels = []
         self.colors = []
         self.data1Name = "All"

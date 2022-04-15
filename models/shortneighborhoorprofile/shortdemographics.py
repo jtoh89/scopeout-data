@@ -1,3 +1,4 @@
+from enums import ModelsDataTypes, ModelsChartTypes
 
 class Demographics:
     def __init__(self):
@@ -13,7 +14,7 @@ class Demographics:
 class DemographicQuickFacts:
     def __init__(self):
         self.title = "Quick Facts"
-        self.charttype = "summary"
+        self.charttype = ModelsChartTypes.SUMMARY.value
         self.label1 = "Poverty rate"
         self.value1 = ""
         self.label2 = "% of Children"
@@ -27,8 +28,8 @@ class DemographicQuickFacts:
 class HighestEducation:
     def __init__(self):
         self.title = "Highest Education"
-        self.datatype = "PERCENT"
-        self.charttype = "donut"
+        self.datatype = ModelsDataTypes.PERCENT.value
+        self.charttype = ModelsChartTypes.DONUT.value
         self.labels = []
         self.data = []
         self.colors = []
@@ -36,8 +37,8 @@ class HighestEducation:
 class Race:
     def __init__(self):
         self.title = "Race/Ethnicity"
-        self.datatype = "PERCENT"
-        self.charttype = "donut"
+        self.datatype = ModelsDataTypes.PERCENT.value
+        self.charttype = ModelsChartTypes.DONUT.value
         self.labels = []
         self.data = []
         self.colors = []
@@ -45,8 +46,8 @@ class Race:
 class AgeGroups:
     def __init__(self):
         self.title = "Age Groups"
-        self.datatype = "PERCENT"
-        self.charttype = "verticalbar"
+        self.datatype = ModelsDataTypes.PERCENT.value
+        self.charttype = ModelsChartTypes.VERTICAL_BAR.value
         self.labels = []
         self.data = []
         self.colors = []
@@ -54,8 +55,8 @@ class AgeGroups:
 class PopulationTrends:
     def __init__(self):
         self.title = "Population Trends"
-        self.datatype = "INTEGER"
-        self.charttype = "line"
+        self.datatype = ModelsDataTypes.INTEGER.value
+        self.charttype = ModelsChartTypes.LINE.value
         self.data1Name = "Population"
         self.data1 = []
         self.labels1 = []
@@ -67,8 +68,8 @@ class OneYearGrowth:
     def __init__(self):
         self.hascolors = True
         self.title = "1 Year Population Growth"
-        self.datatype = "PERCENT"
-        self.charttype = "horizontalbar"
+        self.datatype = ModelsDataTypes.PERCENT.value
+        self.charttype = ModelsChartTypes.HORIZONTAL_BAR.value
         self.labels = []
         self.data = []
         self.colors = []
@@ -77,8 +78,8 @@ class OneYearGrowth:
 class FamilyType:
     def __init__(self):
         self.title = "Family Type"
-        self.datatype = "PERCENT"
-        self.charttype = "donut"
+        self.datatype = ModelsDataTypes.PERCENT.value
+        self.charttype = ModelsChartTypes.DONUT.value
         self.labels = []
         self.data = []
         self.colors = []

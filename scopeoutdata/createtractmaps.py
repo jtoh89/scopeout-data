@@ -17,7 +17,7 @@ def generate_tract_maps():
                                                     collection_filter={},
                                                     prod_env=ProductionEnvironment.GEO_ONLY)
 
-    for cbsacode in [TEST_CBSAID]:
+    for cbsacode in list(scopeout_markets['cbsacode']):
         # counties_to_cbsa = mongoclient.query_collection(database_name="Geographies",
         #                                                 collection_name="CountyByCbsa",
         #                                                 collection_filter={'cbsacode': {'$eq': cbsacode}},
@@ -29,13 +29,13 @@ def generate_tract_maps():
                                                           collection_filter={"cbsacode": cbsacode},
                                                           prod_env=ProductionEnvironment.GEO_ONLY)
 
-        tracts_data_df = mongoclient.query_collection(database_name="scopeout",
-                                                      collection_name="neighborhoodprofiles",
+        tracts_data_df = mongoclient.query_collection(database_name="FullNeighborhoodProfiles",
+                                                      collection_name="fullneighborhoodprofiles",
                                                       collection_filter={"cbsacode": cbsacode},
                                                       prod_env=ProductionEnvironment.FULL_NEIGHBORHOOD_PROFILES_1)
 
-        tracts_data2_df = mongoclient.query_collection(database_name="scopeout",
-                                                       collection_name="neighborhoodprofiles",
+        tracts_data2_df = mongoclient.query_collection(database_name="FullNeighborhoodProfiles",
+                                                       collection_name="fullneighborhoodprofiles",
                                                        collection_filter={"cbsacode": cbsacode},
                                                        prod_env=ProductionEnvironment.FULL_NEIGHBORHOOD_PROFILES_2)
         tracts_data_df.append(tracts_data2_df)
@@ -126,7 +126,7 @@ def calculate_percentiles_from_all_tracts(tracts_data_df):
     owner_occupant_rate_list = []
 
     for i, tract in tracts_data_df.iterrows():
-        tract_median_household_income = tract['economy']['medianhouseholdincome']['data'][0]
+        tract_median_household_income = tract['economy']['medianhouseholdincome']['data1'][0]
         median_household_income_list.append(tract_median_household_income)
 
         tract_median_unemployment_rate = tract['economy']['unemploymentrate']['data'][0]

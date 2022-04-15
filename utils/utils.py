@@ -3,6 +3,7 @@ from enums import ProductionEnvironment
 from census.censusdata import STATES1, STATES2
 import numpy as np
 import math
+import pandas as pd
 
 def number_to_string(data_type, value):
     if value != value or value is None:
@@ -29,6 +30,10 @@ def string_to_float(value, decimal_places):
 
     return round(float(value), decimal_places)
 
+def nat_to_none(value):
+    if value is pd.NaT:
+        return None
+    return value
 
 
 def calculate_percentiles_from_list(list_data):

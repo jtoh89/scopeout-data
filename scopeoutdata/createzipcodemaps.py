@@ -26,7 +26,7 @@ def generate_zipcode_maps():
         cbsacode = scopeout_market.cbsacode
         cbsaname = scopeout_market.geojson['name']
 
-        if cbsacode != "31080":
+        if cbsacode not in ["31080","38060","32820","40900"]:
             continue
 
         all_zip_median_sale_price = []

@@ -148,7 +148,7 @@ def store_neighborhood_data(state_id, neighborhood_profile_list, prod_env, table
         use_prod_env = ProductionEnvironment.FULL_NEIGHBORHOOD_PROFILES_2
     else:
         use_prod_env = ProductionEnvironment.PROD
-        dbname = 'ShortNeighborhoodProfiles'
+        dbname = 'ShortProfiles'
 
     client = connect_to_client(prod_env=use_prod_env)
 

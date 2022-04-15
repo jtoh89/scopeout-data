@@ -63,7 +63,7 @@ def create_short_neighborhood_profiles():
                     neighborhood_profile.countyname = ''
                     neighborhood_profile.cbsacode = False
                     neighborhood_profile.cbsaname = ''
-                    neighborhood_profile.geoshapecoordinates = get_neighborhood_map_shape(tract_profile.geoinfo)
+                    # neighborhood_profile.geoshapecoordinates = get_neighborhood_map_shape(tract_profile.geoinfo)
 
                     # County
                     countyfullcode = tract_profile.geoinfo['countyfullcode']

@@ -20,7 +20,8 @@ REDFIN_PROPERTY_TYPES = ['All Residential', 'Single Family Residential', 'Multi-
 REDFIN_PROPERTY_TYPES_LOWERCASE = ['all', 'singlefamily', 'multifamily']
 REDFIN_DATA_CATEGORIES = ['median_sale_price', 'median_ppsf', 'months_of_supply', 'median_dom', 'price_drops']
 
-def import_redfin_zipcode_data(geo_level, default_geoid, geoid_field):
+
+def import_historical_redfin_dataV2(geo_level, default_geoid, geoid_field, geoname_field):
     initialize_geo(geo_level)
     currpath = os.path.dirname(os.path.abspath(__file__))
     rootpath = os.path.dirname(os.path.abspath(currpath))
@@ -36,111 +37,178 @@ def import_redfin_zipcode_data(geo_level, default_geoid, geoid_field):
     finished_runs = mongoclient.get_finished_runs(collection_find_finished_runs)
 
     if len(finished_runs) > 0:
-        last_finished_year = finished_runs.year.iloc[0]
+        last_full_finished_year = finished_runs.last_full_download_year.iloc[0]
     else:
-        last_finished_year = 0
+        last_full_finished_year = 0
 
     redfin_dict = {}
 
-    file_dir = '/files/zip_code_market_tracker.tsv'
+    file_dir = ''
+    if geo_level == GeoLevels.USA:
+        file_dir = '/files/us_national_market_tracker.tsv'
+    elif geo_level == GeoLevels.CBSA:
+        file_dir = '/files/redfin_metro_market_tracker.tsv'
+    elif geo_level == GeoLevels.COUNTY:
+        file_dir = '/files/county_market_tracker.tsv'
+    elif geo_level == GeoLevels.ZIPCODE:
+        file_dir = '/files/zip_code_market_tracker.tsv'
+        print("!!! This function does not importer historicals for ZIPCODE!!!")
+        sys.exit()
 
-    zipcode_data_dict = {}
-    zipcode_data_list_dict = {}
+    with open(rootpath + file_dir) as file:
+        category_name = 'realestatetrends'
+        df = pd.read_csv(file, sep='\t')
 
-    most_recent_date = datetime.datetime(1900, 1, 1)
+        df = df[['period_begin', 'is_seasonally_adjusted', 'property_type', 'table_id', 'region', 'median_sale_price', 'median_ppsf', 'months_of_supply', 'median_dom', 'price_drops', 'state_code']]
 
-    with open(rootpath + file_dir, 'r') as csvfile:
-        datareader = csv.reader(csvfile, delimiter='\t')
+        df[['median_sale_price', 'median_ppsf', 'months_of_supply', 'median_dom', 'price_drops']] = df[['median_sale_price', 'median_ppsf', 'months_of_supply', 'median_dom', 'price_drops']].fillna(0)
 
-        headers = []
-        for i, row in enumerate(datareader):
-            if i < 1:
-                headers = row
+        df = df[df.is_seasonally_adjusted == 'f']
+        df['date'] = pd.to_datetime(df['period_begin'])
+        df = df.sort_values(by='date')
+        df = df.reset_index()
+
+        last_month_in_dataset = list(df['period_begin'].drop_duplicates())[-1:][0][5:7]
+
+        if geo_level == GeoLevels.USA:
+            df['table_id'] = df['table_id'].astype(str).replace(REDFIN_USA_TO_FIPS)
+        if geo_level == GeoLevels.CBSA:
+            df['table_id'] = df['table_id'].astype(str).replace(REDFIN_MSA_TO_CBSA)
+        elif geo_level == GeoLevels.COUNTY:
+            df['table_id'] = df['table_id'].astype(str).replace(REDFIN_COUNTYID_TO_FIPS)
+        # elif geo_level == GeoLevels.ZIPCODE:
+        #     df['table_id'] = df['table_id'].astype(str).replace(REDFIN_COUNTYID_TO_FIPS)
+
+        print('Create redfin data dictionaries')
+        download_year = 0
+        last_row = False
+        insert_last_row = True
+        for i, row in df.iterrows():
+            geoid = row.table_id
+
+            if i == (len(df) - 1):
+                last_row = True
+
+            if geoid not in geo_list:
+                if last_row:
+                    insert_last_row = False
+                else:
+                    continue
+
+            property_type = row.property_type
+
+            if property_type not in ['All Residential', 'Multi-Family (2-4 Unit)', 'Single Family Residential']:
+                if last_row:
+                    insert_last_row = False
+                else:
+                    continue
+
+            property_type = REDFIN_PROPERTY_TYPES_LOWERCASE_CONVERSION[property_type]
+
+            year_string = row.period_begin[:4]
+            month_string = row.period_begin[5:7]
+            date_string = MONTH_FORMAT[month_string] + ' ' + year_string
+
+            current_year = int(year_string)
+
+            if not last_row and REDFIN_MIN_YEAR > current_year:
+                continue
+            elif not last_row and last_full_finished_year >= current_year:
                 continue
 
-            row_dict = dict(zip(headers, row))
+            if download_year == 0:
+                download_year = current_year
 
-            if row_dict['property_type'] != 'All Residential' or row_dict['is_seasonally_adjusted'] != 'f':
-                continue
+            if download_year != current_year or last_row:
+                if last_row and insert_last_row:
+                    append_last_row_to_redfin_dict(row, redfin_dict, geoid, category_name, property_type, date_string)
 
-            zipcode = row_dict['region'].replace('Zip Code: ','')
+                check_full_year(redfin_dict, category_name, download_year, last_month_in_dataset, geoid_field)
 
-            year, month, day = row_dict['period_end'].split('-')
+                success = store_market_trends_redfin_data(redfin_dict,
+                                                          category_name,
+                                                          download_year,
+                                                          geoid_field=geoid_field,
+                                                          geo_level=geo_level)
 
-            row_date = datetime.datetime(int(year), int(month), int(day))
+                if download_year == REDFIN_MAX_YEAR and last_month_in_dataset != '12':
+                    download_year = download_year - 1
 
-            try:
-                median_sale_price = string_to_float(row_dict['median_sale_price'],0)
-                median_sale_price_mom = string_to_float(row_dict['median_sale_price_mom'], 2)
-                median_sale_price_yoy = string_to_float(row_dict['median_sale_price_yoy'], 2)
-                median_dom = string_to_float(row_dict['median_dom'],2)
-                median_dom_mom = string_to_float(row_dict['median_dom_mom'], 2)
-                median_dom_yoy = string_to_float(row_dict['median_dom_yoy'], 2)
-                median_ppsf = string_to_float(row_dict['median_ppsf'], 2)
-                median_ppsf_mom = string_to_float(row_dict['median_ppsf_mom'], 2)
-                median_ppsf_yoy = string_to_float(row_dict['median_ppsf_yoy'], 2)
-            except Exception as e:
-                print(e)
-
-            if zipcode not in zipcode_data_dict.keys():
-                zipcode_data_dict[zipcode] = {
-                    'date': datetime.datetime(int(year), int(month), int(day)),
-                    'median_sale_price': median_sale_price,
-                    'median_sale_price_mom': median_sale_price_mom,
-                    'median_sale_price_yoy': median_sale_price_yoy,
-                    'median_dom': median_dom,
-                    'median_dom_mom': median_dom_mom,
-                    'median_dom_yoy': median_dom_yoy,
-                    'median_ppsf': median_ppsf,
-                    'median_ppsf_mom': median_ppsf_mom,
-                    'median_ppsf_yoy': median_ppsf_yoy
-                }
-            else:
-                existing_zipcode_data = zipcode_data_dict[zipcode]
-
-                if row_date > existing_zipcode_data['date']:
-                    zipcode_data_dict[zipcode] = {
-                        'date': datetime.datetime(int(year), int(month), int(day)),
-                        'median_sale_price': median_sale_price,
-                        'median_sale_price_mom': median_sale_price_mom,
-                        'median_sale_price_yoy': median_sale_price_yoy,
-                        'median_dom': median_dom,
-                        'median_dom_mom': median_dom_mom,
-                        'median_dom_yoy': median_dom_yoy,
-                        'median_ppsf': median_ppsf,
-                        'median_ppsf_mom': median_ppsf_mom,
-                        'median_ppsf_yoy': median_ppsf_yoy
+                if success:
+                    collection_add_finished_run = {
+                        'category': category_name,
+                        'geo_level': geo_level.value,
+                        'last_full_download_year': download_year
                     }
 
-            if row_date > most_recent_date:
-                most_recent_date = row_date
+                    mongoclient.update_finished_run(collection_add_finished_run, geo_level=geo_level, category=category_name)
+                    download_year = current_year
 
-    insert_list = []
+                    redfin_dict = {}
+                else:
+                    print('Insert Market Trends failed')
+                    sys.exit()
 
-    for k, v in zipcode_data_dict.items():
-        if v['date'] != most_recent_date:
-            continue
+            if last_row:
+                continue
 
-        insert_list.append({'zipcode': k,
-                             'date': INDEX_TO_MONTH[v['date'].month] + ' ' + str(v['date'].year),
-                            'median_sale_price': v['median_sale_price'],
-                            'median_sale_price_mom': v['median_sale_price_mom'],
-                            'median_sale_price_yoy': v['median_sale_price_yoy'],
-                            'median_dom': v['median_dom'],
-                            'median_dom_mom': v['median_dom_mom'],
-                            'median_dom_yoy': v['median_dom_yoy'],
-                            'median_ppsf': v['median_ppsf'],
-                            'median_ppsf_mom': v['median_ppsf_mom'],
-                            'median_ppsf_yoy': v['median_ppsf_yoy']
-                            })
+            median_sale_price = int(round(row.median_sale_price,0))
+            median_ppsf = int(round(row.median_ppsf,0))
+            months_of_supply = round(row.months_of_supply,2)
+            median_dom = row.median_dom
+            price_drops = round(row.price_drops * 100, 1)
 
-    mongoclient.insert_list_mongo(list_data=insert_list,
-                                  dbname='MarketTrends',
-                                  collection_name='redfinzipcodedata',
-                                  prod_env=ProductionEnvironment.MARKET_TRENDS,
-                                  collection_update_existing={})
+            if geoid in redfin_dict.keys():
+                redfin_data = redfin_dict[geoid][category_name]
+                if property_type in redfin_data.keys():
+                    redfin_data[property_type]['dates'].append(date_string)
+                    redfin_data[property_type]['median_sale_price'].append(median_sale_price)
+                    redfin_data[property_type]['median_ppsf'].append(median_ppsf)
+                    redfin_data[property_type]['months_of_supply'].append(months_of_supply)
+                    redfin_data[property_type]['median_dom'].append(median_dom)
+                    redfin_data[property_type]['price_drops'].append(price_drops)
+                else:
+                    redfin_data[property_type] = {
+                        'dates': [date_string],
+                        'median_sale_price': [median_sale_price],
+                        'median_ppsf': [median_ppsf],
+                        'months_of_supply': [months_of_supply],
+                        'median_dom': [median_dom],
+                        'price_drops': [price_drops]
+                    }
+            else:
+                geoname = geographies_df[geographies_df[geoid_field] == geoid]
 
-    print('')
+                if len(geoname) < 1:
+                    print('No geoname found for: {}'.format(geoid))
+                    continue
+                else:
+                    geoname = geoname.iloc[0][geoname_field]
+
+                redfin_dict[geoid] = {
+                    geoid_field: geoid,
+                    'geolevel': geo_level.value,
+                    'geoname': geoname,
+                    category_name: {
+                        property_type: {
+                            'dates': [date_string],
+                            'median_sale_price': [median_sale_price],
+                            'median_ppsf': [median_ppsf],
+                            'months_of_supply': [months_of_supply],
+                            'median_dom': [median_dom],
+                            'price_drops': [price_drops]
+                        }
+                    }
+                }
+
+
+
+
+
+########################
+## V1 below
+########################
+
 
 
 def import_historical_redfin_data(geo_level, default_geoid, geoid_field, geoname_field):
@@ -363,9 +431,9 @@ def check_full_year(redfin_dict, category_name, download_year, last_month_in_dat
             dates_length = len(realestatetrenddata[property_type]['dates'])
 
             # # if there are less than 7 data points, just delete record. Too many dates to fill in.
-            # if download_year != REDFIN_MAX_YEAR and dates_length < 7:
-            #     redfin_dict[k][category_name].pop(property_type)
-            #     continue
+            if download_year != REDFIN_MAX_YEAR and dates_length < 7:
+                redfin_dict[k][category_name].pop(property_type)
+                continue
 
             if dates_length < 12:
                 print('Filling missing months for geoid: {}'.format(data[geoid_field]))
@@ -476,11 +544,14 @@ def update_existing_market_trends(existing_list, market_trends_dict, download_ye
     for existing_item in existing_list:
         geoid = existing_item[geoid_field]
 
+        if geoid == "38060":
+            print("")
+
         # If geoid does not exist in market trends, then check if the existing data has realestatetrends.
         # If so, delete realestatetrends because it will result in a time gap. For example, 2012-2013, then jumping to 2015.
         if geoid not in market_trends_dict.keys():
             if category_name in existing_item.keys():
-                print('!!! DELETING REALESTATETRENDS BECAUSE THERE IS A TIME GAP IN HISTORICAL DATA. GEOID: {}'.format(geoid))
+                print('!!! Deleting {} to update historical. GEOID: {}'.format(category_name, geoid))
                 del existing_item[category_name]
             continue
 

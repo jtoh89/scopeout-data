@@ -9,7 +9,6 @@ class ShortNeighborhoodProfile:
         self.stateid = ""
         self.countyfullcode = ""
         self.cbsacode = ""
-        self.geoshapecoordinates = []
         self.demographics = shortdemographics.Demographics()
         self.economy = shorteconomy.Economy()
         self.housing = shorthousing.Housing()

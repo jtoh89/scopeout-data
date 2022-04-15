@@ -1,3 +1,4 @@
+from enums import ModelsDataTypes, ModelsChartTypes
 
 class Economy:
     def __init__(self):
@@ -15,7 +16,7 @@ class MedianHouseholdIncome:
     def __init__(self):
         self.hascolors = True
         self.title = "Median Household Income"
-        self.charttype = "verticalbartoggle"
+        self.charttype = ModelsChartTypes.VERTICAL_BAR_TOGGLE.value
         self.labels = []
         self.data1Name = "All"
         self.data1 = []
@@ -23,7 +24,7 @@ class MedianHouseholdIncome:
         self.data2 = []
         self.data3Name = "Renters"
         self.data3 = []
-        self.datatype = "DOLLAR"
+        self.datatype = ModelsDataTypes.DOLLAR.value
 
 
 
@@ -31,8 +32,8 @@ class UnemploymentRate:
     def __init__(self):
         self.hascolors = True
         self.title = "Unemployment Rate"
-        self.datatype = "PERCENT"
-        self.charttype = "horizontalbar"
+        self.datatype = ModelsDataTypes.PERCENT.value
+        self.charttype = ModelsChartTypes.HORIZONTAL_BAR.value
         self.labels = []
         self.data = []
         self.colors = []
@@ -41,8 +42,8 @@ class UnemploymentRate:
 class HouseholdIncomeRange:
     def __init__(self):
         self.title = "Household Income Range"
-        self.datatype = "PERCENT"
-        self.charttype = "verticalbartoggle"
+        self.datatype = ModelsDataTypes.PERCENT.value
+        self.charttype = ModelsChartTypes.VERTICAL_BAR_TOGGLE.value
         self.labels = []
         self.data1Name = "All"
         self.data1 = []
@@ -56,8 +57,8 @@ class EmploymentIndustries:
     def __init__(self):
         self.hascolors = True
         self.title = "Employment Industries"
-        self.datatype = "PERCENT"
-        self.charttype ="verticalbar"
+        self.datatype = ModelsDataTypes.PERCENT.value
+        self.charttype = ModelsChartTypes.VERTICAL_BAR.value
         self.labels = []
         self.data = []
         self.colors = []
@@ -66,15 +67,15 @@ class EmploymentIndustries:
 class LeadingEmploymentIndustries:
     def __init__(self):
         self.title = "Leading Employment Industries"
-        self.charttype = "table"
+        self.charttype = ModelsChartTypes.TABLE.value
         self.data = []
 
 
 class VehiclesOwned:
     def __init__(self):
         self.title = "Vehicles Owned"
-        self.datatype = "PERCENT"
-        self.charttype = "piecharttoggle"
+        self.datatype = ModelsDataTypes.PERCENT.value
+        self.charttype = ModelsChartTypes.PIE_CHART_TOGGLE.value
         self.labels = []
         self.colors = []
         self.data1Name = "All"
@@ -89,8 +90,8 @@ class MeansOfTransportation:
     def __init__(self):
         self.hascolors = True,
         self.title = "Means of Transportation"
-        self.datatype = "PERCENT"
-        self.charttype = "donut"
+        self.datatype = ModelsDataTypes.PERCENT.value
+        self.charttype = ModelsChartTypes.DONUT.value
         self.labels = []
         self.data = []
         self.colors = []
@@ -99,8 +100,8 @@ class CommuteToWork:
     def __init__(self):
         self.hascolors = True
         self.title = "Commute to Work"
-        self.datatype = "PERCENT"
-        self.charttype = "horizontalbar"
+        self.datatype = ModelsDataTypes.PERCENT.value
+        self.charttype = ModelsChartTypes.HORIZONTAL_BAR.value
         self.labels = []
         self.data = []
         self.colors = []

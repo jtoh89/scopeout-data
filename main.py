@@ -101,15 +101,25 @@ from database import mongoclient
 ###### REAL ESTATE
 ##################################################################
 
+
+redfin.import_historical_redfin_dataV2(geo_level=GeoLevels.CBSA,
+                                     default_geoid=DefaultGeoIds.CBSA.value,
+                                     geoid_field=GeoIdField.CBSA.value,
+                                     geoname_field=GeoNameField.CBSA.value)
+
+
+
+
+
 # redfin.import_historical_redfin_data(geo_level=GeoLevels.USA,
 #                                      default_geoid=DefaultGeoIds.USA.value,
 #                                      geoid_field=GeoIdField.USA.value,
 #                                      geoname_field=GeoNameField.USA.value)
 
-# redfin.import_historical_redfin_data(geo_level=GeoLevels.CBSA,
-#                                      default_geoid=DefaultGeoIds.CBSA.value,
-#                                      geoid_field=GeoIdField.CBSA.value,
-#                                      geoname_field=GeoNameField.CBSA.value)
+redfin.import_historical_redfin_data(geo_level=GeoLevels.CBSA,
+                                     default_geoid=DefaultGeoIds.CBSA.value,
+                                     geoid_field=GeoIdField.CBSA.value,
+                                     geoname_field=GeoNameField.CBSA.value)
 
 # redfin.import_historical_redfin_data(geo_level=GeoLevels.COUNTY,
 #                                      default_geoid=DefaultGeoIds.COUNTY.value,
@@ -117,25 +127,22 @@ from database import mongoclient
 #                                      geoname_field=GeoNameField.COUNTY.value)
 
 
+# redfin_zipcodes.import_redfin_zipcode_historical_data(geoid_field=GeoIdField.ZIPCODE.value,
+#                                                       prod_env=ProductionEnvironment.MARKET_TRENDS)
 
 
-redfin_zipcodes.import_redfin_zipcode_historical_data(geo_level=GeoLevels.ZIPCODE,
-                                                      geoid_field=GeoIdField.ZIPCODE.value,
-                                                      prod_env=ProductionEnvironment.MARKET_TRENDS)
+# zillow.import_zillow_zip_rental_data()
 
-redfin_zipcodes.import_redfin_zipcode_data(geo_level=GeoLevels.ZIPCODE,
-                              geoid_field=GeoIdField.ZIPCODE.value)
-
-
-zillow.import_zillow_msa_rental_data(geo_level=GeoLevels.USA,
-                                     default_geoid=DefaultGeoIds.USA.value,
-                                     geoid_field=GeoIdField.USA.value,
-                                     geoname_field=GeoNameField.USA.value)
 
 # zillow.import_zillow_msa_rental_data(geo_level=GeoLevels.CBSA,
 #                                      default_geoid=DefaultGeoIds.CBSA.value,
 #                                      geoid_field=GeoIdField.CBSA.value,
 #                                      geoname_field=GeoNameField.CBSA.value)
+
+# zillow.import_zillow_msa_rental_data(geo_level=GeoLevels.USA,
+#                                      default_geoid=DefaultGeoIds.USA.value,
+#                                      geoid_field=GeoIdField.USA.value,
+#                                      geoname_field=GeoNameField.USA.value)
 
 
 # buildingpermits.run_cbsa_building_permit(geo_level=GeoLevels.CBSA,
@@ -165,10 +172,10 @@ zillow.import_zillow_msa_rental_data(geo_level=GeoLevels.USA,
 
 # createneighborhoodprofiles.create_neighborhood_profiles()
 # createshortneighborhoodprofiles.create_short_neighborhood_profiles()
-# createshortzipcodeprofiles.create_short_zipcode_profiles()
+createshortzipcodeprofiles.create_short_zipcode_profiles()
 
 
 ############## CREATE PRODUCTION MAP DATA ############
-# createtractmaps.generate_tract_maps()
+createtractmaps.generate_tract_maps()
 # createzipcodemaps.generate_zipcode_maps()
 
