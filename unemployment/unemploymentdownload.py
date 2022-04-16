@@ -18,11 +18,11 @@ DELIMETER = '\t'
 US_UNEMPLOYMENT = 6.3
 #https://fred.stlouisfed.org/series/UNRATE
 
-def market_profile_add_unemployment(geo_level, geoid_field, prod_env=ProductionEnvironment.MARKET_TRENDS):
-    cbsa_profiles = mongoclient.query_collection(database_name="MarketTrends",
+def market_profile_add_unemployment(geo_level, geoid_field, prod_env=ProductionEnvironment.MARKET_PROFILES):
+    cbsa_profiles = mongoclient.query_collection(database_name="MarketProfiles",
                                                  collection_name="markettrends",
                                                  collection_filter={'geolevel': geo_level.value},
-                                                 prod_env=ProductionEnvironment.MARKET_TRENDS)
+                                                 prod_env=ProductionEnvironment.MARKET_PROFILES)
 
     geo_data = mongoclient.query_collection(database_name="CensusData1",
                                                  collection_name="CensusData",
@@ -46,7 +46,7 @@ def market_profile_add_unemployment(geo_level, geoid_field, prod_env=ProductionE
         insert_list.append(add_dict)
 
     client = mongoclient.connect_to_client(prod_env=prod_env)
-    dbname = 'MarketTrends'
+    dbname = 'MarketProfiles'
     db = client[dbname]
     collection = db['markettrends']
 

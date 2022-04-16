@@ -6,10 +6,10 @@ from utils.utils import list_length_okay, create_url_slug, calculate_percentiles
 import numpy as np
 
 def create_short_zipcode_profiles():
-    zip_code_data = mongoclient.query_collection(database_name="MarketTrends",
+    zip_code_data = mongoclient.query_collection(database_name="MarketProfiles",
                                                  collection_name="redfinzipcodedata",
                                                  collection_filter={},
-                                                 prod_env=ProductionEnvironment.MARKET_TRENDS)
+                                                 prod_env=ProductionEnvironment.MARKET_PROFILES)
 
     zipcodes_by_scopeout_markets = mongoclient.query_collection(database_name="ScopeOut",
                                                     collection_name="EsriZipcodesBySOMarkets",
@@ -19,10 +19,10 @@ def create_short_zipcode_profiles():
     for i, row in zipcodes_by_scopeout_markets.iterrows():
         cbsacode = row.cbsacode
 
-        cbsa_market = mongoclient.query_collection(database_name="MarketTrends",
-                                                    collection_name="cbsamarketprofiles",
-                                                    collection_filter={"cbsacode":cbsacode},
-                                                    prod_env=ProductionEnvironment.MARKET_TRENDS)
+        cbsa_market = mongoclient.query_collection(database_name="MarketProfiles",
+                                                   collection_name="cbsamarketprofiles",
+                                                   collection_filter={"cbsacode":cbsacode},
+                                                   prod_env=ProductionEnvironment.MARKET_PROFILES)
 
         if len(cbsa_market) == 0:
             print("!!! WHY IS CBSA MARKET MISSING FOR SO MARKET? !!!")
@@ -32,10 +32,10 @@ def create_short_zipcode_profiles():
 
         latest_month_cbsa = cbsa_market.mediansaleprice['labels'][-1]
 
-        zip_historical = mongoclient.query_collection(database_name="MarketTrends",
-                                                   collection_name="zipcodehistoricalprofiles",
-                                                   collection_filter={'zipcode': {'$in': row.zipcodes}},
-                                                   prod_env=ProductionEnvironment.MARKET_TRENDS)
+        zip_historical = mongoclient.query_collection(database_name="MarketProfiles",
+                                                      collection_name="zipcodehistoricalprofiles",
+                                                      collection_filter={'zipcode': {'$in': row.zipcodes}},
+                                                      prod_env=ProductionEnvironment.MARKET_PROFILES)
 
         for zipcode in row.zipcodes:
             zip_short_profile = shortzipcodeprofile.ShortZipcodeProfile()

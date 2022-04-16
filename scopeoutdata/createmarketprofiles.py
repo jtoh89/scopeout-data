@@ -1,29 +1,29 @@
 import sys
 from database import mongoclient
-from enums import ProductionEnvironment, GeoLevels, GeoIdField, GeoNameField
+from enums import ProductionEnvironment, GeoLevels, GeoIdField, GeoNameField, Collections_Historical_Profiles
 from utils.utils import get_county_cbsa_lookup, check_dataframe_has_one_record, set_na_to_false_from_dict
 from math import nan
 import pandas as pd
 from realestate.redfin import REDFIN_PROPERTY_TYPES, REDFIN_DATA_CATEGORIES, REDFIN_PROPERTY_TYPES_LOWERCASE
 from models import cbsamarketprofile
 
-def create_county_market_profiles():
-    us_profile = mongoclient.query_collection(database_name="MarketTrends",
-                                                     collection_name="markettrends",
-                                                     collection_filter={'geolevel': GeoLevels.USA.value},
-                                                     prod_env=ProductionEnvironment.MARKET_TRENDS).to_dict('records')[0]
+def create_county_market_profiles(collection_name):
+    us_profile = mongoclient.query_collection(database_name="MarketProfiles",
+                                              collection_name=Collections_Historical_Profiles.USA.value,
+                                              collection_filter={'geolevel': GeoLevels.USA.value},
+                                              prod_env=ProductionEnvironment.MARKET_PROFILES).to_dict('records')[0]
 
-    cbsa_profiles = mongoclient.query_collection(database_name="MarketTrends",
-                                                 collection_name="markettrends",
+    cbsa_profiles = mongoclient.query_collection(database_name="MarketProfiles",
+                                                 collection_name=Collections_Historical_Profiles.CBSA.value,
                                                  collection_filter={'geolevel': GeoLevels.CBSA.value},
-                                                 prod_env=ProductionEnvironment.MARKET_TRENDS)
+                                                 prod_env=ProductionEnvironment.MARKET_PROFILES)
 
     county_cbsa_lookup = get_county_cbsa_lookup(state_id='')
 
-    county_profiles = mongoclient.query_collection(database_name="MarketTrends",
-                                              collection_name="markettrends",
-                                              collection_filter={'geolevel': GeoLevels.COUNTY.value},
-                                              prod_env=ProductionEnvironment.MARKET_TRENDS)
+    county_profiles = mongoclient.query_collection(database_name="MarketProfiles",
+                                                   collection_name=Collections_Historical_Profiles.COUNTY.value,
+                                                   collection_filter={'geolevel': GeoLevels.COUNTY.value},
+                                                   prod_env=ProductionEnvironment.MARKET_PROFILES)
 
     county_profile_list = []
 
@@ -33,11 +33,11 @@ def create_county_market_profiles():
         final_county_profile = aggregate_all_to_county_profile(county_profile, county_cbsa_lookup, cbsa_profiles, us_profile)
         county_profile_list.append(final_county_profile)
 
-    client = mongoclient.connect_to_client(prod_env=ProductionEnvironment.MARKET_TRENDS)
-    dbname = 'MarketTrends'
+    client = mongoclient.connect_to_client(prod_env=ProductionEnvironment.MARKET_PROFILES)
+    dbname = 'MarketProfiles'
     db = client[dbname]
 
-    collection = db['countymarketprofile']
+    collection = db[collection_name]
 
     collection_filter = {}
     success = mongoclient.batch_inserts_with_list(county_profile_list, collection, collection_filter, GeoIdField.COUNTY.value)
@@ -171,9 +171,9 @@ def create_redfin_dict(county_profile, countyname, cbsaname):
     return return_dict
 
 def create_rental_dict(county_profile, cbsaname):
-    us_rental_df = pd.DataFrame.from_dict(county_profile['usrentaltrends']['All Residential'])
+    us_rental_df = pd.DataFrame.from_dict(county_profile['usrentaltrends'])
 
-    cbsa_rental_df = pd.DataFrame.from_dict(county_profile['cbsarentaltrends']['All Residential'])
+    cbsa_rental_df = pd.DataFrame.from_dict(county_profile['cbsarentaltrends'])
 
     combined_rental_df = us_rental_df.merge(cbsa_rental_df, on='dates', how='left', suffixes=('', '_cbsa'))
 

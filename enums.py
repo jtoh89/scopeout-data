@@ -36,7 +36,7 @@ class ProductionEnvironment(Enum):
     QA = 'qa'
     CENSUS_DATA1 = 'CensusData1'
     CENSUS_DATA2 = 'CensusData2'
-    MARKET_TRENDS = 'markettrends'
+    MARKET_PROFILES = 'marketprofiles'
     MARKET_MAPS = 'MarketMaps'
 
 class CensusDataByEnvironment(Enum):
@@ -54,9 +54,30 @@ class ModelsDataTypes(Enum):
 class ModelsChartTypes(Enum):
     SUMMARY = 'summary'
     LINE = 'line'
+    MULTI_LINE = 'multiline'
     HORIZONTAL_BAR = 'horizontalbar'
     DONUT = 'donut'
     VERTICAL_BAR = 'verticalbar'
     VERTICAL_BAR_TOGGLE = 'verticalbartoggle'
     PIE_CHART_TOGGLE = 'piecharttoggle'
     TABLE = 'table'
+
+
+
+class Collections_Historical_Profiles(Enum):
+    USA = 'ushistoricalprofile'
+    CBSA = 'cbsahistoricalprofile'
+    STATE = 'statehistoricalprofile'
+    COUNTY = 'countyhistoricalprofile'
+    TRACT = 'tracthistoricalprofile'
+    ZIPCODE = 'zipcodehistoricalprofile'
+
+
+
+class Collections_Profiles(Enum):
+    USA = 'usmarketprofiles'
+    CBSA = 'cbsamarketprofiles'
+    STATE = 'statemarketprofiles'
+    COUNTY = 'countymarketprofiles'
+    TRACT = 'tractmarketprofiles'
+    ZIPCODE = 'zipcodemarketprofiles'

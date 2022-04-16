@@ -48,7 +48,7 @@ def connect_to_client(prod_env):
         database = os.getenv("CENSUS_DATA2_DATABASE")
         un = os.getenv("CENSUS_DATA2_USERNAME")
         pw = os.getenv("CENSUS_DATA2_PASSWORD")
-    elif prod_env == ProductionEnvironment.MARKET_TRENDS:
+    elif prod_env == ProductionEnvironment.MARKET_PROFILES:
         host = os.getenv("MARKET_TRENDS_MONGO_HOST")
         database = os.getenv("MARKET_TRENDS_MONGO_DATABASE")
         un = os.getenv("MARKET_TRENDS_MONGO_USERNAME")

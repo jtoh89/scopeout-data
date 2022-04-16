@@ -11,10 +11,10 @@ TEST_CBSAID = "31080"
 
 
 def generate_zipcode_maps():
-    zip_code_data = mongoclient.query_collection(database_name="MarketTrends",
-                                                    collection_name="redfinzipcodedata",
-                                                    collection_filter={},
-                                                    prod_env=ProductionEnvironment.MARKET_TRENDS)
+    zip_code_data = mongoclient.query_collection(database_name="MarketProfiles",
+                                                 collection_name="redfinzipcodedata",
+                                                 collection_filter={},
+                                                 prod_env=ProductionEnvironment.MARKET_PROFILES)
 
     zip_code_geojson = mongoclient.query_collection(database_name="ScopeOut",
                                                  collection_name="GeojsonZipcodesBySOMarkets",

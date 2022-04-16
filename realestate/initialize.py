@@ -7,7 +7,7 @@ from enums import ProductionEnvironment
 
 
 
-def initialize_market_trends(geo_level, default_geoid, geoid_field, geoname_field):
+def initialize_market_trends(geo_level, default_geoid, geoid_field, geoname_field, collection_name):
     '''
     Function creates cbsa records for MarketTrend.
     :return:
@@ -16,12 +16,12 @@ def initialize_market_trends(geo_level, default_geoid, geoid_field, geoname_fiel
         'geolevel': geo_level.value,
     }
 
-    current_collection = mongoclient.query_collection(database_name="MarketTrends",
-                                                 collection_name="markettrends",
-                                                 collection_filter=collection_filter,
-                                                 prod_env=ProductionEnvironment.MARKET_TRENDS)
+    current_collection = mongoclient.query_collection(database_name="MarketProfiles",
+                                                      collection_name=collection_name,
+                                                      collection_filter=collection_filter,
+                                                      prod_env=ProductionEnvironment.MARKET_PROFILES)
     if len(current_collection) > 0:
-        print('Cannot initialize market trends. Data already exists')
+        print('Cannot initialize {} because it already exists'.format(collection_name))
         return
     else:
         geographies_df = mongoclient.query_geography(geo_level=geo_level, stateid=default_geoid)
@@ -34,6 +34,6 @@ def initialize_market_trends(geo_level, default_geoid, geoid_field, geoname_fiel
                                   })
 
     mongoclient.insert_list_mongo(list_data=init_all_geos,
-                                  dbname='MarketTrends',
-                                  collection_name='markettrends',
-                                  prod_env=ProductionEnvironment.MARKET_TRENDS)
+                                  dbname='MarketProfiles',
+                                  collection_name=collection_name,
+                                  prod_env=ProductionEnvironment.MARKET_PROFILES)

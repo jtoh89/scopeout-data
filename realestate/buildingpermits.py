@@ -179,9 +179,9 @@ def run_cbsa_building_permit(geo_level, geoid_field, geoname_field):
         if success and latest_insert_month == '12':
             mongoclient.update_finished_run(collection_add_finished_run, geo_level=geo_level, category=category_name)
 
-def store_building_permits(building_permit_dict, geo_level, latest_insert_year, geoid_field, category_name, prod_env=ProductionEnvironment.MARKET_TRENDS):
+def store_building_permits(building_permit_dict, geo_level, latest_insert_year, geoid_field, category_name, prod_env=ProductionEnvironment.MARKET_PROFILES):
     client = mongoclient.connect_to_client(prod_env=prod_env)
-    dbname = 'MarketTrends'
+    dbname = 'MarketProfiles'
     db = client[dbname]
     collection = db['markettrends']
 

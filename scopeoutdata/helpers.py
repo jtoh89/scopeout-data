@@ -38,10 +38,10 @@ def get_all_geo_data_for_neighborhoods(stateid, prod_env):
                                                prod_env=ProductionEnvironment.CENSUS_DATA1)
 
 
-    county_market_profiles = mongoclient.query_collection(database_name="MarketTrends",
+    county_market_profiles = mongoclient.query_collection(database_name="MarketProfiles",
                                                           collection_name="countymarketprofile",
                                                           collection_filter={'countyfullcode': {'$in': counties_to_get}},
-                                                          prod_env=ProductionEnvironment.MARKET_TRENDS)
+                                                          prod_env=ProductionEnvironment.MARKET_PROFILES)
 
     county_cbsa_lookup = get_county_cbsa_lookup(state_id=stateid)
 

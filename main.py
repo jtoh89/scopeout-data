@@ -2,11 +2,12 @@ from scopeoutdata import createneighborhoodprofiles, createmarketprofiles, creat
 from scopeoutdata import createshortneighborhoodprofiles, createshortzipcodeprofiles
 from scopeoutdata import createzipcodemaps, createtractmaps
 from unemployment import unemploymentdownload, unemploymentupdates
-from enums import GeoLevels, DefaultGeoIds, ProductionEnvironment, GeoIdField, GeoNameField
+from enums import GeoLevels, DefaultGeoIds, ProductionEnvironment, GeoIdField, GeoNameField, Collections_Historical_Profiles, Collections_Profiles
 from census import censusdata, censuslookups
-from realestate import redfin, buildingpermits, initialize, zillow, redfin_zipcodes
+from realestate import redfin, buildingpermits, initialize, zillow, DEPRECATED_redfin_zipcodes
 from geographies import geographies, topmarkets, esrigeographies
 from database import mongoclient
+
 
 ##################################################################
 ###### GEOGRAPHIES
@@ -102,48 +103,49 @@ from database import mongoclient
 ##################################################################
 
 
-redfin.import_historical_redfin_dataV2(geo_level=GeoLevels.CBSA,
-                                     default_geoid=DefaultGeoIds.CBSA.value,
-                                     geoid_field=GeoIdField.CBSA.value,
-                                     geoname_field=GeoNameField.CBSA.value)
+# redfin.import_redfin_historical_data(geo_level=GeoLevels.CBSA,
+#                                      default_geoid=DefaultGeoIds.CBSA.value,
+#                                      geoid_field=GeoIdField.CBSA.value,
+#                                      geoname_field=GeoNameField.CBSA.value,
+#                                      collection_name=Collections_Historical_Profiles.CBSA.value)
 
 
-
-
-
-# redfin.import_historical_redfin_data(geo_level=GeoLevels.USA,
-#                                      default_geoid=DefaultGeoIds.USA.value,
-#                                      geoid_field=GeoIdField.USA.value,
-#                                      geoname_field=GeoNameField.USA.value)
-
-redfin.import_historical_redfin_data(geo_level=GeoLevels.CBSA,
-                                     default_geoid=DefaultGeoIds.CBSA.value,
-                                     geoid_field=GeoIdField.CBSA.value,
-                                     geoname_field=GeoNameField.CBSA.value)
-
-# redfin.import_historical_redfin_data(geo_level=GeoLevels.COUNTY,
+# redfin.import_redfin_historical_data(geo_level=GeoLevels.COUNTY,
 #                                      default_geoid=DefaultGeoIds.COUNTY.value,
 #                                      geoid_field=GeoIdField.COUNTY.value,
-#                                      geoname_field=GeoNameField.COUNTY.value)
+#                                      geoname_field=GeoNameField.COUNTY.value,
+#                                      collection_name=Collections_Historical_Profiles.COUNTY.value)
+#
+#
+# redfin.import_redfin_historical_data(geo_level=GeoLevels.USA,
+#                                      default_geoid=DefaultGeoIds.USA.value,
+#                                      geoid_field=GeoIdField.USA.value,
+#                                      geoname_field=GeoNameField.USA.value,
+#                                      collection_name=Collections_Historical_Profiles.USA.value)
+#
+#
+# redfin.import_redfin_historical_data(geo_level=GeoLevels.ZIPCODE,
+#                                      default_geoid=DefaultGeoIds.ZIPCODE.value,
+#                                      geoid_field=GeoIdField.ZIPCODE.value,
+#                                      geoname_field=GeoNameField.ZIPCODE.value,
+#                                      collection_name=Collections_Historical_Profiles.ZIPCODE.value)
 
 
-# redfin_zipcodes.import_redfin_zipcode_historical_data(geoid_field=GeoIdField.ZIPCODE.value,
-#                                                       prod_env=ProductionEnvironment.MARKET_TRENDS)
-
-
-# zillow.import_zillow_zip_rental_data()
+# zillow.import_zillow_msa_rental_data(geo_level=GeoLevels.USA,
+#                                      default_geoid=DefaultGeoIds.USA.value,
+#                                      geoid_field=GeoIdField.USA.value,
+#                                      geoname_field=GeoNameField.USA.value,
+#                                      collection_name=Collections_Historical_Profiles.USA.value)
 
 
 # zillow.import_zillow_msa_rental_data(geo_level=GeoLevels.CBSA,
 #                                      default_geoid=DefaultGeoIds.CBSA.value,
 #                                      geoid_field=GeoIdField.CBSA.value,
-#                                      geoname_field=GeoNameField.CBSA.value)
+#                                      geoname_field=GeoNameField.CBSA.value,
+#                                      collection_name=Collections_Historical_Profiles.CBSA.value)
 
-# zillow.import_zillow_msa_rental_data(geo_level=GeoLevels.USA,
-#                                      default_geoid=DefaultGeoIds.USA.value,
-#                                      geoid_field=GeoIdField.USA.value,
-#                                      geoname_field=GeoNameField.USA.value)
 
+# zillow.import_zillow_zip_rental_data(collection_name=Collections_Historical_Profiles.ZIPCODE.value)
 
 # buildingpermits.run_cbsa_building_permit(geo_level=GeoLevels.CBSA,
 #                                          geoid_field=GeoIdField.CBSA.value,
@@ -164,18 +166,18 @@ redfin.import_historical_redfin_data(geo_level=GeoLevels.CBSA,
 # unemploymentdownload.market_profile_add_unemployment(GeoLevels.COUNTY, GeoIdField.COUNTY.value)
 
 
-# createmarketprofiles.create_county_market_profiles()
+# createmarketprofiles.create_county_market_profiles(collection_name=Collections_Profiles.COUNTY.value)
 
-# createcbsamarketprofiles.generate_cbsa_market_profiles(prod_env=ProductionEnvironment.MARKET_TRENDS,
+# createcbsamarketprofiles.generate_cbsa_market_profiles(prod_env=ProductionEnvironment.MARKET_PROFILES,
 #                                                        geoid_field=GeoIdField.CBSA.value)
 
 
 # createneighborhoodprofiles.create_neighborhood_profiles()
 # createshortneighborhoodprofiles.create_short_neighborhood_profiles()
-createshortzipcodeprofiles.create_short_zipcode_profiles()
+# createshortzipcodeprofiles.create_short_zipcode_profiles()
 
 
 ############## CREATE PRODUCTION MAP DATA ############
-createtractmaps.generate_tract_maps()
+# createtractmaps.generate_tract_maps()
 # createzipcodemaps.generate_zipcode_maps()
 

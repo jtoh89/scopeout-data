@@ -67,7 +67,7 @@ def import_redfin_zipcode_historical_data(geoid_field, prod_env):
             if zipcode not in zipcode_data_dict.keys():
                 zipcode_data_dict[zipcode] = {
                     'realestatetrends': {
-                        'date': [datetime.datetime(int(year), int(month), int(day))],
+                        'dates': [datetime.datetime(int(year), int(month), int(day))],
                         'median_sale_price': [median_sale_price],
                         'median_sale_price_mom': [median_sale_price_mom],
                         'median_sale_price_yoy': [median_sale_price_yoy],
@@ -81,7 +81,7 @@ def import_redfin_zipcode_historical_data(geoid_field, prod_env):
                 }
             else:
                 existing_zipcode_data = zipcode_data_dict[zipcode]['realestatetrends']
-                existing_zipcode_data['date'].append(datetime.datetime(int(year), int(month), int(day)))
+                existing_zipcode_data['dates'].append(datetime.datetime(int(year), int(month), int(day)))
                 existing_zipcode_data['median_sale_price'].append(median_sale_price)
                 existing_zipcode_data['median_sale_price_mom'].append(median_sale_price_mom)
                 existing_zipcode_data['median_sale_price_yoy'].append(median_sale_price_yoy)
@@ -98,8 +98,10 @@ def import_redfin_zipcode_historical_data(geoid_field, prod_env):
 
     for k, zip_data in zipcode_data_dict.items():
 
-        temp_df = pd.DataFrame.from_dict(zip_data['realestatetrends']).sort_values(by='date')
+        temp_df = pd.DataFrame.from_dict(zip_data['realestatetrends']).sort_values(by='dates')
         temp_df = temp_df.replace({np.nan: None})
+
+        # check if at least 12 months exists
         if len(temp_df) < 12:
             continue
 
@@ -155,7 +157,7 @@ def import_redfin_zipcode_historical_data(geoid_field, prod_env):
 
 
     client = mongoclient.connect_to_client(prod_env=prod_env)
-    dbname = 'MarketTrends'
+    dbname = 'MarketProfiles'
     db = client[dbname]
     collection = db['zipcodehistoricalprofiles']
 
@@ -314,7 +316,7 @@ def import_redfin_zipcode_data(geo_level, geoid_field):
                             })
 
     mongoclient.insert_list_mongo(list_data=insert_list,
-                                  dbname='MarketTrends',
+                                  dbname='MarketProfiles',
                                   collection_name='zipcodemarketprofile',
-                                  prod_env=ProductionEnvironment.MARKET_TRENDS,
+                                  prod_env=ProductionEnvironment.MARKET_PROFILES,
                                   collection_update_existing={})
