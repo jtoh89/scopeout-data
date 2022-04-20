@@ -10,7 +10,6 @@ import geojson
 from census.censusdata import STATES1, STATES2
 
 
-CBSA_LIST = ["31080"]
 
 def esri_auth():
     load_dotenv()
@@ -29,7 +28,6 @@ def esri_auth():
     response = response.json()
 
     return response['access_token']
-
 
 
 def dump_tract_by_county(batch_size=100):
@@ -80,7 +78,7 @@ def dump_tract_by_county(batch_size=100):
 
         count += 1
 
-def dump_tract_geojson_for_scopeout_markets():
+def DEPRECATED_dump_tract_geojson_for_scopeout_markets():
     """
     Iterates through list of CBSA Ids. Queries Esri Standard Geography for polygon rings and stores into mongo
     :return:

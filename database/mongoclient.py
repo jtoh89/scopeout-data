@@ -124,6 +124,7 @@ def query_geography(geo_level, stateid=None):
 
     data = list(collection.find(collection_filter))
     df = DataFrame(data)
+
     df = df.drop(columns=['_id'])
 
 

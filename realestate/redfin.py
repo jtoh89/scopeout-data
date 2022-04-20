@@ -74,7 +74,9 @@ def import_redfin_historical_data(geo_level, default_geoid, geoid_field, geoname
                 if geoid in REDFIN_COUNTYID_TO_FIPS.keys():
                     geoid = REDFIN_COUNTYID_TO_FIPS[geoid]
             elif geo_level == GeoLevels.ZIPCODE:
+                geoid = row_dict['region'].replace('Zip Code: ','')
                 geoid = geoid.zfill(5)
+
 
             if geoid not in geo_list and geo_level != GeoLevels.ZIPCODE:
                 continue
@@ -272,10 +274,12 @@ def update_existing_historical_profile(insert_list, geoid_field, collection_name
                 })
             continue
 
-
-
         existing_profile = existing_profile.iloc[0].to_dict()
         existing_profile['realestatetrends'] = updated_profile['realestatetrends']
+
+        if 'rentaltrends' in existing_profile.keys() and existing_profile['rentaltrends'] != existing_profile['rentaltrends']:
+            del existing_profile['rentaltrends']
+
         new_insert_list.append(existing_profile)
 
     return new_insert_list
