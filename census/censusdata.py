@@ -113,7 +113,7 @@ def run_census_data_import(geo_level, prod_env, force_run=False):
     '''
     lookups = censuslookups.get_census_lookup()
     all_categories = lookups['Category'].drop_duplicates()
-    STATES_RUN = [STATES]
+    STATES_RUN = STATES
     if force_run:
         STATES_RUN = [force_run['stateid']]
         mongoclient.delete_finished_run({
@@ -129,77 +129,72 @@ def run_census_data_import(geo_level, prod_env, force_run=False):
     }
     finished_runs = mongoclient.get_finished_runs(collection_find_finished_runs)
 
-    for i, state_array in enumerate(STATES_RUN):
-        states_to_run = STATES
+
+    for i, stateid in enumerate(STATES_RUN):
+        #usa and cbsa data does not need more than 1 iteration
+        if geo_level in [GeoLevels.USA, GeoLevels.CBSA] and i > 0:
+            break
+
+        if geo_level == GeoLevels.USA:
+            stateid = DefaultGeoIds.USA.value
+
+        if geo_level == GeoLevels.CBSA:
+            stateid = DefaultGeoIds.CBSA.value
+
+
         if geo_level == GeoLevels.TRACT:
-            if i == 0:
-                states_to_run = STATES1
-            else:
-                states_to_run = STATES2
+            if stateid in STATES2:
                 prod_env = ProductionEnvironment.CENSUS_DATA2
 
-        for i, stateid in enumerate(states_to_run):
-            #usa and cbsa data does not need more than 1 iteration
-            if geo_level in [GeoLevels.USA, GeoLevels.CBSA] and i > 0:
-                break
+        geographies_df = mongoclient.query_geography(geo_level=geo_level, stateid=stateid)
 
+        print('Starting import for stateid: {}. geolevel: {}'.format(stateid, geo_level.value))
 
-            if geo_level == GeoLevels.USA:
-                stateid = DefaultGeoIds.USA.value
+        finished_cats = []
+        if len(finished_runs) > 0:
+            finished_cats = finished_runs[finished_runs['state_id'] == stateid]['category'].values
 
-            if geo_level == GeoLevels.CBSA:
-                stateid = DefaultGeoIds.CBSA.value
+        for i2, category in all_categories.items():
+            if category in finished_cats:
+                print("Skipping category: " + category + ". State: ", stateid)
+                continue
 
-            geographies_df = mongoclient.query_geography(geo_level=geo_level, stateid=stateid)
+            if geo_level != GeoLevels.CBSA and category == 'Total Households':
+                continue
+            # Filter look ups for current category
+            variables_df = lookups[lookups['Category'] == category]
+            # variables_df = lookups[lookups['Category'] == 'Housing Unit Growth']
 
-            print('Starting import for stateid: {}. geolevel: {}'.format(stateid, geo_level.value))
+            print("Starting import for category: " + category + ". State: ", stateid)
+            success = get_and_store_census_data(geo_level=geo_level,
+                                                state_id=stateid,
+                                                variables_df=variables_df,
+                                                geographies_df=geographies_df,
+                                                prod_env=prod_env)
 
-            finished_cats = []
-            if len(finished_runs) > 0:
-                finished_cats = finished_runs[finished_runs['state_id'] == stateid]['category'].values
+            if not success:
+                print("*** END RUN - get_and_store_census_data Failed ***")
+                sys.exit()
 
-            for i2, category in all_categories.items():
-                if category in finished_cats:
-                    print("Skipping category: " + category + ". State: ", stateid)
-                    continue
+            if prod_env == ProductionEnvironment.CENSUS_DATA1:
+                tablename = "censusdata1"
+                dbname = 'CensusData1'
+            elif prod_env == ProductionEnvironment.CENSUS_DATA2:
+                tablename = "censusdata2"
+                dbname = 'CensusData2'
+            else:
+                print("!!! FATAL - Census data stored in censusdata1 or censusdata2 only !!!")
+                sys.exit()
 
-                if geo_level != GeoLevels.CBSA and category == 'Total Households':
-                    continue
-                # Filter look ups for current category
-                variables_df = lookups[lookups['Category'] == category]
-                # variables_df = lookups[lookups['Category'] == 'Housing Unit Growth']
-
-                print("Starting import for category: " + category + ". State: ", stateid)
-                success = get_and_store_census_data(geo_level=geo_level,
-                                                    state_id=stateid,
-                                                    variables_df=variables_df,
-                                                    geographies_df=geographies_df,
-                                                    prod_env=prod_env)
-
-                if not success:
-                    print("*** END RUN - get_and_store_census_data Failed ***")
-                    sys.exit()
-
-
-                if prod_env == ProductionEnvironment.CENSUS_DATA1:
-                    tablename = "censusdata1"
-                    dbname = 'CensusData1'
-                elif prod_env == ProductionEnvironment.CENSUS_DATA2:
-                    tablename = "censusdata2"
-                    dbname = 'CensusData2'
-                else:
-                    print("!!! FATAL - Census data stored in censusdata1 or censusdata2 only !!!")
-                    sys.exit()
-
-                collection_add_finished_run = {
-                    'scopeout_year': SCOPEOUT_YEAR,
-                    'state_id': stateid,
-                    'geo_level': geo_level.value,
-                    'dbname': dbname,
-                    'tablename': tablename,
-                    'category': category,
-                }
-                mongoclient.add_finished_run(collection_add_finished_run)
+            collection_add_finished_run = {
+                'scopeout_year': SCOPEOUT_YEAR,
+                'state_id': stateid,
+                'geo_level': geo_level.value,
+                'dbname': dbname,
+                'tablename': tablename,
+                'category': category,
+            }
+            mongoclient.add_finished_run(collection_add_finished_run)
 
 
 def get_and_store_census_data(geo_level, state_id, variables_df, geographies_df, prod_env):

@@ -144,7 +144,6 @@ def import_zillow_zip_rental_data(collection_name):
                     'median_rent': [median_rent]
                 }
 
-
     print('zipcode_rental_dict length: {}'.format(len(zipcode_rental_dict)))
 
     existing_zip_historical_profiles = mongoclient.query_collection(database_name="MarketProfiles",

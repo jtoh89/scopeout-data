@@ -65,12 +65,12 @@ class ModelsChartTypes(Enum):
 
 
 class Collections_Historical_Profiles(Enum):
-    USA = 'ushistoricalprofile'
-    CBSA = 'cbsahistoricalprofile'
-    STATE = 'statehistoricalprofile'
-    COUNTY = 'countyhistoricalprofile'
-    TRACT = 'tracthistoricalprofile'
-    ZIPCODE = 'zipcodehistoricalprofile'
+    USA = 'ushistoricalprofiles'
+    CBSA = 'cbsahistoricalprofiles'
+    STATE = 'statehistoricalprofiles'
+    COUNTY = 'countyhistoricalprofiles'
+    TRACT = 'tracthistoricalprofiles'
+    ZIPCODE = 'zipcodehistoricalprofiles'
 
 
 
