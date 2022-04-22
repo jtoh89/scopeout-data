@@ -6,11 +6,6 @@ from utils.utils import list_length_okay, create_url_slug, calculate_percentiles
 import numpy as np
 
 def create_short_zipcode_profiles():
-    # zip_code_data = mongoclient.query_collection(database_name="MarketProfiles",
-    #                                              collection_name="zipcodehistoricalprofile",
-    #                                              collection_filter={},
-    #                                              prod_env=ProductionEnvironment.MARKET_PROFILES)
-
     zipcodes_by_scopeout_markets = mongoclient.query_collection(database_name="ScopeOut",
                                                     collection_name="EsriZipcodesBySOMarkets",
                                                     collection_filter={},
@@ -28,9 +23,10 @@ def create_short_zipcode_profiles():
             print("!!! WHY IS CBSA MARKET MISSING FOR SO MARKET? !!!")
             sys.exit()
 
-        cbsa_market = cbsa_market.iloc[0]
+        cbsa_market = cbsa_market.iloc[0].to_dict()
+        cbsaname = cbsa_market['cbsaname']
 
-        latest_month_cbsa = cbsa_market.mediansaleprice['labels'][-1]
+        latest_month_cbsa = cbsa_market['mediansaleprice']['labels'][-1]
 
         zip_historical = mongoclient.query_collection(database_name="MarketProfiles",
                                                       collection_name="zipcodehistoricalprofiles",
@@ -41,30 +37,53 @@ def create_short_zipcode_profiles():
             zip_short_profile = shortzipcodeprofile.ShortZipcodeProfile()
 
             if zipcode in list(zip_historical['zipcode']):
-                zipcode_historical = zip_historical[zip_historical['zipcode'] == zipcode]
+                zipcode_historical_profile = zip_historical[zip_historical['zipcode'] == zipcode]
 
-                if len(zipcode_historical) == 0:
-                    print()
+                if len(zipcode_historical_profile) == 0:
+                    print("!!! ERROR - why is there no zipcode historical found?")
+                    sys.exit()
                 else:
-                    zipcode_historical = zipcode_historical.iloc[0]
+                    zipcode_historical_profile = zipcode_historical_profile.iloc[0].to_dict()
 
-                    if 'realestatetrends' in zipcode_historical.keys():
-                        if latest_month_cbsa != zipcode_historical.realestatetrends['date'][-1]:
-                            print("!!! LATEST MONTH DOES NOT ALIGN. Cbsa: {} !!!".format(cbsacode))
-                            sys.exit()
+                    if len(zipcode_historical_profile['realestatetrends']) > 0:
+                        zip_latest_month = zipcode_historical_profile['realestatetrends']['dates'][-1]
+
+                        finish_latest_month_match = True
+                        index = 0
+
+                        while finish_latest_month_match:
+                            index -= 1
+                            if cbsa_market['mediansaleprice']['labels'][index] == zip_latest_month:
+                                finish_latest_month_match = False
+
+                        zip_short_profile.mediansaleprice.labels = [zipcode, cbsaname]
+                        zip_short_profile.mediansaleprice.data = [cbsa_market['mediansaleprice']['data'][index], zipcode_historical_profile['realestatetrends']['mediansaleprice'][-1]]
+                        zip_short_profile.mediansaleprice.colors = ['#00d6b4', '#4F6D7A']
 
 
-                        last_12_months = zipcode_historical.realestatetrends['date'][-12:]
+                        zip_short_profile.mediansalepricemom.labels = [zipcode, cbsaname]
+                        zip_short_profile.mediansalepricemom.data = [cbsa_market['mediansalepricemom']['data'][index], zipcode_historical_profile['realestatetrends']['mediansalepricemom'][-1]]
+                        zip_short_profile.mediansalepricemom.colors = ['#00d6b4', '#4F6D7A']
+
+                        zip_short_profile.dom.labels = [zipcode, cbsaname]
+                        zip_short_profile.dom.data = [cbsa_market['mediansaleprice']['data'][index], zipcode_historical_profile['realestatetrends']['mediansaleprice'][-1]]
+                        zip_short_profile.dom.colors = ['#00d6b4', '#4F6D7A']
+
+
+                        last_12_months = zipcode_historical_profile.realestatetrends['date'][-12:]
 
                         zip_short_profile.mediansaleprice.labels = last_12_months
                         zip_short_profile.mediansaleprice.data1Name = zipcode
-                        zip_short_profile.mediansaleprice.data1 = zipcode_historical.realestatetrends['median_sale_price'][-12:]
+                        zip_short_profile.mediansaleprice.data1 = zipcode_historical_profile['realestatetrends']['median_sale_price'][-12:]
                         zip_short_profile.mediansaleprice.data2Name = zipcode
-                        zip_short_profile.mediansaleprice.data2 = cbsa_market.realestatetrends['median_sale_price'][-12:]
+                        zip_short_profile.mediansaleprice.data2 = cbsa_market['realestatetrends']['median_sale_price'][-12:]
 
                         zip_short_profile.mediansalepriceMom.labels = last_12_months
                         zip_short_profile.mediansalepriceMom.data1Name = zipcode
-                        zip_short_profile.mediansalepriceMom.data1 = zipcode_historical.realestatetrends['median_sale_price'][-12:]
+                        zip_short_profile.mediansalepriceMom.data1 = zipcode_historical_profile['realestatetrends']['median_sale_price'][-12:]
+
+                    if zipcode_historical_profile['rentaltrends'] == zipcode_historical_profile['rentaltrends']:
+                        print("")
 
                 print("")
             else:

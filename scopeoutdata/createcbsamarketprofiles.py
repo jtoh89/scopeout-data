@@ -48,6 +48,9 @@ def generate_cbsa_market_profiles(prod_env, geoid_field):
             cbsa_market_profile.mediansaleprice.labels = cbsa_profile['realestatetrends']['dates']
             cbsa_market_profile.mediansaleprice.data = cbsa_profile['realestatetrends']['mediansaleprice']
 
+            cbsa_market_profile.mediansalepricemom.labels = cbsa_profile['realestatetrends']['dates']
+            cbsa_market_profile.mediansalepricemom.data = cbsa_profile['realestatetrends']['mediansalepricemom']
+
             cbsa_market_profile.medianppsf.data = cbsa_profile['realestatetrends']['medianppsf']
             cbsa_market_profile.medianppsf.labels = cbsa_profile['realestatetrends']['dates']
 

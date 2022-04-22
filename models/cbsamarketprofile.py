@@ -7,6 +7,7 @@ class CbsaMarketProfile:
         self.cbsaname = ""
         self.urlslug = ""
         self.mediansaleprice = OneLineChart(title="Median Sale Price", datatype=ModelsDataTypes.DOLLAR.value)
+        self.mediansalepricemom = OneLineChart(title="Median Sale Price MoM Change", datatype=ModelsDataTypes.PERCENT.value)
         self.medianppsf = OneLineChart(title="Median Price Per SqFt", datatype=ModelsDataTypes.DOLLAR.value)
         self.monthsofsupply = OneLineChart(title="Months Of Supply", datatype=ModelsDataTypes.FLOAT.value)
         self.mediandom = OneLineChart(title="Median Days On Market", datatype=ModelsDataTypes.INTEGER.value)
@@ -20,6 +21,7 @@ class CbsaMarketProfile:
 
     def convert_to_dict(self):
         self.mediansaleprice = json.loads(json.dumps(self.mediansaleprice, default=lambda o: o.__dict__))
+        self.mediansalepricemom = json.loads(json.dumps(self.mediansalepricemom, default=lambda o: o.__dict__))
         self.medianppsf = json.loads(json.dumps(self.medianppsf, default=lambda o: o.__dict__))
         self.monthsofsupply = json.loads(json.dumps(self.monthsofsupply, default=lambda o: o.__dict__))
         self.mediandom = json.loads(json.dumps(self.mediandom, default=lambda o: o.__dict__))
