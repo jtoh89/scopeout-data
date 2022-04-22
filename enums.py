@@ -81,3 +81,12 @@ class Collections_Profiles(Enum):
     COUNTY = 'countymarketprofiles'
     TRACT = 'tractmarketprofiles'
     ZIPCODE = 'zipcodemarketprofiles'
+
+
+class Collections_Profiles(Enum):
+    USA = 'usmarketprofiles'
+    CBSA = 'cbsamarketprofiles'
+    STATE = 'statemarketprofiles'
+    COUNTY = 'countymarketprofiles'
+    TRACT = 'tractmarketprofiles'
+    ZIPCODE = 'zipcodemarketprofiles'

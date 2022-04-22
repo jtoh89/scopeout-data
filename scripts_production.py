@@ -18,15 +18,15 @@ from enums import GeoLevels, DefaultGeoIds, ProductionEnvironment, GeoIdField, G
 
 # createmarketprofiles.create_county_market_profiles(collection_name=Collections_Profiles.COUNTY.value)
 
-createcbsamarketprofiles.generate_cbsa_market_profiles(prod_env=ProductionEnvironment.MARKET_PROFILES,
-                                                       geoid_field=GeoIdField.CBSA.value)
+# createcbsamarketprofiles.generate_cbsa_market_profiles(prod_env=ProductionEnvironment.MARKET_PROFILES,
+#                                                        geoid_field=GeoIdField.CBSA.value)
 
 
 # createneighborhoodprofiles.create_neighborhood_profiles()
 # createshortneighborhoodprofiles.create_short_neighborhood_profiles()
-createshortzipcodeprofiles.create_short_zipcode_profiles()
+# createshortzipcodeprofiles.create_short_zipcode_profiles()
 
 
 ############# CREATE PRODUCTION MAP DATA ############
 # createtractmaps.generate_tract_maps()
-# createzipcodemaps.generate_zipcode_maps()
+createzipcodemaps.generate_zipcode_maps()
