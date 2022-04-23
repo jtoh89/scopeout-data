@@ -1,7 +1,7 @@
 import sys
 from database import mongoclient
 from enums import ProductionEnvironment, GeoLevels, GeoIdField, GeoNameField, Collections_Historical_Profiles, Collections_Profiles
-from utils.utils import get_county_cbsa_lookup, check_dataframe_has_one_record, set_na_to_false_from_dict, create_url_slug
+from utils.utils import get_county_cbsa_lookup, check_dataframe_has_one_record, set_na_to_false_from_dict, create_url_slug, list_float_to_percent
 from math import nan
 import pandas as pd
 from realestate.redfin import REDFIN_PROPERTY_TYPES, REDFIN_DATA_CATEGORIES
@@ -49,7 +49,7 @@ def generate_cbsa_market_profiles(prod_env, geoid_field):
             cbsa_market_profile.mediansaleprice.data = cbsa_profile['realestatetrends']['mediansaleprice']
 
             cbsa_market_profile.mediansalepricemom.labels = cbsa_profile['realestatetrends']['dates']
-            cbsa_market_profile.mediansalepricemom.data = cbsa_profile['realestatetrends']['mediansalepricemom']
+            cbsa_market_profile.mediansalepricemom.data = list_float_to_percent(cbsa_profile['realestatetrends']['mediansalepricemom'])
 
             cbsa_market_profile.medianppsf.data = cbsa_profile['realestatetrends']['medianppsf']
             cbsa_market_profile.medianppsf.labels = cbsa_profile['realestatetrends']['dates']
@@ -60,7 +60,7 @@ def generate_cbsa_market_profiles(prod_env, geoid_field):
             cbsa_market_profile.mediandom.data = cbsa_profile['realestatetrends']['mediandom']
             cbsa_market_profile.mediandom.labels = cbsa_profile['realestatetrends']['dates']
 
-            cbsa_market_profile.pricedrops.data = cbsa_profile['realestatetrends']['pricedrops']
+            cbsa_market_profile.pricedrops.data = list_float_to_percent(cbsa_profile['realestatetrends']['pricedrops'])
             cbsa_market_profile.pricedrops.labels = cbsa_profile['realestatetrends']['dates']
 
         if cbsa_profile['rentaltrends']:

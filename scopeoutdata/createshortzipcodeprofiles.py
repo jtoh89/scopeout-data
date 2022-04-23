@@ -65,16 +65,21 @@ def create_short_zipcode_profiles():
                                 found_latest_month_match = False
 
                         zip_short_profile.mediansaleprice.labels = [zipcode, cbsaname]
-                        zip_short_profile.mediansaleprice.data = [cbsa_market['mediansaleprice']['data'][index], zipcode_historical_profile['realestatetrends']['mediansaleprice'][-1]]
+                        zip_short_profile.mediansaleprice.data = [zipcode_historical_profile['realestatetrends']['mediansaleprice'][-1], cbsa_market['mediansaleprice']['data'][index]]
                         zip_short_profile.mediansaleprice.colors = ['#00d6b4', '#4F6D7A']
 
 
                         zip_short_profile.mediansalepricemom.labels = [zipcode, cbsaname]
-                        zip_short_profile.mediansalepricemom.data = [cbsa_market['mediansalepricemom']['data'][index], zipcode_historical_profile['realestatetrends']['mediansalepricemom'][-1]]
+                        zip_mediansaleprice_mom = zipcode_historical_profile['realestatetrends']['mediansalepricemom'][-1]
+
+                        if zip_mediansaleprice_mom != None:
+                            zip_mediansaleprice_mom = zip_mediansaleprice_mom * 100
+
+                        zip_short_profile.mediansalepricemom.data = [zip_mediansaleprice_mom, cbsa_market['mediansalepricemom']['data'][index]]
                         zip_short_profile.mediansalepricemom.colors = ['#00d6b4', '#4F6D7A']
 
                         zip_short_profile.dom.labels = [zipcode, cbsaname]
-                        zip_short_profile.dom.data = [cbsa_market['mediandom']['data'][index], zipcode_historical_profile['realestatetrends']['mediandom'][-1]]
+                        zip_short_profile.dom.data = [zipcode_historical_profile['realestatetrends']['mediandom'][-1], cbsa_market['mediandom']['data'][index]]
                         zip_short_profile.dom.colors = ['#00d6b4', '#4F6D7A']
 
                         zip_short_profile.redfinupdatedate = zip_latest_month

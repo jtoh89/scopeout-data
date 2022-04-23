@@ -5,6 +5,16 @@ import numpy as np
 import math
 import pandas as pd
 
+def list_float_to_percent(float_list):
+    return_list = []
+    for value in float_list:
+        if value == None:
+            return_list.append(None)
+        else:
+            return_list.append(round(value*100, 1))
+    return return_list
+
+
 def number_to_string(data_type, value):
     if value != value or value is None:
         return None

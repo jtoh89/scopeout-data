@@ -230,23 +230,40 @@ def dump_county_by_cbsa():
                                  collection_filter={},
                                  prod_env=ProductionEnvironment.GEO_ONLY)
 
+    scopeout_markets = mongoclient.query_collection(database_name="ScopeOut",
+                                             collection_name="ScopeOutMarkets",
+                                             collection_filter={},
+                                             prod_env=ProductionEnvironment.GEO_ONLY)
+    scopeout_markets = list(scopeout_markets['cbsacode'])
+
     counties_to_cbsa = []
     for i, cbsa in cbsa_data.iterrows():
         cbsaid = cbsa['cbsacode']
         cbsaname = cbsa['cbsaname']
+
+        in_scopeout_market = False
+        urlslug = 'default'
+        if cbsaid in scopeout_markets:
+            in_scopeout_market = True
+            urlslug = create_url_slug(cbsaid, cbsaname)
+
+
         for county in cbsa['counties']:
             stateid = county['stateinfo']['fipsstatecode']
             counties_to_cbsa.append({
                 'countyfullcode': county['countyfullcode'],
                 'cbsacode': cbsaid,
                 'cbsaname': cbsaname,
-                'stateid': stateid
+                'stateid': stateid,
+                'inscopeoutmarket': in_scopeout_market,
+                'urlslug': urlslug,
             })
 
     mongoclient.insert_list_mongo(list_data=counties_to_cbsa,
                       dbname='Geographies',
                       collection_name='CountyByCbsa',
-                      prod_env=ProductionEnvironment.GEO_ONLY)
+                      prod_env=ProductionEnvironment.GEO_ONLY,
+                      collection_update_existing={})
 
 def dump_zillow_cbsa_mapping():
     '''
