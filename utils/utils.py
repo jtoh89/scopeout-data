@@ -5,6 +5,12 @@ import numpy as np
 import math
 import pandas as pd
 
+def zero_to_null(value):
+    if value == 0:
+        return None
+    else:
+        return value
+
 def list_float_to_percent(float_list):
     return_list = []
     for value in float_list:

@@ -16,7 +16,7 @@ from geographies import geographies, scopeoutmarkets, esrigeographies
 # esrigeographies.dump_tract_by_county()
 
 # dump county by cbsa lookup
-geographies.dump_county_by_cbsa()
+# geographies.dump_county_by_cbsa()
 
 # dump zillow to cbsa lookup
 # geographies.dump_zillow_cbsa_mapping()

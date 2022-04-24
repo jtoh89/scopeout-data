@@ -3,7 +3,7 @@ from models.shortneighborhoorprofile import shortneighborhoodprofile
 from database import mongoclient
 from enums import GeoLevels
 from enums import ProductionEnvironment
-from utils.utils import calculate_percent_change, get_county_cbsa_lookup
+from utils.utils import calculate_percent_change, get_county_cbsa_lookup, zero_to_null
 from census.censusdata import STATES1, STATES2
 from globals import CENSUS_YEARS
 from scopeoutdata import helpers
@@ -56,6 +56,9 @@ def create_short_neighborhood_profiles():
 
                 for i, tract_profile in census_tract_data.iterrows():
                     neighborhood_profile = shortneighborhoodprofile.ShortNeighborhoodProfile()
+
+                    if tract_profile.geoid == "20209044500":
+                        print("")
 
                     # Set geoid and neighborhood shapes
                     neighborhood_profile.geoid = tract_profile.geoid
@@ -234,43 +237,13 @@ def set_economy_section(tract_profile, neighborhood_profile, cbsa_profile, count
         '150,000 or more':'$150,000 or more'
     }
 
-    # new_labels = [household_income_range_relabel.get(item,item) for item in pre_labels]
-    # neighborhood_profile.economy.householdincomerange.labels = new_labels
-    # neighborhood_profile.economy.householdincomerange.data1 = list(tract_profile.zipcodedata['Household Income Range']['All'].values())
-    # neighborhood_profile.economy.householdincomerange.data2 = list(tract_profile.zipcodedata['Household Income Range']['Owners'].values())
-    # neighborhood_profile.economy.householdincomerange.data3 = list(tract_profile.zipcodedata['Household Income Range']['Renters'].values())
-
-    # neighborhood_profile.economy.leadingemploymentindustries.zipcodedata = calculate_top_5(tract_profile.zipcodedata['Employment Industries'])
-
-    # neighborhood_profile.economy.employmentindustries.labels = list(tract_profile.zipcodedata['Employment Industries'].keys())
-    # neighborhood_profile.economy.employmentindustries.zipcodedata = list(tract_profile.zipcodedata['Employment Industries'].values())
-    # neighborhood_profile.economy.employmentindustries.colors = COLORS[:len(tract_profile.zipcodedata['Employment Industries'].values())]
-
-    # neighborhood_profile.economy.vehiclesowned.labels = list(tract_profile.zipcodedata['Vehicles Owned']['All'].keys())
-    # neighborhood_profile.economy.vehiclesowned.data1 = list(tract_profile.zipcodedata['Vehicles Owned']['All'].values())
-    # neighborhood_profile.economy.vehiclesowned.data2 = list(tract_profile.zipcodedata['Vehicles Owned']['Owners'].values())
-    # neighborhood_profile.economy.vehiclesowned.data3 = list(tract_profile.zipcodedata['Vehicles Owned']['Renters'].values())
-    # neighborhood_profile.economy.vehiclesowned.colors = COLORS[:len(tract_profile.zipcodedata['Vehicles Owned']['All'].values())]
-
-    #
-    # neighborhood_profile.economy.commutetowork.labels = list(tract_profile.zipcodedata['Commute to Work'].keys())
-    # neighborhood_profile.economy.commutetowork.zipcodedata = list(tract_profile.zipcodedata['Commute to Work'].values())
-    # neighborhood_profile.economy.commutetowork.colors = COLORS[:len(tract_profile.zipcodedata['Commute to Work'].values())]
-
-    # neighborhood_profile.economy.meansoftransportation.labels = list(tract_profile.zipcodedata['Means of Transportation'].keys())
-    # neighborhood_profile.economy.meansoftransportation.zipcodedata = list(tract_profile.zipcodedata['Means of Transportation'].values())
-    # neighborhood_profile.economy.meansoftransportation.colors = COLORS[:len(tract_profile.zipcodedata['Means of Transportation'].values())]
-
-    # top_industry_growth = calculate_top_industry_growth(tract_profile.zipcodedata['Employment Industry Growth'])
-    # neighborhood_profile.economy.leadingemploymentindustries.zipcodedata = top_industry_growth
-
     county_name = county_profile.geoinfo['countyname']
 
     if cbsa_profile is not None:
         cbsa_name = cbsa_profile.geoinfo['cbsaname']
-        cbsa_medianhouseholdincome_all = cbsa_profile.data['Median Household Income']['All'][-1]
-        cbsa_medianhouseholdincome_owner = cbsa_profile.data['Median Household Income']['Owners'][-1]
-        cbsa_medianhouseholdincome_renter = cbsa_profile.data['Median Household Income']['Renters'][-1]
+        cbsa_medianhouseholdincome_all = zero_to_null(cbsa_profile.data['Median Household Income']['All'][-1])
+        cbsa_medianhouseholdincome_owner = zero_to_null(cbsa_profile.data['Median Household Income']['Owners'][-1])
+        cbsa_medianhouseholdincome_renter = zero_to_null(cbsa_profile.data['Median Household Income']['Renters'][-1])
         cbsa_unemployment = cbsa_profile.data['Unemployment Rate']['Unemployment Rate']
     else:
         cbsa_name = "N/A"
@@ -282,24 +255,24 @@ def set_economy_section(tract_profile, neighborhood_profile, cbsa_profile, count
     neighborhood_profile.economy.medianhouseholdincome.data1.append(tract_profile.data['Median Household Income']['All'][-1])
 
     neighborhood_profile.economy.medianhouseholdincome.data1 = [
-        tract_profile.data['Median Household Income']['All'][-1],
-        county_profile.data['Median Household Income']['All'][-1],
+        zero_to_null(tract_profile.data['Median Household Income']['All'][-1]),
+        zero_to_null(county_profile.data['Median Household Income']['All'][-1]),
         cbsa_medianhouseholdincome_all,
-        usa_profile.data['Median Household Income']['All'][-1]
+        zero_to_null(usa_profile.data['Median Household Income']['All'][-1])
     ]
 
     neighborhood_profile.economy.medianhouseholdincome.data2 = [
-        tract_profile.data['Median Household Income']['Owners'][-1],
-        county_profile.data['Median Household Income']['Owners'][-1],
+        zero_to_null(tract_profile.data['Median Household Income']['Owners'][-1]),
+        zero_to_null(county_profile.data['Median Household Income']['Owners'][-1]),
         cbsa_medianhouseholdincome_owner,
-        usa_profile.data['Median Household Income']['Owners'][-1]
+        zero_to_null(usa_profile.data['Median Household Income']['Owners'][-1])
     ]
 
     neighborhood_profile.economy.medianhouseholdincome.data3 = [
-        tract_profile.data['Median Household Income']['Renters'][-1],
-        county_profile.data['Median Household Income']['Renters'][-1],
+        zero_to_null(tract_profile.data['Median Household Income']['Renters'][-1]),
+        zero_to_null(county_profile.data['Median Household Income']['Renters'][-1]),
         cbsa_medianhouseholdincome_renter,
-        usa_profile.data['Median Household Income']['Renters'][-1]
+        zero_to_null(usa_profile.data['Median Household Income']['Renters'][-1])
     ]
 
     neighborhood_profile.economy.medianhouseholdincome.labels = [TRACT_LABEL_NAME, county_name, cbsa_name, US_Name]
