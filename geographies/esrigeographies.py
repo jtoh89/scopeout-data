@@ -228,6 +228,51 @@ def esri_standard_geography_api(geoid, auth_token, main_geo_layer, return_geo_le
 
     return geo_features
 
+def esri_get_centroids(geoid, geo_level):
+    auth_token = esri_auth()
+    if geo_level == GeoLevels.CBSA:
+        maingeolayer = "US.CBSA"
+    elif geo_level == GeoLevels.ZIPCODE:
+        maingeolayer = "US.ZIP5"
+    elif geo_level == GeoLevels.COUNTY:
+        maingeolayer = "US.Counties"
+    elif geo_level == GeoLevels.TRACT:
+        maingeolayer = "US.Tracts"
+    else:
+        print("!!! ERROR - main_geo_layer not defined")
+        sys.exit()
+
+
+    url = "https://geoenrich.arcgis.com/arcgis/rest/services/World/geoenrichmentserver/StandardGeographyQuery/execute"
+
+    params = {
+        "sourceCountry": "US",
+        "geographylayers": [maingeolayer],
+        "geographyids": [geoid],
+        "returnGeometry": True,
+        "returnCentroids": True,
+        "generalizationLevel": 6,
+        "f": "pjson",
+        "token": auth_token,
+    }
+
+    response = r.get(url=url, params=params)
+    response = response.json()
+
+    geo_features = response['results'][0]['value']['features']
+
+    if not list_length_okay(geo_features, 4999):
+        print("!!! Error: 5000 esri query limit hit!!!")
+        sys.exit()
+
+    if len(geo_features) < 1:
+        return {'lon_x': -98.5795,
+                'lat_y': 39.82818}
+
+    return {'lon_x': geo_features[0]['geometry']['x'],
+            'lat_y': geo_features[0]['geometry']['y']}
+
+
 def create_polygon_lat_lng_values(polygon_x_y):
     polygon_lat_lng = []
 

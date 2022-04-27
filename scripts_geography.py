@@ -1,4 +1,4 @@
-from geographies import geographies, scopeoutmarkets, esrigeographies
+from geographies import geography, scopeoutmarkets, esrigeographies
 
 
 
@@ -7,7 +7,7 @@ from geographies import geographies, scopeoutmarkets, esrigeographies
 ##################################################################
 
 # dump state, county, cbsa geographies
-# geographies.dump_all_geographies()
+geography.dump_all_geographies()
 
 # dump scopeout markets
 # scopeoutmarkets.store_scopeout_markets()
@@ -16,13 +16,13 @@ from geographies import geographies, scopeoutmarkets, esrigeographies
 # esrigeographies.dump_tract_by_county()
 
 # dump county by cbsa lookup
-# geographies.dump_county_by_cbsa()
+# geography.dump_county_by_cbsa()
 
 # dump zillow to cbsa lookup
-# geographies.dump_zillow_cbsa_mapping()
+# geography.dump_zillow_cbsa_mapping()
 
 # dump zipcodes by scopeout markets
-# geographies.dump_zipcode_geojson_by_scopeout_markets()
+# geography.dump_zipcode_geojson_by_scopeout_markets()
 
 ##################################################################
 ##################################################################

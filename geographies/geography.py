@@ -2,13 +2,14 @@ import os
 import sys
 from database import mongoclient
 import pandas as pd
-from enums import ProductionEnvironment
+from enums import ProductionEnvironment, GeoLevels
 from database import mongoclient
 import json
 import geojson
 from models.geojson import GeoJson, GeoJsonFeature, GeoJsonGeometry
-from shapely.geometry import Polygon, mapping
+from geographies import esrigeographies
 from utils.utils import create_url_slug
+
 
 def dump_zipcode_geojson_by_scopeout_markets():
     currpath = os.path.dirname(os.path.abspath(__file__))
@@ -171,6 +172,7 @@ def dump_all_geographies():
             if stateid == '72':
                 continue
 
+
             fipscountycode = str(int(row['fipscountycode'])).zfill(3)
             countyfullcode = stateid + fipscountycode
 
@@ -183,10 +185,14 @@ def dump_all_geographies():
             if cbsacode in cbsa_dict.keys():
                 cbsa_dict[cbsacode]['counties'].append(county_data)
             else:
+                coords = esrigeographies.esri_get_centroids(geoid=cbsacode, geo_level=GeoLevels.CBSA)
+
                 cbsa_dict[cbsacode] = {
                     'cbsacode': cbsacode,
                     'cbsaname': row['cbsatitle'].replace('--','-'),
-                    'counties': [county_data]
+                    'counties': [county_data],
+                    'lon_x': coords['lon_x'],
+                    'lat_y': coords['lat_y']
                 }
 
     state_list = []
@@ -199,7 +205,8 @@ def dump_all_geographies():
     mongoclient.insert_list_mongo(list_data=state_list,
                                   dbname='Geographies',
                                   collection_name='State',
-                                  prod_env=ProductionEnvironment.GEO_ONLY)
+                                  prod_env=ProductionEnvironment.GEO_ONLY,
+                                  collection_update_existing={})
 
     for _, v in county_dict.items():
         county_list.append(v)
@@ -207,7 +214,8 @@ def dump_all_geographies():
     mongoclient.insert_list_mongo(list_data=county_list,
                                   dbname='Geographies',
                                   collection_name='County',
-                                  prod_env=ProductionEnvironment.GEO_ONLY)
+                                  prod_env=ProductionEnvironment.GEO_ONLY,
+                                  collection_update_existing={})
 
     for _, v in cbsa_dict.items():
         cbsa_list.append(v)
@@ -215,7 +223,8 @@ def dump_all_geographies():
     mongoclient.insert_list_mongo(list_data=cbsa_list,
                                   dbname='Geographies',
                                   collection_name='Cbsa',
-                                  prod_env=ProductionEnvironment.GEO_ONLY)
+                                  prod_env=ProductionEnvironment.GEO_ONLY,
+                                  collection_update_existing={})
 
 
 
