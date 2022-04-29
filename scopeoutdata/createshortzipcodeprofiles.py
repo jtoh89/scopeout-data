@@ -35,13 +35,8 @@ def create_short_zipcode_profiles():
         cbsa_market_historical = cbsa_market_historical.iloc[0].to_dict()
         cbsaname = cbsa_market_historical['geoname']
 
-        if cbsaname != 'Hartford-West Hartford-East Hartford, CT':
-            continue
-
-        find out why this is erroring now
-
         cbsa_has_rental = True
-        if len(cbsa_market_historical['rentaltrends']['dates']) < 1:
+        if 'rentaltrends' not in cbsa_market_historical.keys():
             cbsa_has_rental = False
         zip_historical = mongoclient.query_collection(database_name="MarketProfiles",
                                                       collection_name="zipcodehistoricalprofiles",

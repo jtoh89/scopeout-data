@@ -24,9 +24,9 @@ from enums import GeoLevels, DefaultGeoIds, ProductionEnvironment, GeoIdField, G
 
 # createneighborhoodprofiles.create_neighborhood_profiles()
 # createshortneighborhoodprofiles.create_short_neighborhood_profiles()
-createshortzipcodeprofiles.create_short_zipcode_profiles()
+# createshortzipcodeprofiles.create_short_zipcode_profiles()
 
 
 ############# CREATE PRODUCTION MAP DATA ############
 # createtractmaps.generate_tract_maps()
-createzipcodemaps.generate_zipcode_maps()
+# createzipcodemaps.generate_zipcode_maps()
