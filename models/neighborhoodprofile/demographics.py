@@ -1,3 +1,4 @@
+from enums import ModelsDataTypes, ModelsChartTypes
 
 class Demographics:
     def __init__(self):
@@ -41,7 +42,6 @@ class Race:
         self.labels = []
         self.data = []
         self.colors = []
-from enums import ModelsDataTypes, ModelsChartTypes
 
 class AgeGroups:
     def __init__(self):

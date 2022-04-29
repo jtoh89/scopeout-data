@@ -10,6 +10,7 @@ class ShortZipcodeProfile:
         self.cbsacode = ""
         self.mediansaleprice = MedianSalePrice()
         self.mediansalepricemom = MedianSalePriceMom()
+        self.mediansalepriceyoy = MedianSalePriceYoy()
         self.dom = Dom()
         self.rentaltrends = TwoLineChart(title="Median Rent", datatype=ModelsDataTypes.DOLLAR.value)
         self.redfinupdatedate = ""
@@ -18,6 +19,7 @@ class ShortZipcodeProfile:
     def convert_to_dict(self):
         self.mediansaleprice = json.loads(json.dumps(self.mediansaleprice, default=lambda o: o.__dict__))
         self.mediansalepricemom = json.loads(json.dumps(self.mediansalepricemom, default=lambda o: o.__dict__))
+        self.mediansalepriceyoy = json.loads(json.dumps(self.mediansalepriceyoy, default=lambda o: o.__dict__))
         self.dom = json.loads(json.dumps(self.dom, default=lambda o: o.__dict__))
         self.rentaltrends = json.loads(json.dumps(self.rentaltrends, default=lambda o: o.__dict__))
 
@@ -37,6 +39,16 @@ class MedianSalePrice:
 class MedianSalePriceMom:
     def __init__(self):
         self.title = "Median Sale Price MoM Change"
+        self.datatype = ModelsDataTypes.PERCENT.value
+        self.hascolors = True
+        self.charttype = ModelsChartTypes.HORIZONTAL_BAR.value
+        self.labels = []
+        self.data = []
+        self.colors = []
+
+class MedianSalePriceYoy:
+    def __init__(self):
+        self.title = "Median Sale Price YoY Change"
         self.datatype = ModelsDataTypes.PERCENT.value
         self.hascolors = True
         self.charttype = ModelsChartTypes.HORIZONTAL_BAR.value

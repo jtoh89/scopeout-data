@@ -1,10 +1,12 @@
 from enums import ModelsDataTypes, ModelsChartTypes
+from models.generics import OneLineChart
 
 
 class Housing:
     def __init__(self):
         self.housingquickfacts = HousingQuickFacts()
         self.occupancyrate = OccupancyRate()
+        self.homeownershiptrend = OneLineChart(title="Homeownership Trend", datatype=ModelsDataTypes.PERCENT.value)
         self.utilitiesincluded = UtilitiesIncluded()
         self.housingunitgrowth = HousingUnitGrowth()
         self.propertytypes = PropertyTypes()
@@ -28,11 +30,10 @@ class HousingQuickFacts:
         self.value4 = ""
 
 
-
 class OccupancyRate:
     def __init__(self):
         self.hascolors = True,
-        self.title = "Occupancy rate"
+        self.title = "Occupancy Rate"
         self.datatype = ModelsDataTypes.PERCENT.value
         self.charttype = ModelsChartTypes.DONUT.value
         self.labels = []

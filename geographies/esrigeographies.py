@@ -78,7 +78,7 @@ def dump_tract_by_county(batch_size=100):
 
         count += 1
 
-def DEPRECATED_dump_tract_geojson_for_scopeout_markets():
+def dump_tract_geojson_for_scopeout_markets():
     """
     Iterates through list of CBSA Ids. Queries Esri Standard Geography for polygon rings and stores into mongo
     :return:

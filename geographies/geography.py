@@ -1,6 +1,7 @@
 import os
 import sys
 from database import mongoclient
+import time
 import pandas as pd
 from enums import ProductionEnvironment, GeoLevels
 from database import mongoclient
@@ -158,6 +159,28 @@ def dump_all_geographies():
                         'stateinfo': state_dict[row['stateid']],
                     }
 
+
+    state_list = []
+    county_list = []
+    for _, v in state_dict.items():
+        state_list.append(v)
+
+    mongoclient.insert_list_mongo(list_data=state_list,
+                                  dbname='Geographies',
+                                  collection_name='State',
+                                  prod_env=ProductionEnvironment.GEO_ONLY,
+                                  collection_update_existing={})
+
+    for _, v in county_dict.items():
+        county_list.append(v)
+
+    mongoclient.insert_list_mongo(list_data=county_list,
+                                  dbname='Geographies',
+                                  collection_name='County',
+                                  prod_env=ProductionEnvironment.GEO_ONLY,
+                                  collection_update_existing={})
+
+
     file_dir = '/files/cbsafips.csv'
     cbsa_df = pd.read_csv(rootpath + file_dir)
 
@@ -195,27 +218,7 @@ def dump_all_geographies():
                     'lat_y': coords['lat_y']
                 }
 
-    state_list = []
-    county_list = []
     cbsa_list = []
-
-    for _, v in state_dict.items():
-        state_list.append(v)
-
-    mongoclient.insert_list_mongo(list_data=state_list,
-                                  dbname='Geographies',
-                                  collection_name='State',
-                                  prod_env=ProductionEnvironment.GEO_ONLY,
-                                  collection_update_existing={})
-
-    for _, v in county_dict.items():
-        county_list.append(v)
-
-    mongoclient.insert_list_mongo(list_data=county_list,
-                                  dbname='Geographies',
-                                  collection_name='County',
-                                  prod_env=ProductionEnvironment.GEO_ONLY,
-                                  collection_update_existing={})
 
     for _, v in cbsa_dict.items():
         cbsa_list.append(v)

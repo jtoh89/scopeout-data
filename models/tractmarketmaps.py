@@ -17,6 +17,7 @@ class TractMarketMap:
         self.cbsacode = ""
         self.cbsaname = ""
         self.urlslug = ""
+        self.coordinates = None
         self.geojson = GeoJson()
         self.medianhouseholdincomecolors = ["match", ["get", "geoid"]]
         self.unemploymentratecolors = ["match", ["get", "geoid"]]

@@ -1,9 +1,11 @@
 from database import mongoclient
 from enums import ProductionEnvironment
+from lookups import INDEX_TO_MONTH
 from census.censusdata import STATES1, STATES2
 import numpy as np
 import math
 import pandas as pd
+import datetime
 
 def zero_to_null(value):
     if value == 0:
@@ -51,9 +53,16 @@ def nat_to_none(value):
         return None
     return value
 
+def isNaN(num):
+    return num != num
 
 def calculate_percentiles_from_list(list_data):
-    np_list = np.array(list_data)
+    final_list = []
+    for val in list_data:
+        if val != None :
+            final_list.append(val)
+
+    np_list = np.array(final_list)
     return {
         "percentile_20": int(round(np.percentile(np_list, 20), 0)),
         "percentile_40": int(round(np.percentile(np_list, 40), 0)),
@@ -197,3 +206,24 @@ def set_na_to_false_from_dict(dict):
     for k, v in dict.items():
         if v != v:
             dict[k] = False
+
+def calculate_yoy_from_list(median_sale_price, historical_list, latest_update_date, multiply_100=False):
+    date_minus_year = latest_update_date['lastupdatedate'] - datetime.timedelta(days=(1*365))
+
+    month_minus_year = INDEX_TO_MONTH[date_minus_year.month-1] + " " + str(date_minus_year.year)
+
+    if len(historical_list['realestatetrends']['dates']) < 12:
+        print("Less than a year")
+    else:
+        if historical_list['realestatetrends']['dates'][-13] == month_minus_year:
+            prev_year_median_sale_price = historical_list['realestatetrends']['mediansaleprice'][-13]
+
+            if prev_year_median_sale_price != None:
+                if multiply_100:
+                    return 100 * calculate_percent_change(prev_year_median_sale_price, median_sale_price, move_decimal=False)
+                else:
+                    return calculate_percent_change(prev_year_median_sale_price, median_sale_price, move_decimal=False)
+            else:
+                return None
+        else:
+            return None

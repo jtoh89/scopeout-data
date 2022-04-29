@@ -18,10 +18,10 @@ def generate_tract_maps():
                                                     prod_env=ProductionEnvironment.GEO_ONLY)
 
     for cbsacode in list(scopeout_markets['cbsacode']):
-        # counties_to_cbsa = mongoclient.query_collection(database_name="Geographies",
-        #                                                 collection_name="CountyByCbsa",
-        #                                                 collection_filter={'cbsacode': {'$eq': cbsacode}},
-        #                                                 prod_env=ProductionEnvironment.GEO_ONLY)
+        cbsa_geo_dict = mongoclient.query_collection(database_name="Geographies",
+                                                        collection_name="Cbsa",
+                                                        collection_filter={'cbsacode': {'$eq': cbsacode}},
+                                                        prod_env=ProductionEnvironment.GEO_ONLY).iloc[0].to_dict()
 
         cbsa_tracts_geo_df = mongoclient.query_collection(database_name="ScopeOut",
                                                           collection_name="EsriTractsBySOMarkets",
@@ -38,14 +38,23 @@ def generate_tract_maps():
                                                        collection_name="fullneighborhoodprofiles",
                                                        collection_filter={"cbsacode": cbsacode},
                                                        prod_env=ProductionEnvironment.FULL_NEIGHBORHOOD_PROFILES_2)
-        tracts_data_df.append(tracts_data2_df)
+        tracts_data_df = tracts_data_df.append(tracts_data2_df)
 
 
         marketname = scopeout_markets[scopeout_markets['cbsacode'] == cbsacode]["cbsaname"].iloc[0]
         tract_map = tractmarketmaps.TractMarketMap()
         tract_map.cbsacode = cbsacode
         tract_map.cbsaname = marketname
+        tract_map.coordinates = {
+            'lon_x':cbsa_geo_dict['lon_x'],
+            'lat_y': cbsa_geo_dict['lat_y']
+        }
         tract_map.urlslug = create_url_slug(marketname=marketname, cbsacode=cbsacode)
+
+        print("Start TractsMarketMaps for ", marketname)
+
+        if marketname != "Buffalo-Cheektowaga-Niagara Falls, NY":
+            continue
 
         tract_data_percentiles_dict = calculate_percentiles_from_all_tracts(tracts_data_df)
 
@@ -67,7 +76,7 @@ def generate_tract_maps():
             tract_data = tracts_data_df[tracts_data_df['geoid'] == tract.tractcode]
 
             if len(tract_data) == 0:
-                print('!!! WARNING - Could not find matching tract for tractid: ', tract.tractcode)
+                # print('!!! WARNING - Could not find matching tract for tractid: ', tract.tractcode)
                 geo_json_feature.geometry = geo_json_geometry.__dict__
                 geo_json_feature.properties = geo_json_properties.__dict__
                 tract_map.medianhouseholdincomecolors.extend([tract.tractcode, COLOR_LEVEL_NA])
@@ -108,6 +117,8 @@ def generate_tract_maps():
         tract_map.unemploymentratecolors.append(COLOR_LEVEL_NA)
         tract_map.owneroccupancyratecolors.append(COLOR_LEVEL_NA)
         tract_map.convert_to_dict()
+
+        print("Insert TractsMarketMaps for ", marketname)
 
         mongoclient.insert_list_mongo(list_data=[tract_map.__dict__],
                                       dbname='ScopeOutMaps',

@@ -1,8 +1,10 @@
 from enums import ModelsDataTypes, ModelsChartTypes
+from models.generics import OneLineChart
 
 class Economy:
     def __init__(self):
         self.medianhouseholdincome = MedianHouseholdIncome()
+        self.medianhouseholdincomehistorical = OneLineChart(title="Median Household Income Trend", datatype=ModelsDataTypes.DOLLAR.value)
         self.unemploymentrate = UnemploymentRate()
         self.householdincomerange = HouseholdIncomeRange()
         self.employmentindustries = EmploymentIndustries()
@@ -25,7 +27,6 @@ class MedianHouseholdIncome:
         self.data3Name = "Renters"
         self.data3 = []
         self.datatype = ModelsDataTypes.DOLLAR.value
-
 
 
 class UnemploymentRate:

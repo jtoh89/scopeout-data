@@ -7,13 +7,17 @@ from geographies import geography, scopeoutmarkets, esrigeographies
 ##################################################################
 
 # dump state, county, cbsa geographies
-geography.dump_all_geographies()
+# geography.dump_all_geographies()
 
 # dump scopeout markets
 # scopeoutmarkets.store_scopeout_markets()
 
+
 # dump tract info by county
 # esrigeographies.dump_tract_by_county()
+
+# dump esri tract geojson
+# esrigeographies.dump_tract_geojson_for_scopeout_markets()
 
 # dump county by cbsa lookup
 # geography.dump_county_by_cbsa()

@@ -23,6 +23,7 @@ REDFIN_DATA_CATEGORIES = ['median_sale_price', 'median_ppsf', 'months_of_supply'
 
 
 def import_redfin_historical_data(geo_level, default_geoid, geoid_field, geoname_field, collection_name):
+    latest_update_date = datetime.datetime(1900, 1, 1)
     initialize_historical_profiles(geo_level, collection_name)
     currpath = os.path.dirname(os.path.abspath(__file__))
     rootpath = os.path.dirname(os.path.abspath(currpath))
@@ -83,6 +84,9 @@ def import_redfin_historical_data(geo_level, default_geoid, geoid_field, geoname
 
             year, month, day = row_dict['period_end'].split('-')
 
+            if latest_update_date < datetime.datetime(int(year), int(month), int(day)):
+                latest_update_date = datetime.datetime(int(year), int(month), int(day))
+
             if int(year) < REDFIN_MIN_YEAR:
                 continue
 
@@ -133,8 +137,6 @@ def import_redfin_historical_data(geo_level, default_geoid, geoid_field, geoname
                 existing_geo_data['medianppsfyoy'].append(median_ppsf_yoy)
                 existing_geo_data['monthsofsupply'].append(months_of_supply)
                 existing_geo_data['pricedrops'].append(price_drops)
-
-
 
     insert_list = []
 
@@ -202,7 +204,7 @@ def import_redfin_historical_data(geo_level, default_geoid, geoid_field, geoname
                 sys.exit()
         insert_list.append(temp_dict)
 
-
+    print("Updating existing historical profiles")
     new_insert_list = update_existing_historical_profile(insert_list, geoid_field, collection_name, geo_level)
 
     client = mongoclient.connect_to_client(prod_env=ProductionEnvironment.MARKET_PROFILES)
@@ -212,11 +214,29 @@ def import_redfin_historical_data(geo_level, default_geoid, geoid_field, geoname
 
     collection_filter = {}
 
+    print("Inserting records to database")
     success = mongoclient.batch_inserts_with_list(new_insert_list, collection, collection_filter, geoid_field)
 
     if not success:
         print("!!! geo historical batch insert failed !!!", len(new_insert_list))
         return success
+    else:
+        print("Redfin import finished")
+        try:
+            insert = {'geolevel': geo_level.value,
+                      'lastupdatedate': latest_update_date,
+                      'year': latest_update_date.year,
+                      'month': latest_update_date.month,
+                      'datestring': INDEX_TO_MONTH[latest_update_date.month-1] + ' ' + str(latest_update_date.year)
+                      }
+
+            collection = db['lastupdates']
+            collection.delete_one({'geolevel': geo_level.value})
+            collection.insert_one(insert)
+        except Exception as e:
+            print("!!! ERROR storing latestupdatedate run to Mongo!!!", e)
+            sys.exit()
+
 
 def fill_missing_dates(row, temp_dict, prev_month):
     num_months_between = row['dates'].month - prev_month - 1

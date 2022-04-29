@@ -68,7 +68,7 @@ def create_neighborhood_profiles():
                     neighborhood_profile.countyname = ''
                     neighborhood_profile.cbsacode = False
                     neighborhood_profile.cbsaname = ''
-                    neighborhood_profile.geoshapecoordinates = get_neighborhood_map_shape(tract_profile.geoinfo)
+                    # neighborhood_profile.geoshapecoordinates = get_neighborhood_map_shape(tract_profile.geoinfo)
 
                     all_geo_profiles = helpers.process_all_geo_profiles(tract_profile, neighborhood_profile, county_data, cbsa_data, usa_data, county_cbsa_lookup)
 
