@@ -2,7 +2,7 @@ import sys
 from database import mongoclient
 from models.zipcodemarketprofile import shortzipcodeprofile
 from enums import ProductionEnvironment, GeoLevels
-from utils.utils import drop_na_values_from_dict, calculate_yoy_from_list
+from utils.utils import drop_na_values_from_dict, calculate_yoy_from_list, truncate_decimals
 import numpy as np
 
 SCOPEOUT_COLOR = "#00d6b4"
@@ -83,24 +83,30 @@ def create_short_zipcode_profiles():
                         # assign median sale price mom
                         zip_short_profile.mediansalepricemom.labels = [zipcode, cbsaname]
                         zip_mediansaleprice_mom = zipcode_historical_profile['realestatetrends']['mediansalepricemom'][-1]
+                        cbsa_mediansaleprice_mom = cbsa_market_historical['realestatetrends']['mediansalepricemom'][index]
 
                         if zip_mediansaleprice_mom != None:
-                            zip_mediansaleprice_mom = zip_mediansaleprice_mom * 100
+                            zip_mediansaleprice_mom = truncate_decimals(zip_mediansaleprice_mom * 100, 2)
+                            cbsa_mediansaleprice_mom = truncate_decimals(cbsa_mediansaleprice_mom * 100, 2)
+                        else:
+                            print("Check mom and yoy")
 
-                        zip_short_profile.mediansalepricemom.data = [zip_mediansaleprice_mom, cbsa_market_historical['realestatetrends']['mediansalepricemom'][index]]
+                        zip_short_profile.mediansalepricemom.data = [zip_mediansaleprice_mom, cbsa_mediansaleprice_mom]
                         zip_short_profile.mediansalepricemom.colors = [SCOPEOUT_COLOR, CBSA_COLOR]
-
 
                         # assign median sale price yoy
                         zip_short_profile.mediansalepricemom.labels = [zipcode, cbsaname]
                         zip_mediansaleprice_yoy = zipcode_historical_profile['realestatetrends']['mediansalepriceyoy'][-1]
+                        cbsa_mediansaleprice_yoy = cbsa_market_historical['realestatetrends']['mediansalepriceyoy'][index]
 
                         if zip_mediansaleprice_yoy != None:
-                            zip_mediansaleprice_yoy = round(zip_mediansaleprice_yoy * 100, 1)
+                            zip_mediansaleprice_yoy = truncate_decimals(zip_mediansaleprice_yoy * 100, 2)
+                            cbsa_mediansaleprice_yoy = truncate_decimals(cbsa_mediansaleprice_yoy * 100, 2)
                         else:
                             zip_mediansaleprice_yoy = calculate_yoy_from_list(median_sale_price, zipcode_historical_profile, latest_update_date)
-                            zip_short_profile.mediansalepriceyoy.data = [zip_mediansaleprice_yoy, cbsa_market_historical['realestatetrends']['mediansalepriceyoy'][index]]
-                            zip_short_profile.mediansalepriceyoy.colors = [SCOPEOUT_COLOR, CBSA_COLOR]
+
+                        zip_short_profile.mediansalepriceyoy.data = [zip_mediansaleprice_yoy, cbsa_mediansaleprice_yoy]
+                        zip_short_profile.mediansalepriceyoy.colors = [SCOPEOUT_COLOR, CBSA_COLOR]
 
                         # assign dom
                         zip_short_profile.dom.labels = [zipcode, cbsaname]

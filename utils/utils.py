@@ -13,6 +13,14 @@ def zero_to_null(value):
     else:
         return value
 
+def truncate_decimals(f, n):
+    '''Truncates/pads a float f to n decimal places without rounding'''
+    s = '{}'.format(f)
+    if 'e' in s or 'E' in s:
+        return '{0:.{1}f}'.format(f, n)
+    i, p, d = s.partition('.')
+    return float('.'.join([i, (d+'0'*n)[:n]]))
+
 def list_float_to_percent(float_list):
     return_list = []
     for value in float_list:
@@ -227,3 +235,34 @@ def calculate_yoy_from_list(median_sale_price, historical_list, latest_update_da
                 return None
         else:
             return None
+
+
+
+# skipped_geos = []
+# too_many_missing_dates = False
+# reversed_date_list = list(temp_df['dates'])
+# reversed_date_list.reverse()
+# for i, date in enumerate(reversed_date_list):
+#     if i > 11:
+#         break
+#
+#     prev_index = i + 1
+#
+#     if prev_index < len(reversed_date_list):
+#         prev_date = reversed_date_list[i + 1]
+#
+#         num_months_between = ((date.year - prev_date.year) * 12) + (date.month - prev_date.month) - 1
+#
+#         if num_months_between > 3:
+#             too_many_missing_dates = True
+#             skipped_geos.append(k)
+#             break
+#
+#
+# if too_many_missing_dates:
+#     print("SKIPPING - too many missing dates")
+#     skipped_geos.append(k)
+#     continue
+
+# with open("skippedgeos.txt", "w") as outfile:
+#     outfile.write("\n".join(skipped_geos))
