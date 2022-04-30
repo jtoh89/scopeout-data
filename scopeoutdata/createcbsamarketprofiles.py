@@ -1,7 +1,8 @@
 import sys
 from database import mongoclient
 from enums import ProductionEnvironment, GeoLevels, GeoIdField, GeoNameField, Collections_Historical_Profiles, Collections_Profiles
-from utils.utils import get_county_cbsa_lookup, check_dataframe_has_one_record, set_na_to_false_from_dict, create_url_slug, list_float_to_percent
+from utils.utils import set_na_to_false_from_dict, list_float_to_percent
+from utils.production import get_county_cbsa_lookup, check_dataframe_has_one_record, create_url_slug
 from math import nan
 import pandas as pd
 from realestate.redfin import REDFIN_PROPERTY_TYPES, REDFIN_DATA_CATEGORIES

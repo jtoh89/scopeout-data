@@ -4,7 +4,8 @@ from database import mongoclient
 from models import marketmap
 from models import tractmarketmaps
 from enums import ProductionEnvironment
-from utils.utils import list_length_okay, create_url_slug, calculate_percentiles_from_list, number_to_string
+from utils.utils import list_length_okay, number_to_string
+from utils.production import create_url_slug, calculate_percentiles_from_list
 import numpy as np
 
 TEST_CBSAID = "31080"

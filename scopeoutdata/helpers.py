@@ -1,6 +1,6 @@
 from enums import ProductionEnvironment
 from database import mongoclient
-from utils.utils import get_county_cbsa_lookup
+from utils.production import get_county_cbsa_lookup
 import sys
 
 def get_all_geo_data_for_neighborhoods(stateid, prod_env):

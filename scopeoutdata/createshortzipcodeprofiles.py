@@ -2,7 +2,9 @@ import sys
 from database import mongoclient
 from models.zipcodemarketprofile import shortzipcodeprofile
 from enums import ProductionEnvironment, GeoLevels
-from utils.utils import drop_na_values_from_dict, calculate_yoy_from_list, truncate_decimals
+from utils.utils import drop_na_values_from_dict, truncate_decimals, calculate_percent_change, month_string_to_datetime
+from utils.production import calculate_yoy_from_list, calculate_mom_or_yoy_from_list
+from dateutil.relativedelta import relativedelta
 import numpy as np
 
 SCOPEOUT_COLOR = "#00d6b4"
@@ -84,12 +86,16 @@ def create_short_zipcode_profiles():
                         zip_short_profile.mediansalepricemom.labels = [zipcode, cbsaname]
                         zip_mediansaleprice_mom = zipcode_historical_profile['realestatetrends']['mediansalepricemom'][-1]
                         cbsa_mediansaleprice_mom = cbsa_market_historical['realestatetrends']['mediansalepricemom'][index]
+                        cbsa_mediansaleprice_mom = truncate_decimals(cbsa_mediansaleprice_mom * 100, 2)
 
                         if zip_mediansaleprice_mom != None:
                             zip_mediansaleprice_mom = truncate_decimals(zip_mediansaleprice_mom * 100, 2)
-                            cbsa_mediansaleprice_mom = truncate_decimals(cbsa_mediansaleprice_mom * 100, 2)
                         else:
-                            print("Check mom and yoy")
+                            zip_mediansaleprice_mom = calculate_mom_or_yoy_from_list(latest_month=zip_latest_month,
+                                                                                     latest_value=median_sale_price,
+                                                                                     historical_profile=zipcode_historical_profile,
+                                                                                     data_type='mediansaleprice',
+                                                                                     type='mom')
 
                         zip_short_profile.mediansalepricemom.data = [zip_mediansaleprice_mom, cbsa_mediansaleprice_mom]
                         zip_short_profile.mediansalepricemom.colors = [SCOPEOUT_COLOR, CBSA_COLOR]
@@ -98,12 +104,16 @@ def create_short_zipcode_profiles():
                         zip_short_profile.mediansalepricemom.labels = [zipcode, cbsaname]
                         zip_mediansaleprice_yoy = zipcode_historical_profile['realestatetrends']['mediansalepriceyoy'][-1]
                         cbsa_mediansaleprice_yoy = cbsa_market_historical['realestatetrends']['mediansalepriceyoy'][index]
+                        cbsa_mediansaleprice_yoy = truncate_decimals(cbsa_mediansaleprice_yoy * 100, 2)
 
                         if zip_mediansaleprice_yoy != None:
                             zip_mediansaleprice_yoy = truncate_decimals(zip_mediansaleprice_yoy * 100, 2)
-                            cbsa_mediansaleprice_yoy = truncate_decimals(cbsa_mediansaleprice_yoy * 100, 2)
                         else:
-                            zip_mediansaleprice_yoy = calculate_yoy_from_list(median_sale_price, zipcode_historical_profile, latest_update_date)
+                            zip_mediansaleprice_yoy = calculate_mom_or_yoy_from_list(latest_month=zip_latest_month,
+                                                                                     latest_value=median_sale_price,
+                                                                                     historical_profile=zipcode_historical_profile,
+                                                                                     data_type='mediansaleprice',
+                                                                                     type='yoy')
 
                         zip_short_profile.mediansalepriceyoy.data = [zip_mediansaleprice_yoy, cbsa_mediansaleprice_yoy]
                         zip_short_profile.mediansalepriceyoy.colors = [SCOPEOUT_COLOR, CBSA_COLOR]

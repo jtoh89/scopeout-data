@@ -3,7 +3,8 @@ from models.shortneighborhoorprofile import shortneighborhoodprofile
 from database import mongoclient
 from enums import GeoLevels
 from enums import ProductionEnvironment
-from utils.utils import calculate_percent_change, get_county_cbsa_lookup, zero_to_null
+from utils.utils import calculate_percent_change, zero_to_null
+from utils.production import get_county_cbsa_lookup
 from census.censusdata import STATES1, STATES2
 from globals import CENSUS_YEARS
 from scopeoutdata import helpers

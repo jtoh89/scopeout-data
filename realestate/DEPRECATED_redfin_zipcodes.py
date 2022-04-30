@@ -9,7 +9,8 @@ from copy import deepcopy
 from realestate import initialize
 from enums import GeoLevels, DefaultGeoIds, ProductionEnvironment, GeoIdField, GeoNameField
 import datetime
-from utils.utils import calculate_percentiles_from_list, string_to_float, string_to_int, nat_to_none
+from utils.utils import string_to_float, string_to_int, nat_to_none
+from utils.production import calculate_percentiles_from_list
 from models import zipcodemarketmap
 from realestate import redfin
 import numpy as np

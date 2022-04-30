@@ -4,8 +4,9 @@ from models import marketmap
 from models import tractmarketmaps, zipcodemarketmap
 from models import geojson as modelGeoJson
 from enums import ProductionEnvironment, GeoLevels
-from utils.utils import isNaN, create_url_slug, calculate_percentiles_from_list, number_to_string, assign_color, COLOR_LEVEL_NA, assign_legend_details
-from utils.utils import calculate_percent_change
+from utils.utils import isNaN,  number_to_string, calculate_percent_change
+from utils.production import create_url_slug, calculate_percentiles_from_list, assign_color, COLOR_LEVEL_NA, assign_legend_details
+
 from lookups import INDEX_TO_MONTH
 import datetime
 

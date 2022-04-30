@@ -5,7 +5,8 @@ from database import mongoclient
 import json
 from enums import GeoLevels
 from enums import ProductionEnvironment
-from utils.utils import calculate_percent_change, get_county_cbsa_lookup
+from utils.utils import calculate_percent_change
+from utils.production import get_county_cbsa_lookup
 import os
 from realestate.redfin import REDFIN_PROPERTY_TYPES
 from scopeoutdata import helpers

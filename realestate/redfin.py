@@ -10,9 +10,9 @@ from copy import deepcopy
 from realestate import initialize
 from enums import GeoLevels, DefaultGeoIds, ProductionEnvironment, GeoIdField, GeoNameField
 import datetime
-from utils.utils import calculate_percentiles_from_list, string_to_float, assign_legend_details, assign_color
+from utils.utils import string_to_int, nat_to_none, string_to_float
 from models import zipcodemarketmap
-from utils.utils import calculate_percentiles_from_list, string_to_float, string_to_int, nat_to_none
+from utils.production import calculate_percentiles_from_list, assign_legend_details, assign_color
 import numpy as np
 
 REDFIN_MIN_YEAR = 2015
