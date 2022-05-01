@@ -12,7 +12,7 @@ from copy import deepcopy
 BUILDING_PERMIT_URL_CBSA = "https://www2.census.gov/econ/bps/Metro/ma{}{}c.txt"
 BUILDING_PERMIT_URL_COUNTY = "https://www2.census.gov/econ/bps/Metro/ma{}{}c.txt"
 
-MONTHS = ['01', '02', '03', '04', '05', '06', '08', '09', '10', '11', '12']
+MONTHS = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
 # MONTHS = ['12']
 
 BUILDING_PERMIT_YEARS = [2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022]
@@ -183,9 +183,9 @@ def store_building_permits(building_permit_dict, geo_level, latest_insert_year, 
     client = mongoclient.connect_to_client(prod_env=prod_env)
     dbname = 'MarketProfiles'
     db = client[dbname]
-    collection = db['markettrends']
+    collection = db['cbsahistoricalprofiles']
 
-    collection_filter = {'geolevel': geo_level.value}
+    collection_filter = {}
 
     existing_collections = collection.find(collection_filter, {'_id': False})
     existing_list = list(existing_collections)

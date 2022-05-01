@@ -101,7 +101,7 @@ def create_short_zipcode_profiles():
                         zip_short_profile.mediansalepricemom.colors = [SCOPEOUT_COLOR, CBSA_COLOR]
 
                         # assign median sale price yoy
-                        zip_short_profile.mediansalepricemom.labels = [zipcode, cbsaname]
+                        zip_short_profile.mediansalepriceyoy.labels = [zipcode, cbsaname]
                         zip_mediansaleprice_yoy = zipcode_historical_profile['realestatetrends']['mediansalepriceyoy'][-1]
                         cbsa_mediansaleprice_yoy = cbsa_market_historical['realestatetrends']['mediansalepriceyoy'][index]
                         cbsa_mediansaleprice_yoy = truncate_decimals(cbsa_mediansaleprice_yoy * 100, 2)

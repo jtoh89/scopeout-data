@@ -61,6 +61,7 @@ class Dom:
         self.title = "Days on Market"
         self.hascolors = True
         self.charttype = ModelsChartTypes.HORIZONTAL_BAR.value
+        self.datatype = ModelsDataTypes.INTEGER.value
         self.labels = []
         self.data = []
         self.colors = []

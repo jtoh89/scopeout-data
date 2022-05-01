@@ -14,6 +14,9 @@ from utils.utils import string_to_int, nat_to_none, string_to_float
 from models import zipcodemarketmap
 from utils.production import calculate_percentiles_from_list, assign_legend_details, assign_color
 import numpy as np
+from dateutil import relativedelta
+from dateutil.relativedelta import relativedelta
+
 
 REDFIN_MIN_YEAR = 2015
 REDFIN_MAX_YEAR = 2022
@@ -60,8 +63,6 @@ def import_redfin_historical_data(geo_level, default_geoid, geoid_field, geoname
 
             geoid = row_dict['table_id']
 
-
-            
             if row_dict['is_seasonally_adjusted'] != 'f':
                 continue
 
@@ -172,18 +173,19 @@ def import_redfin_historical_data(geo_level, default_geoid, geoid_field, geoname
             }
         }
 
-        prev_month = 1
+        prev_date = None
         prev_year = REDFIN_MIN_YEAR
         for i, row in temp_df.iterrows():
-            if row['dates'].year > prev_year:
-                prev_year = row['dates'].year
-                prev_month = 1
+            if i == 0:
+                prev_date = temp_df['dates'].iloc[0]
+                continue
 
-            if row['dates'].month != 1 and row['dates'].month - 1 != prev_month:
-                fill_missing_dates(row, temp_dict, prev_month)
-                prev_month = row['dates'].month
-            else:
-                prev_month = row['dates'].month
+            diff = relativedelta.relativedelta(row['dates'], prev_date)
+            month_diff = diff.month
+            if month_diff > 0:
+                fill_missing_dates(temp_dict, prev_date, month_diff)
+
+            prev_date = row['dates']
             try:
                 temp_dict['realestatetrends']['dates'].append(INDEX_TO_MONTH[row['dates'].month-1] + ' ' + str(row['dates'].year))
             except Exception as e:
@@ -240,41 +242,24 @@ def import_redfin_historical_data(geo_level, default_geoid, geoid_field, geoname
             sys.exit()
 
 
-def fill_missing_dates(row, temp_dict, prev_month):
-    num_months_between = row['dates'].month - prev_month - 1
-    add_month = prev_month + 1
+def fill_missing_dates(temp_dict, prev_date, month_diff):
 
-    # reset temp_dict if a huge gap
-    if num_months_between > 3:
-        temp_dict['realestatetrends'] = {
-            'dates': [],
-            'mediansaleprice': [],
-            'mediansalepricemom': [],
-            'mediansalepriceyoy': [],
-            'mediandom': [],
-            'mediandommom': [],
-            'mediandomyoy': [],
-            'medianppsf': [],
-            'medianppsfmom': [],
-            'medianppsfyoy': [],
-            'monthsofsupply': [],
-            'pricedrops': []
-        }
-    else:
-        for month_index in range(num_months_between):
-            temp_dict['realestatetrends']['dates'].append(INDEX_TO_MONTH[add_month-1] + ' ' + str(row['dates'].year))
-            temp_dict['realestatetrends']['mediansaleprice'].append(None)
-            temp_dict['realestatetrends']['mediansalepricemom'].append(None)
-            temp_dict['realestatetrends']['mediansalepriceyoy'].append(None)
-            temp_dict['realestatetrends']['mediandom'].append(None)
-            temp_dict['realestatetrends']['mediandommom'].append(None)
-            temp_dict['realestatetrends']['mediandomyoy'].append(None)
-            temp_dict['realestatetrends']['medianppsf'].append(None)
-            temp_dict['realestatetrends']['medianppsfmom'].append(None)
-            temp_dict['realestatetrends']['medianppsfyoy'].append(None)
-            temp_dict['realestatetrends']['monthsofsupply'].append(None)
-            temp_dict['realestatetrends']['pricedrops'].append(None)
-            add_month += 1
+    add_date = prev_date + relativedelta(months=1)
+
+    for month_index in range(month_diff):
+        temp_dict['realestatetrends']['dates'].append(INDEX_TO_MONTH[add_date.month-1] + ' ' + str(add_date.year))
+        temp_dict['realestatetrends']['mediansaleprice'].append(None)
+        temp_dict['realestatetrends']['mediansalepricemom'].append(None)
+        temp_dict['realestatetrends']['mediansalepriceyoy'].append(None)
+        temp_dict['realestatetrends']['mediandom'].append(None)
+        temp_dict['realestatetrends']['mediandommom'].append(None)
+        temp_dict['realestatetrends']['mediandomyoy'].append(None)
+        temp_dict['realestatetrends']['medianppsf'].append(None)
+        temp_dict['realestatetrends']['medianppsfmom'].append(None)
+        temp_dict['realestatetrends']['medianppsfyoy'].append(None)
+        temp_dict['realestatetrends']['monthsofsupply'].append(None)
+        temp_dict['realestatetrends']['pricedrops'].append(None)
+        add_date = add_date + relativedelta(months=1)
 
 
 def update_existing_historical_profile(insert_list, geoid_field, collection_name, geo_level):

@@ -9,6 +9,7 @@ import copy
 from lookups import MONTH_FORMAT, MONTH_INTEGER
 from lookups import OLD_TO_NEW_CBSAID, NECTAMSA_to_CBSA_conversion
 from utils.utils import drop_na_values_from_dict
+from enums import GeoLevels, Collections_Historical_Profiles
 
 # CURRENT_YEAR = '2021'
 # CURRENT_MONTH = 'M01'
@@ -19,9 +20,17 @@ US_UNEMPLOYMENT = 6.3
 #https://fred.stlouisfed.org/series/UNRATE
 
 def market_profile_add_unemployment(geo_level, geoid_field, prod_env=ProductionEnvironment.MARKET_PROFILES):
+    collection_name = ""
+    if geo_level == GeoLevels.USA:
+        collection_name = Collections_Historical_Profiles.USA.value
+    elif geo_level == GeoLevels.CBSA:
+        collection_name = Collections_Historical_Profiles.CBSA.value
+    else:
+        collection_name = Collections_Historical_Profiles.COUNTY.value
+
     cbsa_profiles = mongoclient.query_collection(database_name="MarketProfiles",
-                                                 collection_name="markettrends",
-                                                 collection_filter={'geolevel': geo_level.value},
+                                                 collection_name=collection_name,
+                                                 collection_filter={},
                                                  prod_env=ProductionEnvironment.MARKET_PROFILES)
 
     geo_data = mongoclient.query_collection(database_name="CensusData1",
@@ -48,9 +57,9 @@ def market_profile_add_unemployment(geo_level, geoid_field, prod_env=ProductionE
     client = mongoclient.connect_to_client(prod_env=prod_env)
     dbname = 'MarketProfiles'
     db = client[dbname]
-    collection = db['markettrends']
+    collection = db[collection_name]
 
-    collection_filter = {'geolevel': geo_level.value}
+    collection_filter = {}
 
     success = mongoclient.batch_inserts_with_list(insert_list, collection, collection_filter, geoid_field)
 
