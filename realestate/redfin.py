@@ -60,6 +60,8 @@ def import_redfin_historical_data(geo_level, default_geoid, geoid_field, geoname
 
             geoid = row_dict['table_id']
 
+
+            
             if row_dict['is_seasonally_adjusted'] != 'f':
                 continue
 

@@ -5,7 +5,7 @@ from census.censusdata import STATES1, STATES2
 import numpy as np
 from dateutil.relativedelta import relativedelta
 import datetime
-from utils.utils import number_to_string, calculate_percent_change, month_string_to_datetime
+from utils.utils import number_to_string, calculate_percent_change, month_string_to_datetime, truncate_decimals
 import copy
 
 def calculate_percentiles_from_list(list_data):
@@ -152,39 +152,38 @@ def calculate_yoy_from_list(median_sale_price, historical_list, latest_update_da
             return None
 
 def calculate_mom_or_yoy_from_list(latest_month, latest_value, historical_profile, data_type, type):
-    if type == 'mosm':
-        max_percent_change = 200
-        index = -2
-        latest_month_datetime = month_string_to_datetime(latest_month)
-        month_comparison = latest_month_datetime - relativedelta(months=1)
+    if type == 'mom':
+        months = 1
     else:
-        index = False
-        max_percent_change = 200
-        yoy_date_list = copy.deepcopy(historical_profile['realestatetrends']['dates'])
-        yoy_date_list.reverse()
+        months = 12
 
-        latest_month_datetime = month_string_to_datetime(latest_month)
-        month_comparison = latest_month_datetime - relativedelta(months=12)
+    index = False
+    max_percent_change = 200
+    yoy_date_list = copy.deepcopy(historical_profile['realestatetrends']['dates'])
+    yoy_date_list.reverse()
 
-        for i, date in enumerate(yoy_date_list):
-            date_datetime = month_string_to_datetime(date)
-            if date_datetime == month_comparison:
-                index = -(i + 1)
-                break
+    latest_month_datetime = month_string_to_datetime(latest_month)
+    month_comparison = latest_month_datetime - relativedelta(months=months)
 
-        if not index:
-            return None
+    for i, date in enumerate(yoy_date_list):
+        date_datetime = month_string_to_datetime(date)
+        if date_datetime == month_comparison:
+            index = -(i + 1)
+            break
+
+    if not index:
+        return None
 
     past_month_datetime = month_string_to_datetime(historical_profile['realestatetrends']['dates'][index])
     past_month_median_sale_price = historical_profile['realestatetrends'][data_type][index]
 
     if past_month_median_sale_price and month_comparison == past_month_datetime:
-        mom_percent_change = calculate_percent_change(starting_data=past_month_median_sale_price,
+        percent_change = calculate_percent_change(starting_data=past_month_median_sale_price,
                                                       ending_data=latest_value,
                                                       move_decimal=True,
                                                       decimal_places=2)
-        if mom_percent_change < max_percent_change:
-            zip_mediansaleprice_mom = mom_percent_change
+        if percent_change < max_percent_change:
+            zip_mediansaleprice_mom = percent_change
             return zip_mediansaleprice_mom
 
     return None
