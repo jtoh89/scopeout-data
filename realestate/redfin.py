@@ -18,7 +18,7 @@ from dateutil import relativedelta
 from dateutil.relativedelta import relativedelta
 
 
-REDFIN_MIN_YEAR = 2015
+REDFIN_MIN_YEAR = 2016
 REDFIN_MAX_YEAR = 2022
 REDFIN_PROPERTY_TYPES = ['All Residential', 'Single Family Residential', 'Multi-Family (2-4 Unit)']
 REDFIN_PROPERTY_TYPES_LOWERCASE = ['all', 'singlefamily', 'multifamily']
@@ -172,18 +172,17 @@ def import_redfin_historical_data(geo_level, default_geoid, geoid_field, geoname
                 'pricedrops': []
             }
         }
-
+        temp_df = temp_df.reset_index(drop=True)
         prev_date = None
-        prev_year = REDFIN_MIN_YEAR
         for i, row in temp_df.iterrows():
             if i == 0:
                 prev_date = temp_df['dates'].iloc[0]
                 continue
 
-            diff = relativedelta.relativedelta(row['dates'], prev_date)
-            month_diff = diff.month
-            if month_diff > 0:
-                fill_missing_dates(temp_dict, prev_date, month_diff)
+            diff = relativedelta(row['dates'], prev_date)
+            month_diff = diff.months
+            if month_diff != None and month_diff > 1:
+                fill_missing_dates(temp_dict, prev_date, month_diff-1)
 
             prev_date = row['dates']
             try:
@@ -264,9 +263,9 @@ def fill_missing_dates(temp_dict, prev_date, month_diff):
 
 def update_existing_historical_profile(insert_list, geoid_field, collection_name, geo_level):
     existing_historical_profiles = mongoclient.query_collection(database_name="MarketProfiles",
-                                                               collection_name=collection_name,
-                                                               collection_filter={},
-                                                               prod_env=ProductionEnvironment.MARKET_PROFILES).drop(columns=["_id"])
+                                                                collection_name=collection_name,
+                                                                collection_filter={},
+                                                                prod_env=ProductionEnvironment.MARKET_PROFILES).drop(columns=["_id"])
     new_insert_list = []
     for updated_profile in insert_list:
         existing_profile = existing_historical_profiles[existing_historical_profiles[geoid_field] == updated_profile[geoid_field]]

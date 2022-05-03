@@ -42,7 +42,7 @@ from database import mongoclient
 # censusdata.run_census_data_import(GeoLevels.USA, ProductionEnvironment.CENSUS_DATA1)
 # censusdata.update_us_median_income_fred()
 # censusdata.run_census_data_import(GeoLevels.STATE, ProductionEnvironment.CENSUS_DATA1)
-censusdata.run_census_data_import(GeoLevels.CBSA, ProductionEnvironment.CENSUS_DATA1)
+# censusdata.run_census_data_import(GeoLevels.CBSA, ProductionEnvironment.CENSUS_DATA1)
 # censusdata.run_census_data_import(GeoLevels.COUNTY, ProductionEnvironment.CENSUS_DATA1)
 # censusdata.run_census_data_import(GeoLevels.TRACT, ProductionEnvironment.CENSUS_DATA1)
 # censusdata.run_census_data_import(GeoLevels.TRACT, ProductionEnvironment.CENSUS_DATA2)
@@ -58,7 +58,7 @@ censusdata.run_census_data_import(GeoLevels.CBSA, ProductionEnvironment.CENSUS_D
 ##################################################################
 
 # unemploymentdownload.download_cbsa_unemployment()
-# unemploymentdownload.download_county_unemployment()
+unemploymentdownload.download_county_unemployment()
 # unemploymentdownload.download_usa_unemployment()
 # unemploymentupdates.update_regional_unemployment(GeoLevels.CBSA)
 # unemploymentupdates.update_regional_unemployment(GeoLevels.COUNTY)

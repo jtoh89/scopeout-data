@@ -16,7 +16,7 @@ from enums import GeoLevels, Collections_Historical_Profiles
 MINIMUM_YEAR = 2008
 DELIMETER = '\t'
 
-US_UNEMPLOYMENT = 6.3
+US_UNEMPLOYMENT = 3.6
 #https://fred.stlouisfed.org/series/UNRATE
 
 def market_profile_add_unemployment(geo_level, geoid_field, prod_env=ProductionEnvironment.MARKET_PROFILES):

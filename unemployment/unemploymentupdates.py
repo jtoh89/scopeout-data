@@ -46,7 +46,7 @@ def update_regional_unemployment(geo_level):
 
             current_unemployment = float(row['data']['Unemployment Historic']['Unemployment Historic'][-1:][0])
             most_recent_month = row['data']['Unemployment Historic']['Date'][-1:][0]
-            acs_unemployment = float(row['data']['Unemployment Rate']['2019 Unemployment Rate'])
+            acs_unemployment = float(row['data']['Unemployment Rate']['Unemployment Rate'])
 
             # if geo_level == GeoLevels.CBSA or geo_level == GeoLevels.COUNTY:
 

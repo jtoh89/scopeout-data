@@ -31,11 +31,11 @@ from realestate import redfin, buildingpermits, initialize, zillow
 
 
 
-redfin.import_redfin_historical_data(geo_level=GeoLevels.ZIPCODE,
-                                     default_geoid=DefaultGeoIds.ZIPCODE.value,
-                                     geoid_field=GeoIdField.ZIPCODE.value,
-                                     geoname_field=GeoNameField.ZIPCODE.value,
-                                     collection_name=Collections_Historical_Profiles.ZIPCODE.value)
+# redfin.import_redfin_historical_data(geo_level=GeoLevels.ZIPCODE,
+#                                      default_geoid=DefaultGeoIds.ZIPCODE.value,
+#                                      geoid_field=GeoIdField.ZIPCODE.value,
+#                                      geoname_field=GeoNameField.ZIPCODE.value,
+#                                      collection_name=Collections_Historical_Profiles.ZIPCODE.value)
 
 #
 # zillow.import_zillow_msa_rental_data(geo_level=GeoLevels.USA,

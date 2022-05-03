@@ -9,7 +9,7 @@ import json
 import geojson
 from models.geojson import GeoJson, GeoJsonFeature, GeoJsonGeometry
 from geographies import esrigeographies
-from utils.utils import create_url_slug
+from utils.production import create_url_slug
 
 
 def dump_zipcode_geojson_by_scopeout_markets():
