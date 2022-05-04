@@ -60,7 +60,7 @@ def update_regional_unemployment(geo_level):
                     'Unemployment Rate': {
                         'Unemployment Rate': current_unemployment,
                         '{} Unemployment Rate'.format(CENSUS_LATEST_YEAR): acs_unemployment,
-                        'Unemployment Rate % Change'.format(CENSUS_LATEST_YEAR): unemployment_rate_change,
+                        'Unemployment Rate % Change': unemployment_rate_change,
                         'Last Update': most_recent_month,
                     }
                 }
@@ -71,6 +71,7 @@ def update_regional_unemployment(geo_level):
                                                 state_id=stateid,
                                                 filtered_dict=unemployment_update,
                                                 prod_env=ProductionEnvironment.CENSUS_DATA1)
+
 
 
         if success:
@@ -91,12 +92,19 @@ def update_tract_unemployment():
     :return:
     '''
 
+    existing_updates = mongoclient.query_collection(database_name="CensusDataInfo",
+                                                    collection_name="FinishedRuns",
+                                                    collection_filter={'geolevel':  GeoLevels.TRACT.value,
+                                                                       'category': 'Unemployment Update'},
+                                                    prod_env=ProductionEnvironment.QA)
+
     for stategroupindex, stategroup in enumerate([STATES1, STATES2]):
         prod_env = ProductionEnvironment.CENSUS_DATA1
         if stategroupindex == 1:
             prod_env = ProductionEnvironment.CENSUS_DATA2
 
         for stateid in stategroup:
+            print("Running tract unemployment updates for: ", stateid)
             collection_filter = {
                 'geolevel': {'$eq': GeoLevels.TRACT.value},
                 'stateid': stateid
@@ -108,7 +116,7 @@ def update_tract_unemployment():
                                                     prod_env=prod_env)
 
             county_filter = {
-                'geolevel': {'$eq': GeoLevels.COUNTY.value},
+                'geolevel': GeoLevels.COUNTY.value,
                 'stateid': stateid
             }
 
@@ -129,17 +137,34 @@ def update_tract_unemployment():
                 else:
                     county_unemployment_rate_change = county_data_dict['data']['Unemployment Rate']['Unemployment Rate % Change']
 
+
                 tract_unemployment = row['data']['Unemployment Rate']['Unemployment Rate']
                 unemployment_adjustment = tract_unemployment * county_unemployment_rate_change
-                tract_unemployment = round(tract_unemployment + unemployment_adjustment, 1)
+                updated_tract_unemployment = round(tract_unemployment + unemployment_adjustment, 1)
 
-                unemployment_update[row['geoid']] = {
-                    'data': {
-                        'Unemployment Rate': {
-                            'Unemployment Rate': tract_unemployment
+                unemployment_census_year_key = '{} Unemployment Rate'.format(CENSUS_LATEST_YEAR)
+
+                if unemployment_census_year_key not in row['data']['Unemployment Rate'].keys():
+                    unemployment_update[row['geoid']] = {
+                        'data': {
+                            'Unemployment Rate': {
+                                'Unemployment Rate': updated_tract_unemployment,
+                                unemployment_census_year_key: tract_unemployment,
+                            }
                         }
                     }
-                }
+                else:
+                    census_year_unemployment_rate = row['data'][unemployment_census_year_key]
+
+                    unemployment_update[row['geoid']] = {
+                        'data': {
+                            'Unemployment Rate': {
+                                'Unemployment Rate': updated_tract_unemployment,
+                                unemployment_census_year_key: census_year_unemployment_rate,
+                            }
+                        }
+                    }
+
 
             success = mongoclient.store_census_data(geo_level=GeoLevels.TRACT,
                                                     state_id=stateid,
