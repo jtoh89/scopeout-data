@@ -341,8 +341,8 @@ def get_and_store_census_data(geo_level, state_id, variables_df, geographies_df,
 
 
     mongoclient.store_missing_geo_for_census_data(missing_geo, geo_level, state_id, category)
-    filtered_dict = filter_existing_data(results_dict, geo_level, category, prod_env, state_id)
-
+    # filtered_dict = filter_existing_data(results_dict, geo_level, category, prod_env, state_id)
+    filtered_dict = results_dict
     if len(filtered_dict) < 1:
         print("ENDING RUN, NO MORE GEOGRAPHIES TO RUN")
         return True
@@ -373,8 +373,6 @@ def filter_existing_data(results_dict, geo_level, category, prod_env, state_id=N
         existing_cats = list(row.data.keys())
         if category in existing_cats:
             existing_geoids.append(row.geoid)
-
-
 
     filtered_geoids = []
     for k, results in results_dict.items():

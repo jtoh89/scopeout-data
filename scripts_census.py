@@ -44,8 +44,7 @@ from database import mongoclient
 # censusdata.run_census_data_import(GeoLevels.STATE, ProductionEnvironment.CENSUS_DATA1)
 # censusdata.run_census_data_import(GeoLevels.CBSA, ProductionEnvironment.CENSUS_DATA1)
 # censusdata.run_census_data_import(GeoLevels.COUNTY, ProductionEnvironment.CENSUS_DATA1)
-censusdata.run_census_data_import(GeoLevels.TRACT, ProductionEnvironment.CENSUS_DATA1)
-# censusdata.run_census_data_import(GeoLevels.TRACT, ProductionEnvironment.CENSUS_DATA2)
+# censusdata.run_census_data_import(GeoLevels.TRACT, ProductionEnvironment.CENSUS_DATA1)
 
 
 
@@ -57,13 +56,12 @@ censusdata.run_census_data_import(GeoLevels.TRACT, ProductionEnvironment.CENSUS_
 ###### UNEMPLOYMENT
 ##################################################################
 
-# unemploymentdownload.download_cbsa_unemployment()
-# unemploymentdownload.download_county_unemployment()
-# unemploymentdownload.download_usa_unemployment()
+# unemploymentdownload.download_cbsa_historical_unemployment()
+# unemploymentdownload.download_county_historical_unemployment()
+# unemploymentdownload.download_usa_historical_unemployment()
 # unemploymentupdates.update_regional_unemployment(GeoLevels.CBSA)
 # unemploymentupdates.update_regional_unemployment(GeoLevels.COUNTY)
-
-unemploymentupdates.update_tract_unemployment()
+# unemploymentupdates.update_tract_unemployment()
 
 
 ##################################################################

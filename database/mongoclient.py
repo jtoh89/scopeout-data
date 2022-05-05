@@ -212,7 +212,6 @@ def store_census_data(geo_level, state_id, filtered_dict, prod_env=ProductionEnv
             # print('DID NOT FIND GEO IN FILTERED DICT. GEOID: ', geoid)
             continue
 
-        # append data to dict
         existing_data.update(filtered_dict[geoid]['data'])
 
     insert_list = existing_list

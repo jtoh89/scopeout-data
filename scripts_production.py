@@ -11,7 +11,7 @@ from enums import GeoLevels, DefaultGeoIds, ProductionEnvironment, GeoIdField, G
 ##################################################################
 
 # #  Market Trends
-unemploymentdownload.market_profile_add_unemployment(GeoLevels.USA, GeoIdField.USA.value)
+# unemploymentdownload.market_profile_add_unemployment(GeoLevels.USA, GeoIdField.USA.value)
 # unemploymentdownload.market_profile_add_unemployment(GeoLevels.CBSA, GeoIdField.CBSA.value)
 # unemploymentdownload.market_profile_add_unemployment(GeoLevels.COUNTY, GeoIdField.COUNTY.value)
 

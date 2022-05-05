@@ -70,7 +70,7 @@ def market_profile_add_unemployment(geo_level, geoid_field, prod_env=ProductionE
 
 
 
-def download_cbsa_unemployment():
+def download_cbsa_historical_unemployment():
     '''
     Function will download unemployment data for cbsa geographies.
     :return:
@@ -140,7 +140,7 @@ def download_cbsa_unemployment():
     else:
         print('ERROR: Failed to store unemployment data')
 
-def download_county_unemployment():
+def download_county_historical_unemployment():
     '''
     Function will download unemployment data for county geographies.
     :return:
@@ -211,7 +211,7 @@ def download_county_unemployment():
         else:
             print('ERROR: Failed to store unemployment data')
 
-def download_usa_unemployment():
+def download_usa_historical_unemployment():
     '''
     Function will download unemployment data for USA.
     :return:
