@@ -36,7 +36,7 @@ class ZipcodeMarketMap:
 
 class LegendDetails:
     def __init__(self):
-        self.level0color = "#999999"
+        self.level0color = "#ffffff"
         self.level0description = "Not Available"
         self.level1color = ""
         self.level1description = ""

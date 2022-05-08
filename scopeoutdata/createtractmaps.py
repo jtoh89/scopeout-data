@@ -9,6 +9,7 @@ from utils.utils import list_length_okay, number_to_string
 from utils.production import create_url_slug, calculate_percentiles_from_list, assign_color, COLOR_LEVEL_NA, assign_legend_details
 import numpy as np
 
+
 TEST_CBSAID = "31080"
 
 
@@ -53,9 +54,6 @@ def generate_tract_maps():
         tract_map.urlslug = create_url_slug(marketname=marketname, cbsacode=cbsacode)
 
         print("Start TractsMarketMaps for ", marketname)
-
-        if marketname != "Buffalo-Cheektowaga-Niagara Falls, NY":
-            continue
 
         tract_data_percentiles_dict = calculate_percentiles_from_all_tracts(tracts_data_df)
 

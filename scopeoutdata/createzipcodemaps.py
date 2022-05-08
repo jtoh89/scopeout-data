@@ -41,8 +41,8 @@ def generate_zipcode_maps():
                                                      collection_filter={'cbsacode': {'$eq': cbsacode}},
                                                      prod_env=ProductionEnvironment.GEO_ONLY).iloc[0].to_dict()
 
-        if cbsacode not in ["31080","38060","32820","40900"]:
-            continue
+        # if cbsacode not in ["31080","38060","32820","40900"]:
+        #     continue
 
         print("Running ", cbsaname)
 
