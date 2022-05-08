@@ -18,8 +18,8 @@ from enums import GeoLevels, DefaultGeoIds, ProductionEnvironment, GeoIdField, G
 
 # createmarketprofiles.create_county_market_profiles(collection_name=Collections_Profiles.COUNTY.value)
 
-# createcbsamarketprofiles.generate_cbsa_market_profiles(prod_env=ProductionEnvironment.MARKET_PROFILES,
-#                                                        geoid_field=GeoIdField.CBSA.value)
+createcbsamarketprofiles.generate_cbsa_market_profiles(prod_env=ProductionEnvironment.MARKET_PROFILES,
+                                                       geoid_field=GeoIdField.CBSA.value)
 
 
 # createneighborhoodprofiles.create_neighborhood_profiles()

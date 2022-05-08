@@ -44,9 +44,11 @@ def import_zillow_msa_rental_data(geo_level, default_geoid, geoid_field, geoname
             year_string = row.datestring[:4]
             month_string = row.datestring[5:7]
             date_string = MONTH_FORMAT[month_string] + ' ' + year_string
-            median_rent = int(row.medianrent)
             geoid = ''
 
+            median_rent = int(row.medianrent)
+            if median_rent == 0:
+                median_rent = None
             if zillow_id in zillow_geo_lookup.keys():
                 geoid = str(zillow_geo_lookup[zillow_id]).zfill(5)
 
@@ -60,6 +62,7 @@ def import_zillow_msa_rental_data(geo_level, default_geoid, geoid_field, geoname
                     print('No match for zillow geo. zillowid: {}.'.format(zillow_id))
                     missing_zillow_ids.append(zillow_id)
                     continue
+
 
             if geoid in zillow_rental_dict.keys():
                 zillow_rental_dict[geoid]['dates'].append(date_string)

@@ -1,4 +1,4 @@
-from enums import ModelsChartTypes, ModelsDataTypes
+from enums import ModelsChartTypes
 
 class OneLineChart():
     def __init__(self, title, datatype):
@@ -20,3 +20,12 @@ class TwoLineChart():
         self.data2Name = ""
         self.data2 = []
 
+
+class ComparisonBarChart():
+    def __init__(self, title, datatype):
+        self.title = title
+        self.charttype = ModelsChartTypes.VERTICAL_COMPARISON_BAR.value
+        self.datatype = datatype
+        self.colors: []
+        self.labels = []
+        self.datasets = []

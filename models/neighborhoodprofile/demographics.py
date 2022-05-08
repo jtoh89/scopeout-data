@@ -54,7 +54,7 @@ class AgeGroups:
 
 class PopulationTrends:
     def __init__(self):
-        self.title = "Population Trends"
+        self.title = "Total Population"
         self.datatype = ModelsDataTypes.INTEGER.value
         self.charttype = ModelsChartTypes.LINE.value
         self.data1Name = "Population"

@@ -5,8 +5,8 @@ class Demographics:
         # self.demographicquickfacts = DemographicQuickFacts()
         # self.highesteducation = HighestEducation()
         # self.race = Race()
-        # self.agegroups = AgeGroups()
-        # self.populationtrends = PopulationTrends()
+        self.agegroups = AgeGroups()
+        self.populationtrends = PopulationTrends()
         self.oneyeargrowth = OneYearGrowth()
         # self.familytype = FamilyType()
 

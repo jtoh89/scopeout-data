@@ -58,9 +58,10 @@ class ModelsChartTypes(Enum):
     HORIZONTAL_BAR = 'horizontalbar'
     DONUT = 'donut'
     VERTICAL_BAR = 'verticalbar'
-    VERTICAL_BAR_TOGGLE = 'verticalbartoggle'
+    VERTICAL_BAR_TOGGLE = 'multiline'
     PIE_CHART_TOGGLE = 'piecharttoggle'
     TABLE = 'table'
+    VERTICAL_COMPARISON_BAR = 'verticalcomparisonbar'
 
 
 

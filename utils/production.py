@@ -98,8 +98,8 @@ def get_prod_by_stateid(stateid):
         return ProductionEnvironment.FULL_NEIGHBORHOOD_PROFILES_2
 
 def create_url_slug(cbsacode, marketname):
-    urlslug = marketname.split(", ")[0].replace('--','-').replace(' ','-').lower() + "-real-estate-market-trends"
-
+    # urlslug = marketname.split(", ")[0].replace('--','-').replace(' ','-').lower() + "-real-estate-market-trends"
+    urlslug = marketname.replace(', ','-').replace('--','-').replace(' ','-').lower() + "-real-estate-market-trends"
     if (cbsacode) == "17980":
         urlslug = marketname.split(", ")[0].replace('--','-').replace(' ','-').lower() + "GA-AL-real-estate-market-trends"
 

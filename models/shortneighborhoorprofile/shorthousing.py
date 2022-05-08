@@ -7,7 +7,7 @@ class Housing:
         self.occupancyrate = OccupancyRate()
         # self.utilitiesincluded = UtilitiesIncluded()
         # self.housingunitgrowth = HousingUnitGrowth()
-        # self.propertytypes = PropertyTypes()
+        self.propertytypes = PropertyTypes()
         # self.yearbuilt = YearBuilt()
         # self.numberofbedrooms = NumberOfBedrooms()
         # self.yearmovedin = YearMovedIn()

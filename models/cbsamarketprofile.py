@@ -1,6 +1,6 @@
 import json
 from enums import ModelsChartTypes, ModelsDataTypes
-from models.generics import OneLineChart, TwoLineChart
+from models.generics import OneLineChart, TwoLineChart, ComparisonBarChart
 
 class CbsaMarketProfile:
     def __init__(self):
@@ -15,9 +15,10 @@ class CbsaMarketProfile:
         self.pricedrops = OneLineChart(title="% of Listings With Price Drops", datatype=ModelsDataTypes.PERCENT.value)
         self.rentaltrends = OneLineChart(title="Median Rent", datatype=ModelsDataTypes.DOLLAR.value)
         self.unemploymentrate = OneLineChart(title="Unemployment Rate", datatype=ModelsDataTypes.PERCENT.value)
-        self.buildingpermits = OneLineChart(title="Building Permits", datatype=ModelsDataTypes.INTEGER.value)
-        self.housingunitsvshouseholds = TwoLineChart(title="Housing Units vs Households", datatype=ModelsDataTypes.INTEGER.value)
-        self.totalpopulationgrowth = OneLineChart(title="Total Population Growth", datatype=ModelsDataTypes.INTEGER.value)
+        self.buildingpermits = OneLineChart(title="Building Permits (# of Structures)", datatype=ModelsDataTypes.INTEGER.value)
+        self.housingunitsvshouseholdschange = ComparisonBarChart(title="Change in Housing Units and Households", datatype=ModelsDataTypes.INTEGER.value)
+        self.totalpopulationgrowth = OneLineChart(title="Total Population", datatype=ModelsDataTypes.INTEGER.value)
+        self.medianhouseholdincome = OneLineChart(title="Median Household Income", datatype=ModelsDataTypes.DOLLAR.value)
 
 
     def convert_to_dict(self):
@@ -31,6 +32,7 @@ class CbsaMarketProfile:
         self.unemploymentrate = json.loads(json.dumps(self.unemploymentrate, default=lambda o: o.__dict__))
         self.buildingpermits = json.loads(json.dumps(self.buildingpermits, default=lambda o: o.__dict__))
         self.totalpopulationgrowth = json.loads(json.dumps(self.totalpopulationgrowth, default=lambda o: o.__dict__))
-        self.housingunitsvshouseholds = json.loads(json.dumps(self.housingunitsvshouseholds, default=lambda o: o.__dict__))
+        self.housingunitsvshouseholdschange = json.loads(json.dumps(self.housingunitsvshouseholdschange, default=lambda o: o.__dict__))
+        self.medianhouseholdincome = json.loads(json.dumps(self.medianhouseholdincome, default=lambda o: o.__dict__))
 
         return self

@@ -27,7 +27,6 @@ def store_scopeout_markets():
 
 scopeout_market_list = [
     "35620",
-    "35620",
     "31080",
     "16980",
     "19100",

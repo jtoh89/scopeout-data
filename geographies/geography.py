@@ -233,7 +233,7 @@ def dump_all_geographies():
 
     print('done')
 
-def dump_county_by_cbsa():
+def dump_county_by_cbsa_lookup():
     '''
     Stores data to CountyByCbsa table. Function creates lookup for counties to cbsa ids
     '''

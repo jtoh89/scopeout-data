@@ -2,20 +2,11 @@ import sys
 from database import mongoclient
 from models.zipcodemarketprofile import shortzipcodeprofile
 from enums import ProductionEnvironment, GeoLevels
-from utils.utils import drop_na_values_from_dict, truncate_decimals, calculate_percent_change, month_string_to_datetime
-from utils.production import calculate_yoy_from_list, calculate_mom_or_yoy_from_list
-from dateutil.relativedelta import relativedelta
-import numpy as np
-
-SCOPEOUT_COLOR = "#00d6b4"
-CBSA_COLOR = "#4F6D7A"
+from utils.utils import drop_na_values_from_dict, truncate_decimals
+from utils.production import calculate_mom_or_yoy_from_list
+from globals import SCOPEOUT_COLOR, CBSA_COLOR
 
 def create_short_zipcode_profiles():
-    latest_update_date = mongoclient.query_collection(database_name="MarketProfiles",
-                                                      collection_name="lastupdates",
-                                                      collection_filter={'geolevel': GeoLevels.ZIPCODE.value},
-                                                      prod_env=ProductionEnvironment.MARKET_PROFILES).iloc[0].to_dict()
-
     zipcodes_by_scopeout_markets = mongoclient.query_collection(database_name="ScopeOut",
                                                     collection_name="EsriZipcodesBySOMarkets",
                                                     collection_filter={},

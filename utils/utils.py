@@ -95,3 +95,6 @@ def month_string_to_datetime(month_string):
     date = datetime.datetime(year_num, month_num, 1)
 
     return date
+
+def two_list_to_dict(key_list, value_list):
+    return {key_list[i]: value_list[i] for i in range(len(key_list))}

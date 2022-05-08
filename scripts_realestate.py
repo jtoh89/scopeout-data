@@ -45,11 +45,11 @@ from realestate import redfin, buildingpermits, initialize, zillow
 #                                      collection_name=Collections_Historical_Profiles.USA.value)
 
 
-# zillow.import_zillow_msa_rental_data(geo_level=GeoLevels.CBSA,
-#                                      default_geoid=DefaultGeoIds.CBSA.value,
-#                                      geoid_field=GeoIdField.CBSA.value,
-#                                      geoname_field=GeoNameField.CBSA.value,
-#                                      collection_name=Collections_Historical_Profiles.CBSA.value)
+zillow.import_zillow_msa_rental_data(geo_level=GeoLevels.CBSA,
+                                     default_geoid=DefaultGeoIds.CBSA.value,
+                                     geoid_field=GeoIdField.CBSA.value,
+                                     geoname_field=GeoNameField.CBSA.value,
+                                     collection_name=Collections_Historical_Profiles.CBSA.value)
 
 
 # zillow.import_zillow_zip_rental_data(collection_name=Collections_Historical_Profiles.ZIPCODE.value)

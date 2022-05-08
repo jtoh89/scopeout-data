@@ -12,7 +12,8 @@ from scopeoutdata import helpers
 
 COLORS = ["green", "red", "yellow", "blue", "brown", "teal", "purple", "#65AFFF", "#4F6D7A", "#828489", "#D81E5B", "#FDF0D5", "#D4F2DB"]
 
-GROWTH_YEAR_LABELS = CENSUS_YEARS[1:]
+CENSUS_YEARS_SHORT = CENSUS_YEARS[-6:]
+GROWTH_YEAR_LABELS = CENSUS_YEARS_SHORT[1:]
 TRACT_LABEL_NAME = 'Neighborhood'
 US_Name = 'United States'
 
@@ -34,99 +35,94 @@ def create_short_neighborhood_profiles():
             prod_env = ProductionEnvironment.CENSUS_DATA2
 
         for stateid in stategroup:
-            state_already_processed = False
-
             if len(finished_runs) > 0:
                 match_found = finished_runs[finished_runs['state_id'] == stateid]['category'].values
 
                 if match_found:
-                    state_already_processed = True
+                    print('Skipping state {}. Neighborhood profiles already exists.'.format(stateid))
+                    continue
+
+            all_dict = helpers.get_all_geo_data_for_neighborhoods(stateid, prod_env)
+            census_tract_data = all_dict['census_tract_data']
+            county_data = all_dict['county_data']
+            county_market_profiles = all_dict['county_market_profiles']
+            county_cbsa_lookup = all_dict['county_cbsa_lookup']
+            cbsa_data = all_dict['cbsa_data']
+            usa_data = all_dict['usa_data']
 
 
-            if not state_already_processed:
-                all_dict = helpers.get_all_geo_data_for_neighborhoods(stateid, prod_env)
-                census_tract_data = all_dict['census_tract_data']
-                county_data = all_dict['county_data']
-                county_market_profiles = all_dict['county_market_profiles']
-                county_cbsa_lookup = all_dict['county_cbsa_lookup']
-                cbsa_data = all_dict['cbsa_data']
-                usa_data = all_dict['usa_data']
+            neighborhood_profile_list = []
+
+            for i, tract_profile in census_tract_data.iterrows():
+                neighborhood_profile = shortneighborhoodprofile.ShortNeighborhoodProfile()
+
+                if tract_profile.geoid == "20209044500":
+                    print("")
+
+                # Set geoid and neighborhood shapes
+                neighborhood_profile.geoid = tract_profile.geoid
+                neighborhood_profile.countyfullcode = False
+                neighborhood_profile.countyname = ''
+                neighborhood_profile.cbsacode = False
+                neighborhood_profile.cbsaname = ''
 
 
-                neighborhood_profile_list = []
+                # County
+                countyfullcode = tract_profile.geoinfo['countyfullcode']
+                county_profile = county_data[county_data['geoid'] == countyfullcode]
 
-                for i, tract_profile in census_tract_data.iterrows():
-                    neighborhood_profile = shortneighborhoodprofile.ShortNeighborhoodProfile()
+                if len(county_profile) > 1:
+                    print('!!!ERROR - Check why there is more than 1 county record for tractid: {}!!!'.format(tract_profile.geoid))
+                    sys.exit()
+                elif len(county_profile) == 0:
+                    print('!!!ERROR - Check why there is there no county record for tractid: {}!!!'.format(tract_profile.geoid))
+                    sys.exit()
+                else:
+                    county_profile = county_profile.iloc[0]
+                    neighborhood_profile.countyfullcode = county_profile.geoid
+                    neighborhood_profile.countyname = county_profile.geoinfo['countyname']
 
-                    if tract_profile.geoid == "20209044500":
-                        print("")
+                cbsainfo = county_cbsa_lookup[county_cbsa_lookup['countyfullcode'] == countyfullcode]
 
-                    # Set geoid and neighborhood shapes
-                    neighborhood_profile.geoid = tract_profile.geoid
-                    neighborhood_profile.countyfullcode = False
-                    neighborhood_profile.countyname = ''
-                    neighborhood_profile.cbsacode = False
-                    neighborhood_profile.cbsaname = ''
-                    # neighborhood_profile.geoshapecoordinates = get_neighborhood_map_shape(tract_profile.geoinfo)
+                if len(cbsainfo) == 1:
+                    cbsacode = cbsainfo['cbsacode'].iloc[0]
+                    cbsa_profile = cbsa_data[cbsa_data['geoid'] == cbsacode]
 
-                    # County
-                    countyfullcode = tract_profile.geoinfo['countyfullcode']
-                    county_profile = county_data[county_data['geoid'] == countyfullcode]
-
-                    if len(county_profile) > 1:
-                        print('!!!ERROR - Check why there is more than 1 county record for tractid: {}!!!'.format(tract_profile.geoid))
-                        sys.exit()
-                    elif len(county_profile) == 0:
-                        print('!!!ERROR - Check why there is there no county record for tractid: {}!!!'.format(tract_profile.geoid))
-                        sys.exit()
-                    else:
-                        county_profile = county_profile.iloc[0]
-                        neighborhood_profile.countyfullcode = county_profile.geoid
-                        neighborhood_profile.countyname = county_profile.geoinfo['countyname']
-
-                    cbsainfo = county_cbsa_lookup[county_cbsa_lookup['countyfullcode'] == countyfullcode]
-
-                    if len(cbsainfo) == 1:
-                        cbsacode = cbsainfo['cbsacode'].iloc[0]
-                        cbsa_profile = cbsa_data[cbsa_data['geoid'] == cbsacode]
-
-                        if len(cbsa_profile) != 1:
-                            print('!!!WARNING - Why do we have missing cbsaid for cbsa zipcodedata for cbsacode: {}!!!'.format(cbsacode))
-                            cbsa_profile = None
-                        else:
-                            cbsa_profile = cbsa_profile.iloc[0]
-                            neighborhood_profile.cbsacode = cbsa_profile.geoid
-                            neighborhood_profile.cbsaname = cbsa_profile.geoinfo['cbsaname']
-
-                    elif len(cbsainfo) > 1:
-                        print('!!!ERROR - Check why there is more than 1 cbsa record for tractid: {}!!!'.format(tract_profile.geoid))
-                        sys.exit()
-                    else:
+                    if len(cbsa_profile) != 1:
+                        print('!!!WARNING - Why do we have missing cbsaid for cbsa zipcodedata for cbsacode: {}!!!'.format(cbsacode))
                         cbsa_profile = None
+                    else:
+                        cbsa_profile = cbsa_profile.iloc[0]
+                        neighborhood_profile.cbsacode = cbsa_profile.geoid
+                        neighborhood_profile.cbsaname = cbsa_profile.geoinfo['cbsaname']
 
-                    usa_profile = usa_data.iloc[0]
+                elif len(cbsainfo) > 1:
+                    print('!!!ERROR - Check why there is more than 1 cbsa record for tractid: {}!!!'.format(tract_profile.geoid))
+                    sys.exit()
+                else:
+                    cbsa_profile = None
 
-                    neighborhood_profile = set_demographic_section(tract_profile, neighborhood_profile, cbsa_profile, county_profile, usa_profile)
-                    neighborhood_profile = set_economy_section(tract_profile, neighborhood_profile, cbsa_profile, county_profile, usa_profile)
-                    neighborhood_profile = set_housing_section(tract_profile, neighborhood_profile, cbsa_profile, county_profile, usa_profile)
-                    # neighborhood_profile = set_market_trends_section(tract_profile, neighborhood_profile, county_market_profiles)
+                usa_profile = usa_data.iloc[0]
 
-                    add_dict = neighborhood_profile_to_dict(neighborhood_profile, stateid)
-                    neighborhood_profile_list.append(add_dict)
+                neighborhood_profile = set_demographic_section(tract_profile, neighborhood_profile, cbsa_profile, county_profile, usa_profile)
+                neighborhood_profile = set_economy_section(tract_profile, neighborhood_profile, cbsa_profile, county_profile, usa_profile)
+                neighborhood_profile = set_housing_section(tract_profile, neighborhood_profile, cbsa_profile, county_profile, usa_profile)
+                # neighborhood_profile = set_market_trends_section(tract_profile, neighborhood_profile, county_market_profiles)
 
-                success = mongoclient.store_neighborhood_data(stateid, neighborhood_profile_list, None, "shortneighborhoodprofiles")
+                add_dict = neighborhood_profile_to_dict(neighborhood_profile, stateid)
+                neighborhood_profile_list.append(add_dict)
 
-                if success:
-                    collection_add_finished_run = {
-                        'category': 'shortneighborhoodprofiles',
-                        'geo_level': GeoLevels.TRACT.value,
-                        'state_id': stateid,
-                    }
+            success = mongoclient.store_neighborhood_data(stateid, neighborhood_profile_list, None, "shortneighborhoodprofiles")
 
-                    print('Successfully stored neighborhood profile for stateid: {}'.format(stateid))
-                    mongoclient.add_finished_run(collection_add_finished_run)
-            else:
-                print('Skipping state {}. Neighborhood profiles already exists.'.format(stateid))
+            if success:
+                collection_add_finished_run = {
+                    'category': 'shortneighborhoodprofiles',
+                    'geo_level': GeoLevels.TRACT.value,
+                    'state_id': stateid,
+                }
+
+                print('Successfully stored neighborhood profile for stateid: {}'.format(stateid))
+                mongoclient.add_finished_run(collection_add_finished_run)
 
 def process_property_types(neighborhood_profile_object, market_profile, propertytype):
     if propertytype in market_profile.keys():
@@ -219,25 +215,14 @@ def set_demographic_section(tract_profile, neighborhood_profile, cbsa_profile, c
         neighborhood_profile.demographics.oneyeargrowth.labels = [TRACT_LABEL_NAME, county_name, cbsa_name, US_Name]
         neighborhood_profile.demographics.oneyeargrowth.colors = COLORS[:4]
 
-    # neighborhood_profile.demographics.populationtrends.data1 = population
-    # neighborhood_profile.demographics.populationtrends.labels1 = CENSUS_YEARS
-    # neighborhood_profile.demographics.populationtrends.data2 = population_growth
-    # neighborhood_profile.demographics.populationtrends.labels2 = GROWTH_YEAR_LABELS
+    neighborhood_profile.demographics.populationtrends.data1 = population
+    neighborhood_profile.demographics.populationtrends.labels1 = CENSUS_YEARS
+    neighborhood_profile.demographics.populationtrends.data2 = population_growth
+    neighborhood_profile.demographics.populationtrends.labels2 = GROWTH_YEAR_LABELS
 
     return neighborhood_profile
 
 def set_economy_section(tract_profile, neighborhood_profile, cbsa_profile, county_profile, usa_profile):
-    pre_labels = list(tract_profile.data['Household Income Range']['All'].keys())
-
-    household_income_range_relabel = {
-        'Less than 25,000':'Less than $25,000',
-        '25,000-49,999':'$25,000-$49,999',
-        '50,000-74,999':'$50,000-$74,999',
-        '75,000-99,999':'$75,000-$99,999',
-        '100,000-149,999':'$100,000-$149,999',
-        '150,000 or more':'$150,000 or more'
-    }
-
     county_name = county_profile.geoinfo['countyname']
 
     if cbsa_profile is not None:
@@ -303,63 +288,15 @@ def set_economy_section(tract_profile, neighborhood_profile, cbsa_profile, count
     return neighborhood_profile
 
 def set_housing_section(tract_profile, neighborhood_profile, cbsa_profile, county_profile, usa_profile):
-    # housingunit = tract_profile.zipcodedata['Housing Unit Growth']['Total Housing Units']
-    # housingunit_growth = calculate_historic_growth(housingunit)
-    # housingunit_oneyeargrowth = calculate_percent_change(tract_profile.zipcodedata['Housing Unit Growth']['Total Housing Units'][-2], tract_profile.zipcodedata['Housing Unit Growth']['Total Housing Units'][-1])
-
-    # if 'Homeowner Growth' not in tract_profile.zipcodedata.keys():
-    #     print('')
-
-    # homeowner_oneyeargrowth = calculate_percent_change(tract_profile.zipcodedata['Homeowner Growth']['Owner'][-2], tract_profile.zipcodedata['Homeowner Growth']['Owner'][-1])
-    # renter_oneyeargrowth = calculate_percent_change(tract_profile.zipcodedata['Renter Growth']['Renter'][-2], tract_profile.zipcodedata['Renter Growth']['Renter'][-1])
-
-    # neighborhood_profile.housing.housingunitgrowth.data1 = housingunit
-    # neighborhood_profile.housing.housingunitgrowth.labels1 = CENSUS_YEARS
-    # neighborhood_profile.housing.housingunitgrowth.data2 = housingunit_growth
-    # neighborhood_profile.housing.housingunitgrowth.labels2 = GROWTH_YEAR_LABELS
-
-    # dominant_housing_type = sorted(tract_profile.zipcodedata['Property Types']['All'].items(), key=lambda x: (x[1],x[0]), reverse=True)[0][0]
-
-    # neighborhood_profile.housing.housingquickfacts.value1 = str(homeowner_oneyeargrowth) + '%'
-    # neighborhood_profile.housing.housingquickfacts.value2 = str(renter_oneyeargrowth) + '%'
-    # neighborhood_profile.housing.housingquickfacts.value3 = str(housingunit_oneyeargrowth) + '%'
-    # neighborhood_profile.housing.housingquickfacts.value4 = dominant_housing_type
-
     neighborhood_profile.housing.occupancyrate.labels = list(tract_profile.data['Occupancy rate'].keys())
     neighborhood_profile.housing.occupancyrate.data = list(tract_profile.data['Occupancy rate'].values())
     neighborhood_profile.housing.occupancyrate.colors = COLORS[:len(tract_profile.data['Occupancy rate'].values())]
 
-    # neighborhood_profile.housing.utilitiesincluded.labels = list(tract_profile.zipcodedata['Utilities in Rent'].keys())
-    # neighborhood_profile.housing.utilitiesincluded.zipcodedata = list(tract_profile.zipcodedata['Utilities in Rent'].values())
-    # neighborhood_profile.housing.utilitiesincluded.colors = COLORS[:len(tract_profile.zipcodedata['Utilities in Rent'].values())]
-
-    # neighborhood_profile.housing.propertytypes.labels = list(tract_profile.zipcodedata['Property Types']['All'].keys())
-    # neighborhood_profile.housing.propertytypes.data1 = list(tract_profile.zipcodedata['Property Types']['All'].values())
-    # neighborhood_profile.housing.propertytypes.data2 = list(tract_profile.zipcodedata['Property Types']['Owners'].values())
-    # neighborhood_profile.housing.propertytypes.data3 = list(tract_profile.zipcodedata['Property Types']['Renters'].values())
-    # neighborhood_profile.housing.propertytypes.colors = COLORS[:len(tract_profile.zipcodedata['Property Types']['All'].values())]
-
-    # neighborhood_profile.housing.yearbuilt.labels = list(tract_profile.zipcodedata['Year Built'].keys())
-    # neighborhood_profile.housing.yearbuilt.zipcodedata = list(tract_profile.zipcodedata['Year Built'].values())
-
-    # neighborhood_profile.housing.numberofbedrooms.labels = list(tract_profile.zipcodedata['Number of Bedrooms']['All'].keys())
-    # neighborhood_profile.housing.numberofbedrooms.data1 = list(tract_profile.zipcodedata['Number of Bedrooms']['All'].values())
-    # neighborhood_profile.housing.numberofbedrooms.data2 = list(tract_profile.zipcodedata['Number of Bedrooms']['Owners'].values())
-    # neighborhood_profile.housing.numberofbedrooms.data3 = list(tract_profile.zipcodedata['Number of Bedrooms']['Renters'].values())
-    # neighborhood_profile.housing.numberofbedrooms.colors = COLORS[:len(tract_profile.zipcodedata['Number of Bedrooms']['All'].values())]
-
-    # neighborhood_profile.housing.yearmovedin.labels = list(tract_profile.zipcodedata['Year Moved In']['All'].keys())
-    # neighborhood_profile.housing.yearmovedin.data1 = list(tract_profile.zipcodedata['Year Moved In']['All'].values())
-    # neighborhood_profile.housing.yearmovedin.data2 = list(tract_profile.zipcodedata['Year Moved In']['Owners'].values())
-    # neighborhood_profile.housing.yearmovedin.data3 = list(tract_profile.zipcodedata['Year Moved In']['Renters'].values())
-    # neighborhood_profile.housing.yearmovedin.colors = COLORS[:len(tract_profile.zipcodedata['Year Moved In']['All'].values())]
-
-    # neighborhood_profile.housing.incomehousingcost.labels = list(tract_profile.zipcodedata['% Income on Housing Costs']['All'].keys())
-    # neighborhood_profile.housing.incomehousingcost.data1 = list(tract_profile.zipcodedata['% Income on Housing Costs']['All'].values())
-    # neighborhood_profile.housing.incomehousingcost.data2 = list(tract_profile.zipcodedata['% Income on Housing Costs']['Owners'].values())
-    # neighborhood_profile.housing.incomehousingcost.data3 = list(tract_profile.zipcodedata['% Income on Housing Costs']['Renters'].values())
-    # neighborhood_profile.housing.incomehousingcost.colors = COLORS[:len(tract_profile.zipcodedata['% Income on Housing Costs']['All'].values())]
-
+    neighborhood_profile.housing.propertytypes.labels = list(tract_profile.data['Property Types']['All'].keys())
+    neighborhood_profile.housing.propertytypes.data1 = list(tract_profile.data['Property Types']['All'].values())
+    neighborhood_profile.housing.propertytypes.data2 = list(tract_profile.data['Property Types']['Owners'].values())
+    neighborhood_profile.housing.propertytypes.data3 = list(tract_profile.data['Property Types']['Renters'].values())
+    neighborhood_profile.housing.propertytypes.colors = COLORS[:len(tract_profile.data['Property Types']['All'].values())]
 
 
     return neighborhood_profile

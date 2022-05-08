@@ -67,7 +67,7 @@ def run_cbsa_building_permit(geo_level, geoid_field, geoname_field):
                 retry_count += 1
                 continue
 
-            if data.status_code != 200:
+            if data.status_code != 200 or (len(data.history) > 0):
                 retry_count += 1
                 print("ERROR - bad request. Status code: {}. Query: {}".format(data.status_code, query_url))
 
@@ -77,6 +77,8 @@ def run_cbsa_building_permit(geo_level, geoid_field, geoname_field):
 
                 if data.reason == 'Not Found':
                     continue
+                elif data.history[0].status_code == 302:
+                    break
                 else:
                     print('Unexpected error on query: ', data)
                     sys.exit()
@@ -96,11 +98,11 @@ def run_cbsa_building_permit(geo_level, geoid_field, geoname_field):
 
                     append_headers = line_list
 
-                    for i, aheader in enumerate(append_headers):
-                        if i == header1_length:
+                    for i2, aheader in enumerate(append_headers):
+                        if i2 == header1_length:
                             headers.append(aheader)
                             break
-                        headers[i] = headers[i] + ' ' + aheader
+                        headers[i2] = headers[i2] + ' ' + aheader
 
                     if df is None:
                         df = pd.DataFrame(columns=headers)
@@ -120,7 +122,7 @@ def run_cbsa_building_permit(geo_level, geoid_field, geoname_field):
                 print('ERROR: Why are we missing msa in same year?')
                 sys.exit()
 
-            for i, row in df.iterrows():
+            for _, row in df.iterrows():
                 cbsaid = row[geoid_field]
 
                 if cbsaid in OLD_TO_NEW_CBSAID.keys():
