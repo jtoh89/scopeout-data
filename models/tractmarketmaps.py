@@ -1,6 +1,6 @@
 import json
 from models.geojson import GeoJson
-
+from globals import COLOR_LEVEL_NA
 
 class TractMarketGeoJsonProperties:
     def __init__(self):
@@ -35,7 +35,7 @@ class TractMarketMap:
 
 class LegendDetails:
     def __init__(self):
-        self.level0color = "#999999"
+        self.level0color = COLOR_LEVEL_NA
         self.level0description = "Not Available"
         self.level1color = ""
         self.level1description = ""

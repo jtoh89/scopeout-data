@@ -7,6 +7,7 @@ from dateutil.relativedelta import relativedelta
 import datetime
 from utils.utils import number_to_string, calculate_percent_change, month_string_to_datetime, truncate_decimals
 import copy
+from globals import COLOR_LEVEL_NA, COLOR_LEVEL_1, COLOR_LEVEL_2, COLOR_LEVEL_3, COLOR_LEVEL_4, COLOR_LEVEL_5
 
 def calculate_percentiles_from_list(list_data):
     final_list = []
@@ -22,20 +23,6 @@ def calculate_percentiles_from_list(list_data):
         "percentile_80": int(round(np.percentile(np_list, 80), 0))
     }
 
-
-# COLOR_LEVEL_NA = "#999999"
-# COLOR_LEVEL_1 = "#ff0000"
-# COLOR_LEVEL_2 = "#ff7f01"
-# COLOR_LEVEL_3 = "#ffff01"
-# COLOR_LEVEL_4 = "#004c00"
-# COLOR_LEVEL_5 = "#00ff01"
-
-COLOR_LEVEL_NA = "#EAE6E0"
-COLOR_LEVEL_1 = "#CF5304"
-COLOR_LEVEL_2 = "#FFAE0A"
-COLOR_LEVEL_3 = "#F5FF2B"
-COLOR_LEVEL_4 = "#C1FF54"
-COLOR_LEVEL_5 = "#038C0D"
 
 def assign_legend_details(legend_details, percentiles_dict, data_type, order):
     if data_type == "dollar":

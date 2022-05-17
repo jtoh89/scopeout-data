@@ -6,7 +6,7 @@ from models import geojson as modelGeoJson
 from enums import ProductionEnvironment, GeoLevels
 from utils.utils import isNaN,  number_to_string, calculate_percent_change
 from utils.production import create_url_slug, calculate_percentiles_from_list, assign_color, COLOR_LEVEL_NA, assign_legend_details
-
+from dateutil.relativedelta import relativedelta
 from lookups import INDEX_TO_MONTH
 import datetime
 
@@ -47,9 +47,9 @@ def generate_zipcode_maps():
         print("Running ", cbsaname)
 
         all_zip_median_sale_price = []
-        all_zip_median_sale_priceYoY = []
+        all_zip_median_sale_price_yoy = []
+        all_zip_median_sale_price_mom = []
         all_zip_dom = []
-        all_zip_ppsf = []
 
         missing_zipcode_count = 0
 
@@ -64,8 +64,6 @@ def generate_zipcode_maps():
         zipcode_market_map.urlslug = create_url_slug(cbsacode, cbsaname)
         # iterate through geojson features to add property and build metric lists
         for zip_geojson_feature in scopeout_market.geojson['features']:
-            # if zip_geojson_feature['id'] == '38626':
-            #     print("check why proeprties is None")
             matching_zip_data = zip_code_data[zip_code_data['zipcode'] == zip_geojson_feature['id']].iloc[0].to_dict()
 
             zipcode_geojson_property = zipcodemarketmap.ZipcodeGeoJsonProperties()
@@ -73,9 +71,9 @@ def generate_zipcode_maps():
             if len(matching_zip_data) == 0 or isNaN(matching_zip_data['realestatetrends']) or matching_zip_data['realestatetrends']['dates'][-1] != latest_update_date['datestring']:
                 # print('No matching zipcode found')
                 zipcode_geojson_property.mediansaleprice = None
-                zipcode_geojson_property.mediansalepriceYoY = None
+                zipcode_geojson_property.mediansalepriceyoy = None
+                zipcode_geojson_property.mediansalepricemom = None
                 zipcode_geojson_property.dom = None
-                zipcode_geojson_property.ppsf = None
                 zipcode_geojson_property.geoid = zip_geojson_feature['id']
                 zip_geojson_feature['properties'] = zipcode_geojson_property
                 missing_zipcode_count += 1
@@ -83,36 +81,44 @@ def generate_zipcode_maps():
 
             median_sale_price = matching_zip_data['realestatetrends']['mediansaleprice'][-1]
             median_sale_price_yoy = matching_zip_data['realestatetrends']['mediansalepriceyoy'][-1]
+            median_sale_price_mom = matching_zip_data['realestatetrends']['mediansalepricemom'][-1]
             dom = matching_zip_data['realestatetrends']['mediandom'][-1]
-            ppsf = matching_zip_data['realestatetrends']['medianppsf'][-1]
-
 
             if median_sale_price_yoy == None:
-                date_minus_year = latest_update_date['lastupdatedate'] - datetime.timedelta(days=(1*365))
-
-                month_minus_year = INDEX_TO_MONTH[date_minus_year.month-1] + " " + str(date_minus_year.year)
+                prev_year_datetime = latest_update_date['lastupdatedate'] - datetime.timedelta(days=(1*365))
+                prev_year_date = INDEX_TO_MONTH[prev_year_datetime.month-1] + " " + str(prev_year_datetime.year)
 
                 if len(matching_zip_data['realestatetrends']['dates']) < 12:
                     print("Less than a year")
                 else:
-                    if matching_zip_data['realestatetrends']['dates'][-13] == month_minus_year:
+                    if matching_zip_data['realestatetrends']['dates'][-13] == prev_year_date:
                         prev_year_median_sale_price = matching_zip_data['realestatetrends']['mediansaleprice'][-13]
 
                         if prev_year_median_sale_price != None:
                             median_sale_price_yoy = calculate_percent_change(prev_year_median_sale_price, median_sale_price, move_decimal=False)
 
+            if median_sale_price_mom == None:
+                prev_datetime = latest_update_date['lastupdatedate'] - relativedelta(months=1)
+                prev_month = INDEX_TO_MONTH[prev_datetime.month-1] + " " + str(prev_datetime.year)
+
+                if matching_zip_data['realestatetrends']['dates'][-2] == prev_month:
+                    prev_year_median_sale_price = matching_zip_data['realestatetrends']['mediansaleprice'][-2]
+
+                    if prev_year_median_sale_price != None:
+                        median_sale_price_yoy = calculate_percent_change(prev_year_median_sale_price, median_sale_price, move_decimal=False)
+
             # build list of all metrics
             all_zip_median_sale_price.append(median_sale_price)
-            all_zip_median_sale_priceYoY.append(median_sale_price_yoy)
+            all_zip_median_sale_price_yoy.append(median_sale_price_yoy)
             all_zip_dom.append(dom)
-            all_zip_ppsf.append(ppsf)
+            all_zip_median_sale_price_mom.append(median_sale_price_mom)
 
             # assign item to geojson property
             zipcode_geojson_property.geoid = zip_geojson_feature['id']
             zipcode_geojson_property.mediansaleprice = median_sale_price
             zipcode_geojson_property.mediansalepriceYoY = median_sale_price_yoy
             zipcode_geojson_property.dom = dom
-            zipcode_geojson_property.ppsf = ppsf
+            zipcode_geojson_property.mediansalepricemom = median_sale_price_mom
 
             # assign zipcode geojson property
             zip_geojson_feature['properties'] = zipcode_geojson_property
@@ -122,9 +128,9 @@ def generate_zipcode_maps():
 
         # calculate percentiles
         median_sale_price_percentiles = calculate_percentiles_from_list(all_zip_median_sale_price)
-        median_sale_price_yoy_percentiles = calculate_percentiles_from_list(all_zip_median_sale_priceYoY)
+        median_sale_price_yoy_percentiles = calculate_percentiles_from_list(all_zip_median_sale_price_yoy)
         dom_percentiles = calculate_percentiles_from_list(all_zip_dom)
-        ppsf_percentiles = calculate_percentiles_from_list(all_zip_ppsf)
+        median_sale_price_mom_percentiles = calculate_percentiles_from_list(all_zip_median_sale_price_mom)
 
         #iterate again to assign colors
         for zip_geojson_feature in scopeout_market.geojson['features']:
@@ -133,7 +139,7 @@ def generate_zipcode_maps():
                 median_sale_price = zip_geojson_feature['properties'].mediansaleprice
                 median_sale_price_yoy = zip_geojson_feature['properties'].mediansalepriceyoy
                 dom = zip_geojson_feature['properties'].dom
-                ppsf = zip_geojson_feature['properties'].ppsf
+                median_sale_price_mom = zip_geojson_feature['properties'].mediansalepricemom
             except Exception as e:
                 print(e)
                 sys.exit()
@@ -146,8 +152,8 @@ def generate_zipcode_maps():
             dom_color = assign_color(dom, dom_percentiles, 'ascending')
             zipcode_market_map.domcolors.extend([zipcode, dom_color])
 
-            ppsf_color = assign_color(ppsf, ppsf_percentiles, 'ascending')
-            zipcode_market_map.ppsfcolors.extend([zipcode, ppsf_color])
+            median_sale_price_mom_color = assign_color(median_sale_price_mom, median_sale_price_mom_percentiles, 'ascending')
+            zipcode_market_map.mediansalepricemomcolors.extend([zipcode, median_sale_price_mom_color])
 
             zip_geojson_feature['properties'].mediansaleprice = number_to_string('dollar', median_sale_price)
 
@@ -156,10 +162,10 @@ def generate_zipcode_maps():
             else:
                 zip_geojson_feature['properties'].dom = None
 
-            if ppsf:
-                zip_geojson_feature['properties'].ppsf = number_to_string('dollar', ppsf)
+            if median_sale_price_mom:
+                zip_geojson_feature['properties'].mediansalepricemom = number_to_string('dollar', median_sale_price_mom)
             else:
-                zip_geojson_feature['properties'].ppsf = None
+                zip_geojson_feature['properties'].mediansalepricemom = None
 
 
             zip_geojson_feature['properties'] = zip_geojson_feature['properties'].__dict__
@@ -169,17 +175,14 @@ def generate_zipcode_maps():
         assign_legend_details(zipcode_market_map.mediansalepricelegend, median_sale_price_percentiles, 'dollar', 'ascending')
         assign_legend_details(zipcode_market_map.mediansalepriceyoylegend, median_sale_price_yoy_percentiles, 'percent', 'ascending')
         assign_legend_details(zipcode_market_map.domlegend, dom_percentiles, 'number', 'ascending')
-        assign_legend_details(zipcode_market_map.ppsflegend, ppsf_percentiles, 'dollar', 'ascending')
+        assign_legend_details(zipcode_market_map.mediansalepricemomlegend, median_sale_price_mom_percentiles, 'percent', 'ascending')
 
         zipcode_market_map.mediansalepricecolors.append(COLOR_LEVEL_NA)
         zipcode_market_map.mediansalepriceyoycolors.append(COLOR_LEVEL_NA)
+        zipcode_market_map.mediansalepricemomcolors.append(COLOR_LEVEL_NA)
         zipcode_market_map.domcolors.append(COLOR_LEVEL_NA)
-        zipcode_market_map.ppsfcolors.append(COLOR_LEVEL_NA)
-
-
 
         zipcode_market_map.convert_to_dict()
-
 
         mongoclient.insert_list_mongo(list_data=[zipcode_market_map.__dict__],
                                       dbname='ScopeOutMaps',
