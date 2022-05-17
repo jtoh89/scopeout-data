@@ -30,7 +30,7 @@ def esri_auth():
     return response['access_token']
 
 
-def dump_tract_by_county(batch_size=100):
+def DEPECRATED_dump_tract_by_county(batch_size=100):
     """
     Iterates through list of CBSA Ids. Queries Esri Standard Geography for polygon rings and stores into mongo
     :return:

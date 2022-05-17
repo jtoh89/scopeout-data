@@ -1,4 +1,4 @@
-from geographies import geography, scopeoutmarkets, esrigeographies
+from geographies import geography, scopeoutmarkets, esrigeographies, tractgeojson
 
 
 
@@ -14,10 +14,11 @@ from geographies import geography, scopeoutmarkets, esrigeographies
 
 
 # dump tract info by county
-# esrigeographies.dump_tract_by_county()
+# esrigeographies.DEPECRATED_dump_tract_by_county()
+# geography.store_tract_lookups()
 
-# dump esri tract geojson
-# esrigeographies.dump_tract_geojson_for_scopeout_markets()
+# dump tract geojson
+# tractgeojson.store_tract_geojson_for_cbsacode()
 
 # dump county by cbsa lookup
 # geography.dump_county_by_cbsa_lookup()

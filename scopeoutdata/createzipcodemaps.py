@@ -51,7 +51,6 @@ def generate_zipcode_maps():
         all_zip_dom = []
         all_zip_ppsf = []
 
-
         missing_zipcode_count = 0
 
         # create zipcode market map

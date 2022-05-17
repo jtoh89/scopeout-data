@@ -30,7 +30,7 @@ def calculate_percentiles_from_list(list_data):
 # COLOR_LEVEL_4 = "#004c00"
 # COLOR_LEVEL_5 = "#00ff01"
 
-COLOR_LEVEL_NA = "#ffffff"
+COLOR_LEVEL_NA = "#EAE6E0"
 COLOR_LEVEL_1 = "#CF5304"
 COLOR_LEVEL_2 = "#FFAE0A"
 COLOR_LEVEL_3 = "#F5FF2B"

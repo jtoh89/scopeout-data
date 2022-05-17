@@ -28,5 +28,5 @@ from enums import GeoLevels, DefaultGeoIds, ProductionEnvironment, GeoIdField, G
 
 
 ############# CREATE PRODUCTION MAP DATA ############
-createtractmaps.generate_tract_maps()
-# createzipcodemaps.generate_zipcode_maps()
+# createtractmaps.generate_tract_maps()
+createzipcodemaps.generate_zipcode_maps()

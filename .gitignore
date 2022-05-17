@@ -6,4 +6,5 @@
 .env
 files/
 zipcodegithubrepo/
-zipcodedata/
+zipcodegeojson/
+tractsgeojson/

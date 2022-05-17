@@ -27,7 +27,7 @@ def generate_tract_maps():
         # cbsa_data = mongoclient.query_collection(database_name="CensusData1",
         #                                             collection_name="CensusData",
         #                                             collection_filter={"geoid": cbsacode, "geolevel": "cbsa"},
-        #                                             prod_env=ProductionEnvironment.CENSUS_DATA1).iloc[0].zipcodedata
+        #                                             prod_env=ProductionEnvironment.CENSUS_DATA1).iloc[0].zipcodegeojson
 
         cbsa_tracts_geo_df = mongoclient.query_collection(database_name="Geographies",
                                                     collection_name="EsriTractLookup",
@@ -76,8 +76,8 @@ def generate_tract_maps():
             tract_data = tract_data.iloc[0]
 
             medianhouseholdincome = tract_data.economy['medianhouseholdincome']['data1'][0]
-            unemploymentrate = tract_data.economy['unemploymentrate']['zipcodedata'][0]
-            owneroccupancyrate = tract_data.housing['occupancyrate']['zipcodedata'][0]
+            unemploymentrate = tract_data.economy['unemploymentrate']['zipcodegeojson'][0]
+            owneroccupancyrate = tract_data.housing['occupancyrate']['zipcodegeojson'][0]
 
             if medianhouseholdincome != medianhouseholdincome or unemploymentrate != unemploymentrate:
                 print('!!! Found NA value for tract!!!')
@@ -174,10 +174,10 @@ def calculate_percentiles_from_all_tracts(tracts_data_df):
         tract_median_household_income = tract['economy']['medianhouseholdincome']['data1'][0]
         median_household_income_list.append(tract_median_household_income)
 
-        tract_median_unemployment_rate = tract['economy']['unemploymentrate']['zipcodedata'][0]
+        tract_median_unemployment_rate = tract['economy']['unemploymentrate']['zipcodegeojson'][0]
         unemployment_rate_list.append(tract_median_unemployment_rate)
 
-        tract_owner_occupant_rate = tract['housing']['occupancyrate']['zipcodedata'][0]
+        tract_owner_occupant_rate = tract['housing']['occupancyrate']['zipcodegeojson'][0]
         owner_occupant_rate_list.append(tract_owner_occupant_rate)
 
     median_household_income_percentiles = calculate_percentiles_from_list(median_household_income_list)
@@ -239,7 +239,7 @@ def generate_zipcode_maps():
             marketmap_data.zipprofiles.append({
                 'zipcode': zipcode_data['zipcode'],
                 'geometry': geometry,
-                'zipcodedata': {
+                'zipcodegeojson': {
                     'medianhouseholdincome': 80000
                 }
             })

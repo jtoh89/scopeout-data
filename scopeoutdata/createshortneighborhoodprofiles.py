@@ -89,7 +89,7 @@ def create_short_neighborhood_profiles():
                     cbsa_profile = cbsa_data[cbsa_data['geoid'] == cbsacode]
 
                     if len(cbsa_profile) != 1:
-                        print('!!!WARNING - Why do we have missing cbsaid for cbsa zipcodedata for cbsacode: {}!!!'.format(cbsacode))
+                        print('!!!WARNING - Why do we have missing cbsaid for cbsa zipcodegeojson for cbsacode: {}!!!'.format(cbsacode))
                         cbsa_profile = None
                     else:
                         cbsa_profile = cbsa_profile.iloc[0]

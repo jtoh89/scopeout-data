@@ -20,6 +20,9 @@ def generate_tract_maps():
                                                     prod_env=ProductionEnvironment.GEO_ONLY)
 
     for cbsacode in list(scopeout_markets['cbsacode']):
+        if cbsacode != "28140":
+            continue
+
         cbsa_geo_dict = mongoclient.query_collection(database_name="Geographies",
                                                         collection_name="Cbsa",
                                                         collection_filter={'cbsacode': {'$eq': cbsacode}},
@@ -62,6 +65,9 @@ def generate_tract_maps():
         assign_legend_details(tract_map.owneroccupancyratelegend, tract_data_percentiles_dict["owner_occupancy_rate_percentiles"], 'percent', 'ascending')
 
         for i, tract in cbsa_tracts_geo_df.iterrows():
+            if tract.tractcode != "29095011600":
+                continue
+
             geo_json_feature = modelGeoJson.GeoJsonFeature()
 
             geo_json_geometry = modelGeoJson.GeoJsonGeometry()

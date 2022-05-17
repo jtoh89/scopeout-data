@@ -21,11 +21,11 @@ from enums import GeoLevels
 # print('County delete done')
 
 ## Tract
-# mongoclient.delete_finished_run({
-#         'geo_level': GeoLevels.TRACT.value,
-#         'category': 'Unemployment Update'
-#     })
-# print('Tract delete done')
+mongoclient.delete_finished_run({
+        'geo_level': GeoLevels.TRACT.value,
+        'category': ''
+    })
+print('Tract delete done')
 
 
 
@@ -33,11 +33,11 @@ from enums import GeoLevels
 ### Short/Full Neighborhood Update
 ##################################################################
 
-mongoclient.delete_finished_run({
-    'geo_level': GeoLevels.TRACT.value,
-    'category': 'shortneighborhoodprofiles'
-})
-print('Tract delete done')
+# mongoclient.delete_finished_run({
+#     'geo_level': GeoLevels.TRACT.value,
+#     'category': 'shortneighborhoodprofiles'
+# })
+# print('Tract delete done')
 
 
 

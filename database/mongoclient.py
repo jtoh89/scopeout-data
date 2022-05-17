@@ -111,7 +111,7 @@ def query_geography(geo_level, stateid=None):
             collection_filter = {}
 
     elif geo_level == GeoLevels.TRACT:
-        collection = db['EsriTractLookup']
+        collection = db['TractLookup']
         collection_filter = {
             'fipsstatecode': stateid,
         }
@@ -208,11 +208,10 @@ def store_census_data(geo_level, state_id, filtered_dict, prod_env=ProductionEnv
         geoid = item_dict['geoid']
         existing_data = item_dict['data']
 
-        if geoid not in filtered_dict.keys():
-            # print('DID NOT FIND GEO IN FILTERED DICT. GEOID: ', geoid)
-            continue
-
-        existing_data.update(filtered_dict[geoid]['data'])
+        if geoid not in list(filtered_dict.keys()):
+            print('DID NOT FIND GEO IN FILTERED DICT. GEOID: ', geoid)
+        else:
+            existing_data.update(filtered_dict[geoid]['data'])
 
     insert_list = existing_list
 
@@ -389,8 +388,6 @@ def delete_finished_run(collection_delete_finished_run):
 def update_finished_run(collection_add_finished_run, geo_level, category):
     client = connect_to_client(prod_env=ProductionEnvironment.QA)
     db = client['CensusDataInfo']
-
-
 
     # Add entry to finished runs. So if process stops, we can start from where we left off without running through
     # each state and category again.

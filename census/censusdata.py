@@ -7,13 +7,13 @@ from enums import GeoLevels, ProductionEnvironment, DefaultGeoIds
 from census import censuslookups
 from fredapi import Fred
 from dotenv import load_dotenv
-from lookups import OLD_TO_NEW_CBSAID
+from lookups import OLD_TO_NEW_CBSAID, STATES
 from census.censushelpers import calculate_category_percentage, check_percentages, sum_categories, sum_categories_and_total, sum_categories_with_owner_renter
 import time
 import os
 import sys
 from globals import SCOPEOUT_YEAR, CENSUS_LATEST_YEAR, CENSUS_YEARS
-from datetime import datetime
+
 
 # CENSUS_LATEST_YEAR = 2014
 # CENSUS_YEARS = [2013, CENSUS_LATEST_YEAR]
@@ -28,15 +28,12 @@ STATES2 = [
     '47','48','49','50','51','53','54','55','56'
 ]
 
-#
-STATES = ['01','02','04','05','06','08','09','10','11','12','13','15','16','17','18','19','20','21','22','23','24',
-    '25','26','27','28','29','30','31','32','33','34','35','36','37','38','39','40','41','42','44','45','46',
-    '47','48','49','50','51','53','54','55','56']
 
 def update_us_median_income_fred():
     '''
     Function will get national unemployment data from Fred API and update median household income data for
     US data.
+
     :return: None
     '''
     load_dotenv()
@@ -122,13 +119,11 @@ def run_census_data_import(geo_level, prod_env, force_run=False):
             'category': force_run['category']
             })
 
-
     collection_find_finished_runs = {
         'scopeout_year': SCOPEOUT_YEAR,
         'geo_level': geo_level.value,
     }
     finished_runs = mongoclient.get_finished_runs(collection_find_finished_runs)
-
 
     for i, stateid in enumerate(STATES_RUN):
         #usa and cbsa data does not need more than 1 iteration
@@ -140,7 +135,6 @@ def run_census_data_import(geo_level, prod_env, force_run=False):
 
         if geo_level == GeoLevels.CBSA:
             stateid = DefaultGeoIds.CBSA.value
-
 
         if geo_level == GeoLevels.TRACT:
             if stateid in STATES2:

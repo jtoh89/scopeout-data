@@ -10,7 +10,8 @@ import geojson
 from models.geojson import GeoJson, GeoJsonFeature, GeoJsonGeometry
 from geographies import esrigeographies
 from utils.production import create_url_slug
-
+from lookups import STATES
+from census.censusdata import census_api
 
 def dump_zipcode_geojson_by_scopeout_markets():
     currpath = os.path.dirname(os.path.abspath(__file__))
@@ -26,7 +27,6 @@ def dump_zipcode_geojson_by_scopeout_markets():
         cbsacode = cbsa['cbsacode']
 
         store_zip_geojson_for_cbsacode(cbsacode=cbsacode)
-
 
 def store_zip_geojson_for_cbsacode(cbsacode):
     cbsa_market = mongoclient.query_collection(database_name="Geographies",
@@ -52,7 +52,7 @@ def store_zip_geojson_for_cbsacode(cbsacode):
     geojson_model = GeoJson()
     geojson_model.name = cbsa_name
 
-    directory = 'zipcodedata'
+    directory = 'zipcodegeojson'
     for foldername in os.listdir(directory):
         if foldername not in unique_states:
             continue
@@ -76,7 +76,6 @@ def store_zip_geojson_for_cbsacode(cbsacode):
                 geo_json_geometry.type = zipcode_data['geometry']['type']
 
                 geojson_feature.geometry = geo_json_geometry.__dict__
-
                 geojson_model.features.append(geojson_feature.__dict__)
 
 
@@ -100,22 +99,6 @@ def store_zip_geojson_for_cbsacode(cbsacode):
 
     print('Successfully stored zipcode geojson for cbsacode: {}'.format(cbsacode))
     mongoclient.add_finished_run(collection_add_finished_run)
-
-def dump_testziplist():
-    with open('./files/test_zip.json', 'r') as f:
-        data = json.load(f)
-
-        insert_list = []
-        for zipcode_data in data['features']:
-            geometry = []
-            zipcode = zipcode_data['properties']['ZIP_CODE']
-            insert_list.append({"zipcode": zipcode})
-
-
-        mongoclient.insert_list_mongo(list_data=insert_list,
-                                      dbname='Geographies',
-                                      collection_name='TestZipList',
-                                      prod_env=ProductionEnvironment.GEO_ONLY)
 
 def dump_all_geographies():
     """
@@ -318,72 +301,26 @@ def dump_zillow_cbsa_mapping():
                                   collection_name='ZillowCbsaMapping',
                                   prod_env=ProductionEnvironment.GEO_ONLY)
 
-# Get zip files from: https://www.huduser.gov/portal/datasets/usps_crosswalk.html
-def DEPRECATED_dump_zipcode():
-    '''
-    Function stores all USPS zipcodes from various years.
-    :return:
-    '''
-    currpath = os.path.dirname(os.path.abspath(__file__))
-    rootpath = os.path.dirname(os.path.abspath(currpath))
+def store_tract_lookups():
+    for stateid in STATES:
 
-    final_df = pd.DataFrame()
+        query_url = "https://api.census.gov/data/2020/acs/acs5?get=NAME&for=tract:*&in=state:{}%20county:*".format(stateid)
+        df = census_api(query_url)
 
-    ZIP_FILE_YEARS = ['10','15','19','20']
-    for year in ZIP_FILE_YEARS:
-        file_dir = '/files/zipcodes/ZIP_COUNTY_1220{}.xlsx'.format(year)
-        print('Reading zip file: {}'.format(file_dir))
-        df = pd.read_excel(rootpath + file_dir)
+        insert_list = []
+        for i, row in df.iterrows():
+            stateid = row['state']
+            countyid = row['county']
+            tractcode = stateid + countyid + row['tract']
 
-        df = df.rename(columns={'ZIP':'zipcode','COUNTY':'countyfullcode'})
-        df['zipcode'] = df['zipcode'].apply(lambda x: str(x).zfill(5))
-        df['countyfullcode'] = df['countyfullcode'].apply(lambda x: str(x).zfill(5))
-        df['stateid'] = df['countyfullcode'].str[:2]
-        df = df[df['stateid'].isin(['60','66','69','72','78']) == False ]
-        df = df[['zipcode','countyfullcode']]
-        df['zipcountyid'] = df['zipcode'] + df['countyfullcode']
-
-        if len(final_df) < 1:
-            final_df = df
-        else:
-            final_zipcode_list = list(final_df['zipcountyid'])
-            for i, row in df.iterrows():
-              current_zipcode = row.zipcode
-              current_countyfullcode = row.countyfullcode
-              zipcountyid = current_zipcode + current_countyfullcode
-
-              if zipcountyid not in final_zipcode_list:
-                  final_df = final_df.append({'zipcountyid': zipcountyid,
-                                              'zipcode':current_zipcode,
-                                              'countyfullcode':current_countyfullcode},
-                                              ignore_index=True)
-
-    counties_to_cbsa = mongoclient.query_collection(database_name="Geographies",
-                                                    collection_name="CountyByCbsa",
-                                                    collection_filter={},
-                                                    prod_env=ProductionEnvironment.GEO_ONLY)
-
-    insert_list = []
-    for i, zipcounty in final_df.iterrows():
-        match = counties_to_cbsa[counties_to_cbsa['countyfullcode'] == zipcounty.countyfullcode]
-
-        if len(match) > 1:
-            print('found multiple matches: countyfullcode: {}'.format(zipcounty.countyfullcode))
-        elif len(match) > 0:
             insert_list.append({
-                'zipcode': zipcounty.zipcode,
-                'countyfullcode': zipcounty.countyfullcode,
-                'cbsacode': match.cbsacode.iloc[0]
-            })
-        else:
-            insert_list.append({
-                'zipcode': zipcounty.zipcode,
-                'countyfullcode': zipcounty.countyfullcode
+                "tractcode": tractcode,
+                "countyfullcode": stateid + countyid,
+                "fipsstatecode": stateid
             })
 
+        mongoclient.insert_list_mongo(list_data=insert_list,
+                                      dbname='Geographies',
+                                      collection_name='TractLookup',
+                                      prod_env=ProductionEnvironment.GEO_ONLY)
 
-
-    mongoclient.insert_list_mongo(list_data=insert_list,
-                                  dbname='Geographies',
-                                  collection_name='ZipCountyCbsa',
-                                  prod_env=ProductionEnvironment.GEO_ONLY)
