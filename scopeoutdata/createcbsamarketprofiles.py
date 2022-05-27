@@ -25,7 +25,6 @@ def generate_cbsa_market_profiles(prod_env, geoid_field):
                                                  collection_filter={'geolevel': GeoLevels.CBSA.value},
                                                  prod_env=ProductionEnvironment.CENSUS_DATA1)
 
-
     cbsa_market_profile_list = []
 
     for i, row in cbsa_historical_profiles.iterrows():

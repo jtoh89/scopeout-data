@@ -66,7 +66,6 @@ def create_short_neighborhood_profiles():
                 neighborhood_profile.cbsacode = False
                 neighborhood_profile.cbsaname = ''
 
-
                 # County
                 countyfullcode = tract_profile.geoinfo['countyfullcode']
                 county_profile = county_data[county_data['geoid'] == countyfullcode]
@@ -193,38 +192,24 @@ def set_demographic_section(tract_profile, neighborhood_profile, cbsa_profile, c
         neighborhood_profile.demographics.oneyeargrowth.hasData = False
     else:
         population = tract_profile.data['Population Growth']['Total Population']
-        population_growth = calculate_historic_growth(population)
 
-        tract_population_oneyeargrowth = calculate_percent_change(tract_profile.data['Population Growth']['Total Population'][-2], tract_profile.data['Population Growth']['Total Population'][-1])
-        county_population_oneyeargrowth = calculate_percent_change(county_profile.data['Population Growth']['Total Population'][-2], county_profile.data['Population Growth']['Total Population'][-1],decimal_places=2)
-        us_population_oneyeargrowth = calculate_percent_change(usa_profile.data['Population Growth']['Total Population'][-2], usa_profile.data['Population Growth']['Total Population'][-1])
+    neighborhood_profile.demographics.race.labels = list(tract_profile.data['Race/Ethnicity'].keys())
+    neighborhood_profile.demographics.race.data = list(tract_profile.data['Race/Ethnicity'].values())
+    neighborhood_profile.demographics.race.colors = COLORS[:len(tract_profile.data['Race/Ethnicity'].values())]
 
-        if cbsa_profile is not None:
-            cbsa_name = cbsa_profile.geoinfo['cbsaname']
-            cbsa_population_oneyeargrowth = calculate_percent_change(cbsa_profile.data['Population Growth']['Total Population'][-2], cbsa_profile.data['Population Growth']['Total Population'][-1])
-        else:
-            cbsa_name = "N/A"
-            cbsa_population_oneyeargrowth = 0
+    neighborhood_profile.demographics.agegroups.labels = list(tract_profile.data['Age Groups'].keys())
+    neighborhood_profile.demographics.agegroups.data = list(tract_profile.data['Age Groups'].values())
+    neighborhood_profile.demographics.agegroups.colors = COLORS[:len(tract_profile.data['Age Groups'].values())]
 
-        neighborhood_profile.demographics.oneyeargrowth.data = [tract_population_oneyeargrowth,
-                                                                county_population_oneyeargrowth,
-                                                                cbsa_population_oneyeargrowth,
-                                                                us_population_oneyeargrowth]
-
-        county_name = county_profile.geoinfo['countyname']
-        neighborhood_profile.demographics.oneyeargrowth.labels = [TRACT_LABEL_NAME, county_name, cbsa_name, US_Name]
-        neighborhood_profile.demographics.oneyeargrowth.colors = COLORS[:4]
-
-    neighborhood_profile.demographics.populationtrends.data1 = population
-    neighborhood_profile.demographics.populationtrends.labels1 = CENSUS_YEARS
-    neighborhood_profile.demographics.populationtrends.data2 = population_growth
-    neighborhood_profile.demographics.populationtrends.labels2 = GROWTH_YEAR_LABELS
+    neighborhood_profile.demographics.populationhistorical.data = population
+    neighborhood_profile.demographics.populationhistorical.labels = CENSUS_YEARS
 
     return neighborhood_profile
 
 def set_economy_section(tract_profile, neighborhood_profile, cbsa_profile, county_profile, usa_profile):
     county_name = county_profile.geoinfo['countyname']
 
+    #region Median Household Income
     if cbsa_profile is not None:
         cbsa_name = cbsa_profile.geoinfo['cbsaname']
         cbsa_medianhouseholdincome_all = zero_to_null(cbsa_profile.data['Median Household Income']['All'][-1])
@@ -237,7 +222,6 @@ def set_economy_section(tract_profile, neighborhood_profile, cbsa_profile, count
         cbsa_medianhouseholdincome_owner = 0
         cbsa_medianhouseholdincome_renter = 0
         cbsa_unemployment = 0
-
     neighborhood_profile.economy.medianhouseholdincome.data1.append(tract_profile.data['Median Household Income']['All'][-1])
 
     neighborhood_profile.economy.medianhouseholdincome.data1 = [
@@ -263,7 +247,16 @@ def set_economy_section(tract_profile, neighborhood_profile, cbsa_profile, count
 
     neighborhood_profile.economy.medianhouseholdincome.labels = [TRACT_LABEL_NAME, county_name, cbsa_name, US_Name]
     neighborhood_profile.economy.medianhouseholdincome.colors = COLORS[:4]
+    #endregion
 
+    #region Median Household Income Historical
+    neighborhood_profile.economy.medianhouseholdincomehistorical.labels = CENSUS_YEARS
+    neighborhood_profile.economy.medianhouseholdincomehistorical.data1 = tract_profile.data['Median Household Income']['All']
+    neighborhood_profile.economy.medianhouseholdincomehistorical.data2 = tract_profile.data['Median Household Income']['Owners']
+    neighborhood_profile.economy.medianhouseholdincomehistorical.data3 = tract_profile.data['Median Household Income']['Renters']
+    #endregion
+
+    #region Unemployment Rate
     neighborhood_profile.economy.unemploymentrate.labels= [TRACT_LABEL_NAME, county_name, cbsa_name, US_Name]
     neighborhood_unemployment = tract_profile.data['Unemployment Rate']['Unemployment Rate']
 
@@ -284,6 +277,8 @@ def set_economy_section(tract_profile, neighborhood_profile, cbsa_profile, count
     ]
 
     neighborhood_profile.economy.unemploymentrate.colors = COLORS[:4]
+    #endregion
+
 
     return neighborhood_profile
 

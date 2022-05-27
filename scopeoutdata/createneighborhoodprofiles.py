@@ -212,10 +212,10 @@ def set_demographic_section(tract_profile, neighborhood_profile, cbsa_profile, c
         neighborhood_profile.demographics.oneyeargrowth.labels = [TRACT_LABEL_NAME, county_name, cbsa_name, US_Name]
         neighborhood_profile.demographics.oneyeargrowth.colors = COLORS[:4]
 
-    neighborhood_profile.demographics.populationtrends.data1 = population
-    neighborhood_profile.demographics.populationtrends.labels1 = CENSUS_YEARS
-    neighborhood_profile.demographics.populationtrends.data2 = population_growth
-    neighborhood_profile.demographics.populationtrends.labels2 = GROWTH_YEAR_LABELS
+    neighborhood_profile.demographics.populationhistorical.data1 = population
+    neighborhood_profile.demographics.populationhistorical.labels1 = CENSUS_YEARS
+    neighborhood_profile.demographics.populationhistorical.data2 = population_growth
+    neighborhood_profile.demographics.populationhistorical.labels2 = GROWTH_YEAR_LABELS
 
     return neighborhood_profile
 

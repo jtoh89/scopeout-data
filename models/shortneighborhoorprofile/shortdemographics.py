@@ -1,13 +1,14 @@
 from enums import ModelsDataTypes, ModelsChartTypes
+from models.generics import OneLineChart
 
 class Demographics:
     def __init__(self):
         # self.demographicquickfacts = DemographicQuickFacts()
         # self.highesteducation = HighestEducation()
-        # self.race = Race()
+        self.race = Race()
         self.agegroups = AgeGroups()
-        self.populationtrends = PopulationTrends()
-        self.oneyeargrowth = OneYearGrowth()
+        self.populationhistorical = OneLineChart(title="Total Population", datatype=ModelsDataTypes.INTEGER.value)
+        # self.oneyeargrowth = OneYearGrowth()
         # self.familytype = FamilyType()
 
 
@@ -63,17 +64,6 @@ class PopulationTrends:
         self.data2Name = "Growth Rate"
         self.data2 = []
         self.labels2 = []
-
-class OneYearGrowth:
-    def __init__(self):
-        self.hascolors = True
-        self.title = "1 Year Population Growth"
-        self.datatype = ModelsDataTypes.PERCENT.value
-        self.charttype = ModelsChartTypes.HORIZONTAL_BAR.value
-        self.labels = []
-        self.data = []
-        self.colors = []
-        self.hasData = True
 
 class FamilyType:
     def __init__(self):

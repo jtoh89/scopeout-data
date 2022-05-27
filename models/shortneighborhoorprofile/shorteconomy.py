@@ -1,8 +1,8 @@
 from enums import ModelsDataTypes, ModelsChartTypes
-
 class Economy:
     def __init__(self):
         self.medianhouseholdincome = MedianHouseholdIncome()
+        self.medianhouseholdincomehistorical = MedianHouseholdIncomeHistorical()
         self.unemploymentrate = UnemploymentRate()
         # self.householdincomerange = HouseholdIncomeRange()
         # self.employmentindustries = EmploymentIndustries()
@@ -27,6 +27,19 @@ class MedianHouseholdIncome:
         self.datatype = ModelsDataTypes.DOLLAR.value
 
 
+class MedianHouseholdIncomeHistorical:
+    def __init__(self):
+        self.hascolors = True
+        self.title = "Median Household Income Trends"
+        self.charttype = ModelsChartTypes.VERTICAL_BAR_TOGGLE.value
+        self.labels = []
+        self.data1Name = "All"
+        self.data1 = []
+        self.data2Name = "Owners"
+        self.data2 = []
+        self.data3Name = "Renters"
+        self.data3 = []
+        self.datatype = ModelsDataTypes.DOLLAR.value
 
 class UnemploymentRate:
     def __init__(self):

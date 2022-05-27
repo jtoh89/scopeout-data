@@ -125,7 +125,7 @@ def run_census_data_import(geo_level, prod_env, force_run=False):
     }
     finished_runs = mongoclient.get_finished_runs(collection_find_finished_runs)
 
-    for i, stateid in enumerate(STATES_RUN):
+    for i, stateid in enumerate(STATES1):
         #usa and cbsa data does not need more than 1 iteration
         if geo_level in [GeoLevels.USA, GeoLevels.CBSA] and i > 0:
             break
