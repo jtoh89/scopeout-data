@@ -2,6 +2,7 @@ import os
 import sys
 from database import mongoclient
 import time
+import requests as r
 import pandas as pd
 from enums import ProductionEnvironment, GeoLevels
 from database import mongoclient
@@ -44,8 +45,9 @@ def store_zip_geojson_for_cbsacode(cbsacode):
     states_in_cbsa = []
 
     for county_info in counties_in_cbsa:
-        state_info = county_info['stateinfo']
-        states_in_cbsa.append(state_info["stateabbreviation"])
+        # state_info = county_info['stateinfo']
+        # states_in_cbsa.append(state_info["stateabbreviation"])
+        states_in_cbsa.append(county_info["stateid"])
 
     unique_states = list(set(states_in_cbsa))
 
@@ -100,7 +102,7 @@ def store_zip_geojson_for_cbsacode(cbsacode):
     print('Successfully stored zipcode geojson for cbsacode: {}'.format(cbsacode))
     mongoclient.add_finished_run(collection_add_finished_run)
 
-def dump_all_geographies():
+def DEPRECATED_dump_all_geographies():
     """
     Stores data to State, County, Cbsa tables
     """
@@ -244,7 +246,8 @@ def dump_county_by_cbsa_lookup():
 
 
         for county in cbsa['counties']:
-            stateid = county['stateinfo']['fipsstatecode']
+            # stateid = county['stateinfo']['fipsstatecode']
+            stateid = county['stateid']
             counties_to_cbsa.append({
                 'countyfullcode': county['countyfullcode'],
                 'cbsacode': cbsaid,
@@ -323,4 +326,145 @@ def store_tract_lookups():
                                       dbname='Geographies',
                                       collection_name='TractLookup',
                                       prod_env=ProductionEnvironment.GEO_ONLY)
+
+def dump_state_geography():
+    """
+    Stores data to State tables
+    """
+    currpath = os.path.dirname(os.path.abspath(__file__))
+    rootpath = os.path.dirname(os.path.abspath(currpath))
+
+    file_dir = '/files/statecountyfips.csv'
+    geo_df = pd.read_csv(rootpath + file_dir)
+
+    geo_df = geo_df.rename(columns={'State Code (FIPS)': 'stateid',
+                                    'County Code (FIPS)': 'countyid',
+                                    'Area Name (including legal/statistical area description)': 'areaname',
+                                    'Abbreviation': 'abbreviation'})
+
+    geo_df['stateid'] = geo_df['stateid'].apply(lambda x: str(x).zfill(2))
+
+    geo_df = geo_df[geo_df['stateid'] != '72']
+
+    state_list = []
+    for i, row in geo_df.iterrows():
+        if row['Summary Level'] == 40:
+            state_list.append({
+                'fipsstatecode': row['stateid'],
+                'statename': row['areaname'],
+                'stateabbreviation': row['abbreviation'],
+            })
+
+    mongoclient.insert_list_mongo(list_data=state_list,
+                                  dbname='Geographies',
+                                  collection_name='State',
+                                  prod_env=ProductionEnvironment.GEO_ONLY,
+                                  collection_update_existing={})
+
+    print('done')
+
+def dump_county_geography():
+    """
+    Stores data to County tables
+    """
+
+
+    states = mongoclient.query_collection(database_name="Geographies",
+                                               collection_name="State",
+                                               collection_filter={},
+                                               prod_env=ProductionEnvironment.GEO_ONLY)
+
+
+    url = "https://api.census.gov/data/2020/acs/acs5/subject?get=NAME&for=county:*&in=state:*"
+
+    counties_df = census_api(url)
+
+    county_list = []
+    for i, row in counties_df.iterrows():
+        if row['state'] == "72":
+            continue
+
+        state_info = states[states['fipsstatecode'] == row['state']].iloc[0].to_dict()
+
+        county_name = row['NAME'].split(",")[0]
+
+        county_list.append({
+            'countyfullcode': row['state'] + row['county'],
+            'fipscountycode': row['county'],
+            'countyname': county_name,
+            'stateid': row['state'],
+            'stateabbreviation': state_info['stateabbreviation'],
+        })
+
+    mongoclient.insert_list_mongo(list_data=county_list,
+                                  dbname='Geographies',
+                                  collection_name='County',
+                                  prod_env=ProductionEnvironment.GEO_ONLY,
+                                  collection_update_existing={})
+
+
+    print('done')
+
+def dump_cbsa_geography():
+    """
+    Stores data to Cbsa tables
+    """
+    counties_df = mongoclient.query_collection(database_name="Geographies",
+                                                 collection_name="County",
+                                                 collection_filter={},
+                                                 prod_env=ProductionEnvironment.GEO_ONLY)
+
+    currpath = os.path.dirname(os.path.abspath(__file__))
+    rootpath = os.path.dirname(os.path.abspath(currpath))
+
+    file_dir = '/files/cbsafips.csv'
+    cbsa_df = pd.read_csv(rootpath + file_dir)
+
+    cbsa_dict = {}
+
+    for i, row in cbsa_df.iterrows():
+        if row['cbsacode'] == row['cbsacode']:
+            cbsacode = str(int(row['cbsacode']))
+            stateid = str(int(row['fipsstatecode'])).zfill(2)
+
+            if stateid == '72':
+                continue
+
+            fipscountycode = str(int(row['fipscountycode'])).zfill(3)
+            countyfullcode = stateid + fipscountycode
+
+            if countyfullcode in list(counties_df['countyfullcode']):
+                county_data = counties_df[counties_df['countyfullcode'] == countyfullcode].iloc[0].to_dict()
+                del county_data['_id']
+            else:
+                print('Skipping county: ', row['countycountyequivalent'])
+                continue
+
+            if cbsacode in cbsa_dict.keys():
+                cbsa_dict[cbsacode]['counties'].append(county_data)
+            else:
+                coords = esrigeographies.esri_get_centroids(geoid=cbsacode, geo_level=GeoLevels.CBSA)
+
+                cbsa_dict[cbsacode] = {
+                    'cbsacode': cbsacode,
+                    'cbsaname': row['cbsatitle'].replace('--','-'),
+                    'counties': [county_data],
+                    'lon_x': coords['lon_x'],
+                    'lat_y': coords['lat_y']
+                }
+
+    cbsa_list = []
+
+    for _, v in cbsa_dict.items():
+        cbsa_list.append(v)
+
+    mongoclient.insert_list_mongo(list_data=cbsa_list,
+                                  dbname='Geographies',
+                                  collection_name='Cbsa',
+                                  prod_env=ProductionEnvironment.GEO_ONLY,
+                                  collection_update_existing={})
+
+
+
+    print('done')
 

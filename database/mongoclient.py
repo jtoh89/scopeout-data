@@ -104,7 +104,7 @@ def query_geography(geo_level, stateid=None):
         collection = db['County']
 
         collection_filter = {
-            'stateinfo.fipsstatecode': stateid,
+            'stateid': stateid,
         }
 
         if stateid == None:
@@ -330,7 +330,7 @@ def perform_small_batch_inserts(data_list, tempkey, collection, geo_level):
             collection.insert_many(insert_list)
             delete_temp_backup(key=tempkey)
 
-            print("Finished small batch insert. Current index: ", i)
+            # print("Finished small batch insert. Current index: ", i)
 
             insert_list.clear()
             remove_list.clear()

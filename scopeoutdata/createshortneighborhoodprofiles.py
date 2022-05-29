@@ -106,7 +106,6 @@ def create_short_neighborhood_profiles():
                 neighborhood_profile = set_demographic_section(tract_profile, neighborhood_profile, cbsa_profile, county_profile, usa_profile)
                 neighborhood_profile = set_economy_section(tract_profile, neighborhood_profile, cbsa_profile, county_profile, usa_profile)
                 neighborhood_profile = set_housing_section(tract_profile, neighborhood_profile, cbsa_profile, county_profile, usa_profile)
-                # neighborhood_profile = set_market_trends_section(tract_profile, neighborhood_profile, county_market_profiles)
 
                 add_dict = neighborhood_profile_to_dict(neighborhood_profile, stateid)
                 neighborhood_profile_list.append(add_dict)
@@ -257,7 +256,7 @@ def set_economy_section(tract_profile, neighborhood_profile, cbsa_profile, count
     #endregion
 
     #region Unemployment Rate
-    neighborhood_profile.economy.unemploymentrate.labels= [TRACT_LABEL_NAME, county_name, cbsa_name, US_Name]
+    neighborhood_profile.economy.unemploymentrate.labels = [TRACT_LABEL_NAME, county_name, cbsa_name, US_Name]
     neighborhood_unemployment = tract_profile.data['Unemployment Rate']['Unemployment Rate']
 
     if 'Unemployment Rate % Change' in county_profile.data['Unemployment Rate'].keys():
@@ -296,13 +295,6 @@ def set_housing_section(tract_profile, neighborhood_profile, cbsa_profile, count
 
     return neighborhood_profile
 
-
-def get_neighborhood_map_shape(geoinfo):
-    coordinate_list = []
-    for coordinate in geoinfo['esristandardgeofeatures']['geometry']['rings'][0]:
-        coordinate_list.append({'lng': coordinate[0], 'lat': coordinate[1]})
-
-    return coordinate_list
 
 def neighborhood_profile_to_dict(neighborhood_profile, state_id):
     neighborhood_profile = neighborhood_profile.convert_to_dict()

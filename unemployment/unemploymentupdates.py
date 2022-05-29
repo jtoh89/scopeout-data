@@ -23,6 +23,7 @@ def update_regional_unemployment(geo_level):
         states = ['00000']
 
     for stateid in states:
+        print("Start {} update for stateid: {}".format(geo_level.value, stateid))
         collection_filter = {
             'geolevel': {'$eq': geo_level.value},
             'stateid': stateid
@@ -40,28 +41,31 @@ def update_regional_unemployment(geo_level):
                 print('COULD NOT SET UNEMPLOYMENT. Unemployment Historic is missing. Geocode: ', row['geoid'])
                 continue
 
-            # Need to check if unemplorate change updated.
-
-            update_unemployment = 0
-
-            # need to check the last month update was made
-
             current_unemployment = float(row['data']['Unemployment Historic']['Unemployment Historic'][-1:][0])
             most_recent_month = row['data']['Unemployment Historic']['Date'][-1:][0]
-            acs_unemployment = float(row['data']['Unemployment Rate']['Unemployment Rate'])
 
-            # if geo_level == GeoLevels.CBSA or geo_level == GeoLevels.COUNTY:
+            unemployment_census_year_key = '{} Unemployment Rate'.format(CENSUS_LATEST_YEAR)
 
-            unemployment_rate_change = calculate_percent_change(starting_data=acs_unemployment,
-                                                                ending_data=current_unemployment,
-                                                                move_decimal=False,
-                                                                decimal_places=7)
+            if unemployment_census_year_key in row['data']['Unemployment Rate'].keys():
+                county_census_unemployment = row['data']['Unemployment Rate'][unemployment_census_year_key]
+
+                unemployment_rate_change = calculate_percent_change(starting_data=county_census_unemployment,
+                                                                    ending_data=current_unemployment,
+                                                                    move_decimal=False,
+                                                                    decimal_places=7)
+            else:
+                county_census_unemployment = row['data']['Unemployment Rate']['Unemployment Rate']
+
+                unemployment_rate_change = calculate_percent_change(starting_data=county_census_unemployment,
+                                                                    ending_data=current_unemployment,
+                                                                    move_decimal=False,
+                                                                    decimal_places=7)
 
             unemployment_update[row['geoid']] = {
                 'data': {
                     'Unemployment Rate': {
                         'Unemployment Rate': current_unemployment,
-                        '{} Unemployment Rate'.format(CENSUS_LATEST_YEAR): acs_unemployment,
+                        '{} Unemployment Rate'.format(CENSUS_LATEST_YEAR): county_census_unemployment,
                         'Unemployment Rate % Change': unemployment_rate_change,
                         'Last Update': most_recent_month,
                     }
@@ -88,7 +92,7 @@ def update_regional_unemployment(geo_level):
             print('ERROR: Failed to store unemployment data')
 
 
-def update_tract_unemployment():
+def  update_tract_unemployment():
     '''
     Function updates all tract unemployment rates using unemployment adjustments calculated from BLS data.
     :return:
@@ -100,12 +104,17 @@ def update_tract_unemployment():
                                                                        'category': 'Unemployment Update'},
                                                     prod_env=ProductionEnvironment.QA)
 
-    existing_updates = list(existing_updates['state_id'])
+    if len(existing_updates) > 0:
+        existing_updates = list(existing_updates['state_id'])
+    else:
+        existing_updates = []
 
     for stategroupindex, stategroup in enumerate([STATES1, STATES2]):
         prod_env = ProductionEnvironment.CENSUS_DATA1
+        db_name = "CensusData1"
         if stategroupindex == 1:
             prod_env = ProductionEnvironment.CENSUS_DATA2
+            db_name = "CensusData2"
 
         for stateid in stategroup:
             if stateid in existing_updates:
@@ -118,7 +127,7 @@ def update_tract_unemployment():
                 'stateid': stateid
             }
 
-            geo_data = mongoclient.query_collection(database_name="CensusData1",
+            geo_data = mongoclient.query_collection(database_name=db_name,
                                                     collection_name="CensusData",
                                                     collection_filter=collection_filter,
                                                     prod_env=prod_env)
@@ -151,22 +160,30 @@ def update_tract_unemployment():
                 unemployment_census_year_key = '{} Unemployment Rate'.format(CENSUS_LATEST_YEAR)
 
                 if unemployment_census_year_key in row['data']['Unemployment Rate'].keys():
-                    # census_year_unemployment_rate = row['data']['Unemployment Rate'][unemployment_census_year_key]
-                    # unemployment_adjustment = census_year_unemployment_rate * county_unemployment_rate_change
-                    # updated_tract_unemployment = round(row['data']['Unemployment Rate']['Unemployment Rate'] + unemployment_adjustment, 1)
-
                     recent_updates += 1
-                else:
-                    recent_updates += 1
-                    tract_unemployment = row['data']['Unemployment Rate']['Unemployment Rate']
-                    unemployment_adjustment = tract_unemployment * county_unemployment_rate_change
-                    updated_tract_unemployment = round(tract_unemployment + unemployment_adjustment, 1)
+                    tract_census_unemployment = row['data']['Unemployment Rate'][unemployment_census_year_key]
+                    unemployment_adjustment = tract_census_unemployment * county_unemployment_rate_change
+                    updated_tract_unemployment = round(tract_census_unemployment + unemployment_adjustment, 1)
 
                     unemployment_update[row['geoid']] = {
                         'data': {
                             'Unemployment Rate': {
                                 'Unemployment Rate': updated_tract_unemployment,
-                                unemployment_census_year_key: tract_unemployment,
+                                unemployment_census_year_key: tract_census_unemployment,
+                            }
+                        }
+                    }
+                else:
+                    recent_updates += 1
+                    tract_census_unemployment = row['data']['Unemployment Rate']['Unemployment Rate']
+                    unemployment_adjustment = tract_census_unemployment * county_unemployment_rate_change
+                    updated_tract_unemployment = round(tract_census_unemployment + unemployment_adjustment, 1)
+
+                    unemployment_update[row['geoid']] = {
+                        'data': {
+                            'Unemployment Rate': {
+                                'Unemployment Rate': updated_tract_unemployment,
+                                unemployment_census_year_key: tract_census_unemployment,
                             }
                         }
                     }

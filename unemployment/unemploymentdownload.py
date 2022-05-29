@@ -160,6 +160,7 @@ def download_county_historical_unemployment():
                 if row['series_id'][5:7] == '72':
                     df.drop(i, inplace=True)
                     continue
+
                 df.at[i, 'countyfullcode'] = row['series_id'][5:10]
                 df.at[i, 'geo_type'] = 'Counties'
 
@@ -196,20 +197,21 @@ def download_county_historical_unemployment():
         counties_to_process['stateid'] = counties_to_process['countyfullcode'].str[:2]
         counties_to_process = counties_to_process[counties_to_process['stateid'] == stateid]
 
+
         county_unemployment_dict = create_unemployment_dict(df=common,
                                                        geoid_field='countyfullcode',
                                                        geo_df=counties_to_process)
 
 
         success = mongoclient.store_census_data(geo_level=GeoLevels.COUNTY,
-                                                state_id=None,
+                                                state_id=stateid,
                                                 filtered_dict=county_unemployment_dict,
                                                 prod_env=ProductionEnvironment.CENSUS_DATA1)
 
         if success:
-            print('Successfully stored unemployment data')
+            print('Successfully stored historical unemployment data')
         else:
-            print('ERROR: Failed to store unemployment data')
+            print('ERROR: Failed to store historical unemployment data')
 
 def download_usa_historical_unemployment():
     '''

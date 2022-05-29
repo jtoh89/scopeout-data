@@ -7,7 +7,10 @@ from geographies import geography, scopeoutmarkets, esrigeographies, tractgeojso
 ##################################################################
 
 # dump state, county, cbsa geographies
-# geography.dump_all_geographies()
+# geography.dump_state_geography()
+# geography.dump_county_geography()
+# geography.dump_cbsa_geography()
+# geography.DEPRECATED_dump_all_geographies()
 
 # dump scopeout markets
 # scopeoutmarkets.store_scopeout_markets()

@@ -1,6 +1,6 @@
 from database import mongoclient
 from enums import ProductionEnvironment
-
+from utils.production import create_url_slug
 
 def store_scopeout_markets():
     collection_filter = {
@@ -17,6 +17,7 @@ def store_scopeout_markets():
         insert_list.append({
             'cbsacode': row['cbsacode'],
             'cbsaname': row['cbsaname'],
+            'urlslug': create_url_slug( row['cbsacode'], row['cbsaname'])
         })
 
     mongoclient.insert_list_mongo(list_data=insert_list,
