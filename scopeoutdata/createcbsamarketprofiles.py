@@ -14,6 +14,13 @@ def generate_cbsa_market_profiles(prod_env, geoid_field):
     #                                              prod_env=ProductionEnvironment.MARKET_PROFILES)
     # us_historical_profile = us_historical_profile.to_dict()
 
+    scopeout_markets = mongoclient.query_collection(database_name="ScopeOut",
+                                                    collection_name="ScopeOutMarkets",
+                                                    collection_filter={},
+                                                    prod_env=ProductionEnvironment.GEO_ONLY)
+
+    all_scopeout_markets = list(scopeout_markets['cbsacode'])
+
     cbsa_historical_profiles = mongoclient.query_collection(database_name="MarketProfiles",
                                                  collection_name=Collections_Historical_Profiles.CBSA.value,
                                                  collection_filter={'geolevel': GeoLevels.CBSA.value},
@@ -25,20 +32,25 @@ def generate_cbsa_market_profiles(prod_env, geoid_field):
                                                  collection_filter={'geolevel': GeoLevels.CBSA.value},
                                                  prod_env=ProductionEnvironment.CENSUS_DATA1)
 
+
     cbsa_market_profile_list = []
 
     for i, row in cbsa_historical_profiles.iterrows():
         cbsa_profile = row.to_dict()
 
-        if row[geoid_field] not in SCOPEOUT_MARKET_LIST:
+        if row[geoid_field] not in all_scopeout_markets:
             continue
 
         set_na_to_false_from_dict(cbsa_profile)
         cbsa_market_profile = cbsamarketprofile.CbsaMarketProfile()
+
         cbsa_market_profile.cbsacode = row[geoid_field]
         cbsa_market_profile.cbsaname = row['geoname']
-
         cbsa_market_profile.urlslug = create_url_slug(marketname=row['geoname'], cbsacode=cbsa_market_profile.cbsacode)
+
+        if row['cbsacode'] not in list(scopeout_markets['cbsacode']):
+            print("!!! Why is cbsacode not found in scopeout markets? !!!!")
+            sys.exit()
 
         census_cbsa_data_match = census_cbsa_data[census_cbsa_data['geoid'] == row[geoid_field]]
 
@@ -109,9 +121,6 @@ def generate_cbsa_market_profiles(prod_env, geoid_field):
                 housing_units_add = []
                 households_add = []
 
-                if cbsa_market_profile.cbsacode == "35620":
-                    print('')
-
                 years = list(housing_unit_growth_dict.keys())
                 for i2, year in enumerate(years):
                     # skip year 2012, weird anomoly data where huge difference in households/housing units
@@ -123,7 +132,6 @@ def generate_cbsa_market_profiles(prod_env, geoid_field):
 
                     if change > 3 or change < -3:
                         print("{}. year: {}. change: {}".format(cbsa_market_profile.cbsaname, year, change))
-
 
                     housing_units_add.append(housing_unit_growth_dict[year]-housing_unit_growth_dict[prev_year])
                     households_add.append(household_growth_dict[year]-household_growth_dict[prev_year])

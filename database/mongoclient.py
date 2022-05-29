@@ -161,6 +161,7 @@ def store_neighborhood_data(state_id, neighborhood_profile_list, prod_env, table
         temp_insert_failed = store_temp_backup(key=tempkey,insert_list=neighborhood_profile_list)
 
         if temp_insert_failed:
+            collection.delete_many({'stateid': state_id})
             perform_small_batch_inserts(neighborhood_profile_list, tempkey, collection, GeoLevels.TRACT)
         else:
             collection.delete_many({'stateid': state_id})
