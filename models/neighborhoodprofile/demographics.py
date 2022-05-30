@@ -1,4 +1,5 @@
 from enums import ModelsDataTypes, ModelsChartTypes
+from models.generics import OneLineChart
 
 class Demographics:
     def __init__(self):
@@ -6,7 +7,8 @@ class Demographics:
         self.highesteducation = HighestEducation()
         self.race = Race()
         self.agegroups = AgeGroups()
-        self.populationtrends = PopulationTrends()
+        # self.populationhistorical = PopulationTrends()
+        self.populationhistorical = OneLineChart(title="Total Population", datatype=ModelsDataTypes.INTEGER.value)
         self.oneyeargrowth = OneYearGrowth()
         self.familytype = FamilyType()
 

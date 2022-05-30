@@ -9,6 +9,13 @@ def zero_to_null(value):
     else:
         return value
 
+
+def list_0_to_None(list):
+    for i, value in enumerate(list):
+        if value == 0:
+            list[i] = None
+    return list
+
 def truncate_decimals(f, n):
     '''Truncates/pads a float f to n decimal places without rounding'''
     s = '{}'.format(f)

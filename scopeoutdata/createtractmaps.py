@@ -18,32 +18,29 @@ def generate_tract_maps():
                                                     collection_name="ScopeOutMarkets",
                                                     collection_filter={},
                                                     prod_env=ProductionEnvironment.GEO_ONLY)
-
-    for cbsacode in list(scopeout_markets['cbsacode']):
-        if cbsacode != "28140":
-            continue
-
+    scopeout_markets = list(scopeout_markets['cbsacode'])
+    for cbsacode in scopeout_markets:
         cbsa_geo_dict = mongoclient.query_collection(database_name="Geographies",
                                                         collection_name="Cbsa",
                                                         collection_filter={'cbsacode': {'$eq': cbsacode}},
                                                         prod_env=ProductionEnvironment.GEO_ONLY).iloc[0].to_dict()
 
         cbsa_tracts_geo_df = mongoclient.query_collection(database_name="ScopeOut",
-                                                          collection_name="EsriTractsBySOMarkets",
+                                                          collection_name="GeojsonTractsBySOMarkets",
                                                           # collection_filter={'countyfullcode': {'$in': list(counties_to_cbsa["countyfullcode"])}},
                                                           collection_filter={"cbsacode": cbsacode},
                                                           prod_env=ProductionEnvironment.GEO_ONLY)
 
-        tracts_data_df = mongoclient.query_collection(database_name="FullNeighborhoodProfiles",
-                                                      collection_name="fullneighborhoodprofiles",
+        tracts_data_df = mongoclient.query_collection(database_name="ShortProfiles",
+                                                      collection_name="shortneighborhoodprofiles",
                                                       collection_filter={"cbsacode": cbsacode},
-                                                      prod_env=ProductionEnvironment.FULL_NEIGHBORHOOD_PROFILES_1)
+                                                      prod_env=ProductionEnvironment.PROD)
 
-        tracts_data2_df = mongoclient.query_collection(database_name="FullNeighborhoodProfiles",
-                                                       collection_name="fullneighborhoodprofiles",
-                                                       collection_filter={"cbsacode": cbsacode},
-                                                       prod_env=ProductionEnvironment.FULL_NEIGHBORHOOD_PROFILES_2)
-        tracts_data_df = tracts_data_df.append(tracts_data2_df)
+        # tracts_data2_df = mongoclient.query_collection(database_name="ShortProfiles",
+        #                                                collection_name="shortneighborhoodprofiles",
+        #                                                collection_filter={"cbsacode": cbsacode},
+        #                                                prod_env=ProductionEnvironment.FULL_NEIGHBORHOOD_PROFILES_2)
+        # tracts_data_df = tracts_data_df.append(tracts_data2_df)
 
 
         marketname = scopeout_markets[scopeout_markets['cbsacode'] == cbsacode]["cbsaname"].iloc[0]
@@ -64,29 +61,28 @@ def generate_tract_maps():
         assign_legend_details(tract_map.unemploymentratelegend, tract_data_percentiles_dict["unemployment_rate_percentiles"], 'percent', 'descending')
         assign_legend_details(tract_map.owneroccupancyratelegend, tract_data_percentiles_dict["owner_occupancy_rate_percentiles"], 'percent', 'ascending')
 
-        for i, tract in cbsa_tracts_geo_df.iterrows():
-            if tract.tractcode != "29095011600":
-                continue
-
+        for tract in cbsa_tracts_geo_df.iloc[0]['geojson']['features']:
             geo_json_feature = modelGeoJson.GeoJsonFeature()
 
-            geo_json_geometry = modelGeoJson.GeoJsonGeometry()
-            geo_json_geometry.coordinates = [tract["rings"]]
+            geo_json_feature.geometry = tract['geometry']
+
+            # geo_json_geometry = modelGeoJson.GeoJsonGeometry()
+            # geo_json_geometry.coordinates = [tract["rings"]]
 
             geo_json_properties = tractmarketmaps.TractMarketGeoJsonProperties()
 
-            geo_json_feature.id = tract.tractcode
-            geo_json_properties.geoid = tract.tractcode
+            geo_json_feature.id = tract['id']
+            geo_json_properties.geoid = tract['id']
 
-            tract_data = tracts_data_df[tracts_data_df['geoid'] == tract.tractcode]
+            tract_data = tracts_data_df[tracts_data_df['geoid'] == tract['id']]
 
             if len(tract_data) == 0:
                 # print('!!! WARNING - Could not find matching tract for tractid: ', tract.tractcode)
-                geo_json_feature.geometry = geo_json_geometry.__dict__
+                # geo_json_feature.geometry = geo_json_geometry.__dict__
                 geo_json_feature.properties = geo_json_properties.__dict__
-                tract_map.medianhouseholdincomecolors.extend([tract.tractcode, COLOR_LEVEL_NA])
-                tract_map.unemploymentratecolors.extend([tract.tractcode, COLOR_LEVEL_NA])
-                tract_map.owneroccupancyratecolors.extend([tract.tractcode, COLOR_LEVEL_NA])
+                tract_map.medianhouseholdincomecolors.extend([tract['id'], COLOR_LEVEL_NA])
+                tract_map.unemploymentratecolors.extend([tract['id'], COLOR_LEVEL_NA])
+                tract_map.owneroccupancyratecolors.extend([tract['id'], COLOR_LEVEL_NA])
 
                 tract_map.geojson.features.append(geo_json_feature.__dict__)
                 continue
@@ -103,17 +99,16 @@ def generate_tract_maps():
 
             geo_json_properties.medianhouseholdincome = medianhouseholdincome
             tract_medianhouseholdincome_color = assign_color(medianhouseholdincome, tract_data_percentiles_dict["median_household_income_percentiles"],  'ascending')
-            tract_map.medianhouseholdincomecolors.extend([tract.tractcode, tract_medianhouseholdincome_color])
+            tract_map.medianhouseholdincomecolors.extend([tract['id'], tract_medianhouseholdincome_color])
 
             geo_json_properties.unemploymentrate = unemploymentrate
             tract_unemploymentrate_color = assign_color(unemploymentrate, tract_data_percentiles_dict["unemployment_rate_percentiles"], 'descending')
-            tract_map.unemploymentratecolors.extend([tract.tractcode, tract_unemploymentrate_color])
+            tract_map.unemploymentratecolors.extend([tract['id'], tract_unemploymentrate_color])
 
             geo_json_properties.owneroccupancyrate = owneroccupancyrate
             tract_owneroccupancyrate_color = assign_color(owneroccupancyrate, tract_data_percentiles_dict["owner_occupancy_rate_percentiles"], 'ascending')
-            tract_map.owneroccupancyratecolors.extend([tract.tractcode, tract_owneroccupancyrate_color])
+            tract_map.owneroccupancyratecolors.extend([tract['id'], tract_owneroccupancyrate_color])
 
-            geo_json_feature.geometry = geo_json_geometry.__dict__
             geo_json_feature.properties = geo_json_properties.__dict__
 
             tract_map.geojson.features.append(geo_json_feature.__dict__)

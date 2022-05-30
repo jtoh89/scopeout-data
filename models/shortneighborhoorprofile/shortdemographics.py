@@ -47,23 +47,12 @@ class Race:
 class AgeGroups:
     def __init__(self):
         self.title = "Age Groups"
+        self.hascolors = True
         self.datatype = ModelsDataTypes.PERCENT.value
         self.charttype = ModelsChartTypes.VERTICAL_BAR.value
         self.labels = []
         self.data = []
         self.colors = []
-
-class PopulationTrends:
-    def __init__(self):
-        self.title = "Population Trends"
-        self.datatype = ModelsDataTypes.INTEGER.value
-        self.charttype = ModelsChartTypes.LINE.value
-        self.data1Name = "Population"
-        self.data1 = []
-        self.labels1 = []
-        self.data2Name = "Growth Rate"
-        self.data2 = []
-        self.labels2 = []
 
 class FamilyType:
     def __init__(self):

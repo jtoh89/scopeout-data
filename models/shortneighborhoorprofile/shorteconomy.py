@@ -30,6 +30,7 @@ class MedianHouseholdIncome:
 class MedianHouseholdIncomeHistorical:
     def __init__(self):
         self.hascolors = True
+        self.hasData = True
         self.title = "Median Household Income Trends"
         self.charttype = ModelsChartTypes.VERTICAL_BAR_TOGGLE.value
         self.labels = []

@@ -3,7 +3,7 @@ from models.shortneighborhoorprofile import shortneighborhoodprofile
 from database import mongoclient
 from enums import GeoLevels
 from enums import ProductionEnvironment
-from utils.utils import calculate_percent_change, zero_to_null
+from utils.utils import calculate_percent_change, zero_to_null, list_0_to_None
 from utils.production import get_county_cbsa_lookup
 from census.censusdata import STATES1, STATES2
 from globals import CENSUS_YEARS
@@ -50,14 +50,10 @@ def create_short_neighborhood_profiles():
             cbsa_data = all_dict['cbsa_data']
             usa_data = all_dict['usa_data']
 
-
             neighborhood_profile_list = []
 
             for i, tract_profile in census_tract_data.iterrows():
                 neighborhood_profile = shortneighborhoodprofile.ShortNeighborhoodProfile()
-
-                if tract_profile.geoid == "20209044500":
-                    print("")
 
                 # Set geoid and neighborhood shapes
                 neighborhood_profile.geoid = tract_profile.geoid
@@ -250,9 +246,13 @@ def set_economy_section(tract_profile, neighborhood_profile, cbsa_profile, count
 
     #region Median Household Income Historical
     neighborhood_profile.economy.medianhouseholdincomehistorical.labels = CENSUS_YEARS
-    neighborhood_profile.economy.medianhouseholdincomehistorical.data1 = tract_profile.data['Median Household Income']['All']
-    neighborhood_profile.economy.medianhouseholdincomehistorical.data2 = tract_profile.data['Median Household Income']['Owners']
-    neighborhood_profile.economy.medianhouseholdincomehistorical.data3 = tract_profile.data['Median Household Income']['Renters']
+    neighborhood_profile.economy.medianhouseholdincomehistorical.data1 = list_0_to_None(tract_profile.data['Median Household Income']['All'])
+    neighborhood_profile.economy.medianhouseholdincomehistorical.data2 = list_0_to_None(tract_profile.data['Median Household Income']['Owners'])
+    neighborhood_profile.economy.medianhouseholdincomehistorical.data3 = list_0_to_None(tract_profile.data['Median Household Income']['Renters'])
+
+    if len(tract_profile.data['Median Household Income']['All']) == 1:
+        neighborhood_profile.economy.medianhouseholdincomehistorical.hasData = False
+
     #endregion
 
     #region Unemployment Rate

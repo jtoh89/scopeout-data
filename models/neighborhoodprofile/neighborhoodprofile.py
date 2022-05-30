@@ -18,7 +18,7 @@ class NeighborhoodProfile:
         self.demographics.highesteducation = json.loads(json.dumps(self.demographics.highesteducation, default=lambda o: o.__dict__))
         self.demographics.race = json.loads(json.dumps(self.demographics.race, default=lambda o: o.__dict__))
         self.demographics.agegroups = json.loads(json.dumps( self.demographics.agegroups, default=lambda o: o.__dict__))
-        self.demographics.populationtrends = json.loads(json.dumps(self.demographics.populationtrends, default=lambda o: o.__dict__))
+        self.demographics.populationhistorical = json.loads(json.dumps(self.demographics.populationhistorical, default=lambda o: o.__dict__))
         self.demographics.oneyeargrowth = json.loads(json.dumps(self.demographics.oneyeargrowth, default=lambda o: o.__dict__))
         self.demographics.familytype = json.loads(json.dumps(self.demographics.familytype, default=lambda o: o.__dict__))
 

@@ -8,6 +8,7 @@ class OneLineChart():
         self.labels = []
         self.dataName = title
         self.data = []
+        self.hasData = True
 
 class TwoLineChart():
     def __init__(self, title, datatype):

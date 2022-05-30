@@ -322,22 +322,34 @@ def perform_small_batch_inserts(data_list, tempkey, collection, geo_level):
     insert_list = []
     for i, row in enumerate(data_list, 1):
         tractid = row['geoid']
+
         if i % 99 == 0:
+            insert_list.append(row)
             store_temp_backup(key=tempkey,insert_list=insert_list)
 
             collection.delete_many({
                 'geolevel': geo_level.value,
                 'geoid': {'$in': remove_list}})
+
             collection.insert_many(insert_list)
+
             delete_temp_backup(key=tempkey)
-
-            # print("Finished small batch insert. Current index: ", i)
-
             insert_list.clear()
             remove_list.clear()
         else:
             insert_list.append(row)
             remove_list.append(tractid)
+
+    store_temp_backup(key=tempkey,insert_list=insert_list)
+
+    collection.delete_many({
+        'geolevel': geo_level.value,
+        'geoid': {'$in': remove_list}})
+    collection.insert_many(insert_list)
+
+    delete_temp_backup(key=tempkey)
+    insert_list.clear()
+    remove_list.clear()
 
     print("Finished small batch. Num of records: ", len(data_list) )
 

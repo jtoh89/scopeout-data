@@ -89,13 +89,13 @@ def create_neighborhood_profiles():
                 success = mongoclient.store_neighborhood_data(stateid, neighborhood_profile_list, prod_env)
 
                 if success:
-                    collection_add_finished_run = {
-                        'category': "fullneighborhoodprofiles",
-                        'geo_level': GeoLevels.TRACT.value,
-                        'state_id': stateid,
-                    }
-
-                    mongoclient.add_finished_run(collection_add_finished_run)
+                    # collection_add_finished_run = {
+                    #     'category': "fullneighborhoodprofiles",
+                    #     'geo_level': GeoLevels.TRACT.value,
+                    #     'state_id': stateid,
+                    # }
+                    #
+                    # mongoclient.add_finished_run(collection_add_finished_run)
                     print('Successfully stored neighborhood profile for stateid: {}'.format(stateid))
             else:
                 print('Skipping state {}. Neighborhood profiles already exists.'.format(stateid))

@@ -35,6 +35,7 @@ class MedianSalePrice:
         self.labels = []
         self.data = []
         self.colors = []
+        self.hasData = True
 
 class MedianSalePriceMom:
     def __init__(self):
@@ -45,6 +46,7 @@ class MedianSalePriceMom:
         self.labels = []
         self.data = []
         self.colors = []
+        self.hasData = True
 
 class MedianSalePriceYoy:
     def __init__(self):
@@ -55,6 +57,7 @@ class MedianSalePriceYoy:
         self.labels = []
         self.data = []
         self.colors = []
+        self.hasData = True
 
 class Dom:
     def __init__(self):
@@ -65,6 +68,7 @@ class Dom:
         self.labels = []
         self.data = []
         self.colors = []
+        self.hasData = True
 
 
 class RentalTrends:
@@ -93,3 +97,4 @@ class TwoLineChart():
         self.data1 = []
         self.data2Name = ""
         self.data2 = []
+        self.hasData = True
