@@ -1,5 +1,4 @@
 import sys
-
 from database import mongoclient
 from models import marketmap
 from models import tractmarketmaps
@@ -7,6 +6,7 @@ from models import geojson as modelGeoJson
 from enums import ProductionEnvironment
 from utils.utils import list_length_okay, number_to_string
 from utils.production import create_url_slug, calculate_percentiles_from_list, assign_color, COLOR_LEVEL_NA, assign_legend_details
+from aws.s3 import upload_s3
 import numpy as np
 
 
@@ -18,8 +18,9 @@ def generate_tract_maps():
                                                     collection_name="ScopeOutMarkets",
                                                     collection_filter={},
                                                     prod_env=ProductionEnvironment.GEO_ONLY)
-    scopeout_markets = list(scopeout_markets['cbsacode'])
-    for cbsacode in scopeout_markets:
+
+    # for cbsacode in list(scopeout_markets['cbsacode']):
+    for cbsacode in list(["28140"]):
         cbsa_geo_dict = mongoclient.query_collection(database_name="Geographies",
                                                         collection_name="Cbsa",
                                                         collection_filter={'cbsacode': {'$eq': cbsacode}},
@@ -36,12 +37,6 @@ def generate_tract_maps():
                                                       collection_filter={"cbsacode": cbsacode},
                                                       prod_env=ProductionEnvironment.PROD)
 
-        # tracts_data2_df = mongoclient.query_collection(database_name="ShortProfiles",
-        #                                                collection_name="shortneighborhoodprofiles",
-        #                                                collection_filter={"cbsacode": cbsacode},
-        #                                                prod_env=ProductionEnvironment.FULL_NEIGHBORHOOD_PROFILES_2)
-        # tracts_data_df = tracts_data_df.append(tracts_data2_df)
-
 
         marketname = scopeout_markets[scopeout_markets['cbsacode'] == cbsacode]["cbsaname"].iloc[0]
         tract_map = tractmarketmaps.TractMarketMap()
@@ -57,17 +52,16 @@ def generate_tract_maps():
 
         tract_data_percentiles_dict = calculate_percentiles_from_all_tracts(tracts_data_df)
 
+        #region Median Household Income
         assign_legend_details(tract_map.medianhouseholdincomelegend, tract_data_percentiles_dict["median_household_income_percentiles"], 'dollar', 'ascending')
         assign_legend_details(tract_map.unemploymentratelegend, tract_data_percentiles_dict["unemployment_rate_percentiles"], 'percent', 'descending')
         assign_legend_details(tract_map.owneroccupancyratelegend, tract_data_percentiles_dict["owner_occupancy_rate_percentiles"], 'percent', 'ascending')
+        #endregion
 
         for tract in cbsa_tracts_geo_df.iloc[0]['geojson']['features']:
             geo_json_feature = modelGeoJson.GeoJsonFeature()
 
             geo_json_feature.geometry = tract['geometry']
-
-            # geo_json_geometry = modelGeoJson.GeoJsonGeometry()
-            # geo_json_geometry.coordinates = [tract["rings"]]
 
             geo_json_properties = tractmarketmaps.TractMarketGeoJsonProperties()
 
@@ -77,8 +71,6 @@ def generate_tract_maps():
             tract_data = tracts_data_df[tracts_data_df['geoid'] == tract['id']]
 
             if len(tract_data) == 0:
-                # print('!!! WARNING - Could not find matching tract for tractid: ', tract.tractcode)
-                # geo_json_feature.geometry = geo_json_geometry.__dict__
                 geo_json_feature.properties = geo_json_properties.__dict__
                 tract_map.medianhouseholdincomecolors.extend([tract['id'], COLOR_LEVEL_NA])
                 tract_map.unemploymentratecolors.extend([tract['id'], COLOR_LEVEL_NA])
@@ -88,6 +80,10 @@ def generate_tract_maps():
                 continue
 
             tract_data = tract_data.iloc[0]
+
+            if tract_data.demographics['populationhistorical']['data'][-1] == 0:
+                print("Skipping geoid with no population: ", tract['id'])
+                continue
 
             medianhouseholdincome = tract_data.economy['medianhouseholdincome']['data1'][0]
             unemploymentrate = tract_data.economy['unemploymentrate']['data'][0]
@@ -119,12 +115,15 @@ def generate_tract_maps():
         tract_map.convert_to_dict()
 
         print("Insert TractsMarketMaps for ", marketname)
+        tract_map_dict = tract_map.__dict__
 
-        mongoclient.insert_list_mongo(list_data=[tract_map.__dict__],
-                                      dbname='ScopeOutMaps',
-                                      collection_name='TractsMarketMaps',
-                                      prod_env=ProductionEnvironment.MARKET_MAPS,
-                                      collection_update_existing={"cbsacode": cbsacode})
+        upload_s3(cbsacode, tract_map_dict)
+
+        # mongoclient.insert_list_mongo(list_data=[tract_map.__dict__],
+        #                               dbname='ScopeOutMaps',
+        #                               collection_name='TractsMarketMaps',
+        #                               prod_env=ProductionEnvironment.MARKET_MAPS,
+        #                               collection_update_existing={"cbsacode": cbsacode})
 
 
 

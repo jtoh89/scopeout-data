@@ -10,6 +10,7 @@
 ####-fredapi
 ####-openpyxl
 ####-shapely
+####-boto3
 
 
 # How to run scripts

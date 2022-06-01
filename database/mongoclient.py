@@ -499,16 +499,18 @@ def insert_list_mongo(list_data, dbname, collection_name, prod_env, collection_u
         print("!!! ERROR could not store insert_list_mongo to Mongo.!!!\nError: ", e)
         sys.exit()
 
-def test_mongo(data_dict):
-    client = connect_to_client(prod_env=ProductionEnvironment.FULL_NEIGHBORHOOD_PROFILES_1)
-    db = client['scopeout']
 
-    collection = db['test']
+def delete_mongo(dbname, collection_name, prod_env, collection_delete=None):
+    client = connect_to_client(prod_env=prod_env)
+    db = client[dbname]
+    collection = db[collection_name]
 
-    print("Storing census2 data into Mongo")
-    collection.insert_one(data_dict)
-
-    print("Successfully stored batch into Mongo")
-
-    return True
-
+    try:
+        if collection_delete is None:
+            print("!!! Nothing to delete. collection_delete is {} !!!")
+            return
+        else:
+            collection.delete_many(collection_delete)
+    except Exception as e:
+        print("!!! ERROR could not delete !!!\nError: ", e)
+        sys.exit()

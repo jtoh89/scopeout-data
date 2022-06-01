@@ -21,7 +21,7 @@ from geographies import geography, scopeoutmarkets, esrigeographies, tractgeojso
 # geography.store_tract_lookups()
 
 # dump tract geojson
-# tractgeojson.store_tract_geojson_for_cbsacode()
+tractgeojson.store_tract_geojson_for_cbsacode()
 
 # dump county by cbsa lookup
 # geography.dump_county_by_cbsa_lookup()

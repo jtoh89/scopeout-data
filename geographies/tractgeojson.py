@@ -22,7 +22,6 @@ def store_tract_geojson_for_cbsacode():
         df = geopandas.read_file(rootpath + file_dir)
         df = df.to_crs("EPSG:4326")
 
-        tract_geojson_list = []
         tract_geojson_dict = {}
         for i, row in df.iterrows():
             countyfullcode = row['GEOID'][:5]
@@ -89,8 +88,7 @@ def store_tract_geojson_for_cbsacode():
             mongoclient.insert_list_mongo(list_data=[cbsa_ziplist],
                                           dbname='ScopeOut',
                                           collection_name='GeojsonTractsBySOMarkets',
-                                          prod_env=ProductionEnvironment.GEO_ONLY,
-                                          collection_update_existing={"cbsacode": cbsacode})
+                                          prod_env=ProductionEnvironment.GEO_ONLY)
 
             collection_add_finished_run = {
                 'hosttype': 'Geography',
@@ -117,3 +115,12 @@ def cbsa_exists_for_state(cbsacode, stateid):
 
     if stateid in existing_states:
         return True
+
+
+def clear_geojson_for_cbsa(cbsacode):
+    mongoclient.delete_mongo(
+        dbname='ScopeOut',
+        collection_name='GeojsonTractsBySOMarkets',
+        prod_env=ProductionEnvironment.GEO_ONLY,
+        collection_delete={"cbsacode": cbsacode}
+    )
