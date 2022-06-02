@@ -19,8 +19,8 @@ def generate_tract_maps():
                                                     collection_filter={},
                                                     prod_env=ProductionEnvironment.GEO_ONLY)
 
-    # for cbsacode in list(scopeout_markets['cbsacode']):
-    for cbsacode in list(["28140"]):
+    for cbsacode in list(scopeout_markets['cbsacode']):
+    # for cbsacode in list(["28140"]):
         cbsa_geo_dict = mongoclient.query_collection(database_name="Geographies",
                                                         collection_name="Cbsa",
                                                         collection_filter={'cbsacode': {'$eq': cbsacode}},
@@ -58,56 +58,57 @@ def generate_tract_maps():
         assign_legend_details(tract_map.owneroccupancyratelegend, tract_data_percentiles_dict["owner_occupancy_rate_percentiles"], 'percent', 'ascending')
         #endregion
 
-        for tract in cbsa_tracts_geo_df.iloc[0]['geojson']['features']:
-            geo_json_feature = modelGeoJson.GeoJsonFeature()
+        for i, row in cbsa_tracts_geo_df.iterrows():
+            for tract in row.geojson['features']:
+                geo_json_feature = modelGeoJson.GeoJsonFeature()
 
-            geo_json_feature.geometry = tract['geometry']
+                geo_json_feature.geometry = tract['geometry']
 
-            geo_json_properties = tractmarketmaps.TractMarketGeoJsonProperties()
+                geo_json_properties = tractmarketmaps.TractMarketGeoJsonProperties()
 
-            geo_json_feature.id = tract['id']
-            geo_json_properties.geoid = tract['id']
+                geo_json_feature.id = tract['id']
+                geo_json_properties.geoid = tract['id']
 
-            tract_data = tracts_data_df[tracts_data_df['geoid'] == tract['id']]
+                tract_data = tracts_data_df[tracts_data_df['geoid'] == tract['id']]
 
-            if len(tract_data) == 0:
+                if len(tract_data) == 0:
+                    # geo_json_feature.properties = geo_json_properties.__dict__
+                    # tract_map.medianhouseholdincomecolors.extend([tract['id'], COLOR_LEVEL_NA])
+                    # tract_map.unemploymentratecolors.extend([tract['id'], COLOR_LEVEL_NA])
+                    # tract_map.owneroccupancyratecolors.extend([tract['id'], COLOR_LEVEL_NA])
+                    #
+                    # tract_map.geojson.features.append(geo_json_feature.__dict__)
+                    continue
+
+                tract_data = tract_data.iloc[0]
+
+                if tract_data.demographics['populationhistorical']['data'][-1] == 0:
+                    # print("Skipping geoid with no population: ", tract['id'])
+                    continue
+
+                medianhouseholdincome = tract_data.economy['medianhouseholdincome']['data1'][0]
+                unemploymentrate = tract_data.economy['unemploymentrate']['data'][0]
+                owneroccupancyrate = tract_data.housing['occupancyrate']['data'][0]
+
+                if medianhouseholdincome != medianhouseholdincome or unemploymentrate != unemploymentrate:
+                    print('!!! Found NA value for tract!!!')
+                    sys.exit()
+
+                geo_json_properties.medianhouseholdincome = medianhouseholdincome
+                tract_medianhouseholdincome_color = assign_color(medianhouseholdincome, tract_data_percentiles_dict["median_household_income_percentiles"],  'ascending')
+                tract_map.medianhouseholdincomecolors.extend([tract['id'], tract_medianhouseholdincome_color])
+
+                geo_json_properties.unemploymentrate = unemploymentrate
+                tract_unemploymentrate_color = assign_color(unemploymentrate, tract_data_percentiles_dict["unemployment_rate_percentiles"], 'descending')
+                tract_map.unemploymentratecolors.extend([tract['id'], tract_unemploymentrate_color])
+
+                geo_json_properties.owneroccupancyrate = owneroccupancyrate
+                tract_owneroccupancyrate_color = assign_color(owneroccupancyrate, tract_data_percentiles_dict["owner_occupancy_rate_percentiles"], 'ascending')
+                tract_map.owneroccupancyratecolors.extend([tract['id'], tract_owneroccupancyrate_color])
+
                 geo_json_feature.properties = geo_json_properties.__dict__
-                tract_map.medianhouseholdincomecolors.extend([tract['id'], COLOR_LEVEL_NA])
-                tract_map.unemploymentratecolors.extend([tract['id'], COLOR_LEVEL_NA])
-                tract_map.owneroccupancyratecolors.extend([tract['id'], COLOR_LEVEL_NA])
 
                 tract_map.geojson.features.append(geo_json_feature.__dict__)
-                continue
-
-            tract_data = tract_data.iloc[0]
-
-            if tract_data.demographics['populationhistorical']['data'][-1] == 0:
-                print("Skipping geoid with no population: ", tract['id'])
-                continue
-
-            medianhouseholdincome = tract_data.economy['medianhouseholdincome']['data1'][0]
-            unemploymentrate = tract_data.economy['unemploymentrate']['data'][0]
-            owneroccupancyrate = tract_data.housing['occupancyrate']['data'][0]
-
-            if medianhouseholdincome != medianhouseholdincome or unemploymentrate != unemploymentrate:
-                print('!!! Found NA value for tract!!!')
-                sys.exit()
-
-            geo_json_properties.medianhouseholdincome = medianhouseholdincome
-            tract_medianhouseholdincome_color = assign_color(medianhouseholdincome, tract_data_percentiles_dict["median_household_income_percentiles"],  'ascending')
-            tract_map.medianhouseholdincomecolors.extend([tract['id'], tract_medianhouseholdincome_color])
-
-            geo_json_properties.unemploymentrate = unemploymentrate
-            tract_unemploymentrate_color = assign_color(unemploymentrate, tract_data_percentiles_dict["unemployment_rate_percentiles"], 'descending')
-            tract_map.unemploymentratecolors.extend([tract['id'], tract_unemploymentrate_color])
-
-            geo_json_properties.owneroccupancyrate = owneroccupancyrate
-            tract_owneroccupancyrate_color = assign_color(owneroccupancyrate, tract_data_percentiles_dict["owner_occupancy_rate_percentiles"], 'ascending')
-            tract_map.owneroccupancyratecolors.extend([tract['id'], tract_owneroccupancyrate_color])
-
-            geo_json_feature.properties = geo_json_properties.__dict__
-
-            tract_map.geojson.features.append(geo_json_feature.__dict__)
 
         tract_map.medianhouseholdincomecolors.append(COLOR_LEVEL_NA)
         tract_map.unemploymentratecolors.append(COLOR_LEVEL_NA)
@@ -146,8 +147,13 @@ def calculate_percentiles_from_all_tracts(tracts_data_df):
         owner_occupant_rate_list.append(tract_owner_occupant_rate)
 
     median_household_income_percentiles = calculate_percentiles_from_list(median_household_income_list)
-    unemployment_rate_percentiles = calculate_percentiles_from_list(unemployment_rate_list)
     owner_occupancy_rate_percentiles = calculate_percentiles_from_list(owner_occupant_rate_list)
+    unemployment_rate_percentiles = {
+        "percentile_20": 2,
+        "percentile_40": 4,
+        "percentile_60": 6,
+        "percentile_80": 8
+    }
 
     return {
         "median_household_income_percentiles": median_household_income_percentiles,

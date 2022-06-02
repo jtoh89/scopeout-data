@@ -5,7 +5,6 @@ from unemployment import unemploymentdownload, unemploymentupdates
 from enums import GeoLevels, DefaultGeoIds, ProductionEnvironment, GeoIdField, GeoNameField, Collections_Historical_Profiles, Collections_Profiles
 
 
-
 ##################################################################
 ###### PRODUCTION MARKET DATA
 ##################################################################
@@ -21,12 +20,11 @@ from enums import GeoLevels, DefaultGeoIds, ProductionEnvironment, GeoIdField, G
 # createcbsamarketprofiles.generate_cbsa_market_profiles(prod_env=ProductionEnvironment.MARKET_PROFILES,
 #                                                        geoid_field=GeoIdField.CBSA.value)
 
-
 # createneighborhoodprofiles.create_neighborhood_profiles()
 # createshortneighborhoodprofiles.create_short_neighborhood_profiles()
-# createshortzipcodeprofiles.create_short_zipcode_profiles()
+createshortzipcodeprofiles.create_short_zipcode_profiles()
 
 
 ############# CREATE PRODUCTION MAP DATA ############
-createtractmaps.generate_tract_maps()
+# createtractmaps.generate_tract_maps()
 # createzipcodemaps.generate_zipcode_maps()
