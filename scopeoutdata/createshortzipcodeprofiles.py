@@ -121,8 +121,13 @@ def create_short_zipcode_profiles():
 
                         if cbsa_has_rental:
                             if cbsa_market_historical['rentaltrends']['dates'][-1] != zip_rental_latest_month:
-                                print("!!! ERROR - why does the last month not match? !!!")
-                                sys.exit()
+                                if cbsa_market_historical['rentaltrends']['dates'][-2] != zip_rental_latest_month:
+                                    print("!!! ERROR - why do cbsa and zip rental months not match? !!!")
+                                    sys.exit()
+                                else:
+                                    zip_short_profile.rentaltrends.data2 = cbsa_market_historical['rentaltrends']['median_rent'][-13:-1]
+                            else:
+                                zip_short_profile.rentaltrends.data2 = cbsa_market_historical['rentaltrends']['median_rent'][-12:]
 
                             last_12_months = zipcode_historical_profile['rentaltrends']['dates'][-12:]
 
@@ -130,7 +135,7 @@ def create_short_zipcode_profiles():
                             zip_short_profile.rentaltrends.data1Name = zipcode
                             zip_short_profile.rentaltrends.data1 = zipcode_historical_profile['rentaltrends']['median_rent'][-12:]
                             zip_short_profile.rentaltrends.data2Name = cbsaname
-                            zip_short_profile.rentaltrends.data2 = cbsa_market_historical['rentaltrends']['median_rent'][:12]
+
                             zip_short_profile.zillowupdatedate = zip_rental_latest_month
                         else:
                             last_12_months = zipcode_historical_profile['rentaltrends']['dates'][-12:]
@@ -148,7 +153,7 @@ def create_short_zipcode_profiles():
                         zip_short_profile.rentaltrends.data1Name = zipcode
                         zip_short_profile.rentaltrends.data1 = []
                         zip_short_profile.rentaltrends.data2Name = cbsaname
-                        zip_short_profile.rentaltrends.data2 = cbsa_market_historical['rentaltrends']['median_rent'][:12]
+                        zip_short_profile.rentaltrends.data2 = cbsa_market_historical['rentaltrends']['median_rent'][-12:]
                         zip_short_profile.zillowupdatedate = last_12_months[-1]
 
                     zip_short_profile = zip_short_profile.convert_to_dict()
