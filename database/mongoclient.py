@@ -325,6 +325,7 @@ def perform_small_batch_inserts(data_list, tempkey, collection, geo_level):
 
         if i % 99 == 0:
             insert_list.append(row)
+            remove_list.append(tractid)
             store_temp_backup(key=tempkey,insert_list=insert_list)
 
             collection.delete_many({
