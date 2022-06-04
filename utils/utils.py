@@ -38,13 +38,15 @@ def number_to_string(data_type, value):
     if value != value or value is None:
         return None
 
-
     if data_type == "dollar":
         return "${:,.0f}".format(value)
     elif data_type == "percent":
         return str(value) + "%"
     # elif data_type == "dollar":
     #     return value
+
+def float_to_percent(value, decimal_places=1):
+    return round(float(value * 100), decimal_places)
 
 def string_to_int(value):
     if value == '':
@@ -94,6 +96,7 @@ def calculate_percent_change(starting_data, ending_data, move_decimal=True, deci
     return percent_change
 
 
+
 def month_string_to_datetime(month_string):
     month_string = month_string.split(' ')
     month_num = MONTH_STRING_TO_INT[month_string[0]]
@@ -105,3 +108,6 @@ def month_string_to_datetime(month_string):
 
 def two_list_to_dict(key_list, value_list):
     return {key_list[i]: value_list[i] for i in range(len(key_list))}
+
+def get_top_n_df(df, n, order=1):
+    print('')

@@ -39,6 +39,7 @@ def market_profile_add_unemployment(geo_level, geoid_field, prod_env=ProductionE
                                                  prod_env=ProductionEnvironment.CENSUS_DATA1)
 
     insert_list = []
+    latest_update_date = None
     for i, row in cbsa_profiles.iterrows():
         add_dict = row.to_dict()
         geo_unemployment_data = geo_data[geo_data['geoid'] == add_dict[geoid_field]]
@@ -49,6 +50,9 @@ def market_profile_add_unemployment(geo_level, geoid_field, prod_env=ProductionE
                 add_dict['historicunemploymentrate'] = {}
                 add_dict['historicunemploymentrate']['unemploymentrate'] = geo_unemployment_data['Unemployment Historic']
                 add_dict['historicunemploymentrate']['dates'] = geo_unemployment_data['Date']
+
+            if row.cbsacode == "31080":
+                latest_update_date = geo_unemployment_data['Date'][-1]
 
         add_dict = drop_na_values_from_dict(add_dict)
 
@@ -65,6 +69,20 @@ def market_profile_add_unemployment(geo_level, geoid_field, prod_env=ProductionE
 
     if success:
         print("Successfully stored batch into Mongo. Rows inserted: ", len(insert_list))
+
+        if geo_level == GeoLevels.CBSA:
+            try:
+                insert = {'Category': "Unemployment",
+                          'lastupdatedate': latest_update_date,
+                          }
+
+                collection = db['lastupdates']
+                collection.delete_one({'Category': "Unemployment"})
+                collection.insert_one(insert)
+            except Exception as e:
+                print("!!! ERROR storing latestupdatedate run to Mongo!!!", e)
+                sys.exit()
+
         return success
 
 

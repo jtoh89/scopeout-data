@@ -14,6 +14,10 @@ def create_short_zipcode_profiles():
 
     for i, row in zipcodes_by_scopeout_markets.iterrows():
         cbsacode = row.cbsacode
+
+        # if cbsacode != "28140":
+        #     continue
+
         cbsa_market_historical = mongoclient.query_collection(database_name="MarketProfiles",
                                                    collection_name="cbsahistoricalprofiles",
                                                    collection_filter={"cbsacode":cbsacode},

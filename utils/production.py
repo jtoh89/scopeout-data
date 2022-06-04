@@ -24,6 +24,14 @@ def calculate_percentiles_from_list(list_data):
     }
 
 
+def calculate_percentiles_by_median_value(median_value):
+    return {
+        "percentile_20":  median_value * .6,
+        "percentile_40": median_value * .8,
+        "percentile_60": median_value * 1.2,
+        "percentile_80":  median_value * 1.4
+    }
+
 def assign_legend_details(legend_details, percentiles_dict, data_type, order):
     if data_type == "dollar":
         legend_details.level1description = "Under " + number_to_string(data_type, percentiles_dict['percentile_20'])

@@ -88,6 +88,7 @@ def update_regional_unemployment(geo_level):
                 'category': 'Unemployment Update',
             }
             mongoclient.add_finished_run(collection_add_finished_run)
+
         else:
             print('ERROR: Failed to store unemployment data')
 
