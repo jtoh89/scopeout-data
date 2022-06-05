@@ -13,8 +13,8 @@ from geographies import geography, scopeoutmarkets, esrigeographies, tractgeojso
 # geography.DEPRECATED_dump_all_geographies()
 
 # dump scopeout markets
-# scopeoutmarkets.store_scopeout_markets()
-scopeoutmarkets.store_all_markets()
+# scopeoutmarkets.store_scopeout_markets()-
+scopeoutmarkets.store_all_markets(300)
 
 # dump tract info by county
 # esrigeographies.DEPECRATED_dump_tract_by_county()

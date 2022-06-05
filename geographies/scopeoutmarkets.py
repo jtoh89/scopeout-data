@@ -1,13 +1,65 @@
+import pandas as pd
 from database import mongoclient
 from enums import ProductionEnvironment, GeoLevels
 from utils.production import create_url_slug
 
-def store_all_markets():
+def store_all_markets(top_n):
     all_markets = mongoclient.query_collection(database_name="CensusData1",
                                                  collection_name="CensusData",
                                                  collection_filter={'geolevel': GeoLevels.CBSA.value},
                                                  prod_env=ProductionEnvironment.CENSUS_DATA1)
-    print('')
+
+    cbsacode_list = []
+    population_list = []
+
+    for i, row in all_markets.iterrows():
+        data = row['data']
+        population = data['Population Growth']['Total Population'][-1]
+
+        cbsacode_list.append(row['geoid'])
+        population_list.append(population)
+
+    population_df = pd.DataFrame(list(zip(cbsacode_list, population_list)), columns=['cbsacode', 'population'])
+
+    population_df = population_df.sort_values(by=['population'], ascending=False)
+
+    top_population_list = population_df.head(top_n)
+
+    all_cbsa = mongoclient.query_collection(database_name="Geographies",
+                                                 collection_name="Cbsa",
+                                                 collection_filter={},
+                                                 prod_env=ProductionEnvironment.GEO_ONLY)
+
+    all_markets = mongoclient.query_collection(database_name="CensusData1",
+                                                 collection_name="CensusData",
+                                                 collection_filter={'geolevel': GeoLevels.CBSA.value},
+                                                 prod_env=ProductionEnvironment.CENSUS_DATA1)
+    # all_markets = all_markets.to_dict('records')
+    insert_list = []
+    for cbsacode in top_population_list['cbsacode']:
+        cbsa_info = all_markets[all_markets['geoid'] == cbsacode]
+
+        if len(cbsa_info) > 1 or len(cbsa_info) < 1:
+            print("!!! What is length of cbsa_info1? !!!")
+
+        cbsa_info = cbsa_info.iloc[0].to_dict()
+
+        cbsa_name = cbsa_info['geoinfo']['cbsaname']
+
+        insert_list.append({
+            'cbsacode': cbsacode,
+            'cbsaname':cbsa_name,
+            'urlslug': create_url_slug(cbsacode, cbsa_name)
+        })
+    print("inserting AllMarkets")
+
+    mongoclient.insert_list_mongo(list_data=insert_list,
+                                  dbname='ScopeOut',
+                                  collection_name='AllMarkets',
+                                  prod_env=ProductionEnvironment.GEO_ONLY,
+                                  collection_update_existing={})
+
+
 def store_scopeout_markets():
     collection_filter = {
         'cbsacode': {'$in': scopeout_market_list},
