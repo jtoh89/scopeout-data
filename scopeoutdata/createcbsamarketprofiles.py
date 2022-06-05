@@ -110,54 +110,6 @@ def generate_cbsa_market_profiles(prod_env, geoid_field):
             cbsa_market_profile.medianhouseholdincome.labels = census_cbsa_data_match['Median Household Income']['years']
             cbsa_market_profile.medianhouseholdincome.data = census_cbsa_data_match['Median Household Income']['All']
 
-            # Housing unit vs Household growth change
-            housing_unit_growth_dict = two_list_to_dict(key_list=census_cbsa_data_match['Housing Unit Growth']['years'],
-                                                        value_list=census_cbsa_data_match['Housing Unit Growth']['Total Housing Units'])
-
-            household_growth_dict = two_list_to_dict(key_list=census_cbsa_data_match['Total Households']['years'],
-                                                        value_list=census_cbsa_data_match['Total Households']['Total Households'])
-
-            if housing_unit_growth_dict.keys() == household_growth_dict.keys():
-                housing_units_add = []
-                households_add = []
-
-                years = list(housing_unit_growth_dict.keys())
-                for i2, year in enumerate(years):
-                    # skip year 2012, weird anomoly data where huge difference in households/housing units
-                    if i2 == 0 or year == '2013':
-                        continue
-                    prev_year = years[i2-1]
-
-                    change = calculate_percent_change(housing_unit_growth_dict[prev_year], housing_unit_growth_dict[year])
-
-                    if change > 3 or change < -3:
-                        print("{}. year: {}. change: {}".format(cbsa_market_profile.cbsaname, year, change))
-
-                    housing_units_add.append(housing_unit_growth_dict[year]-housing_unit_growth_dict[prev_year])
-                    households_add.append(household_growth_dict[year]-household_growth_dict[prev_year])
-
-                housing_unit_added = {
-                    "label": "Housing Units",
-                    "fill": True,
-                    "borderColor": BORDER_COLOR,
-                    "data": housing_units_add,
-                    "backgroundColor": BLUE_COLOR,
-                }
-
-                households_added = {
-                    "label": "Households",
-                    "fill": True,
-                    "data": households_add,
-                    "borderColor": BORDER_COLOR,
-                    "backgroundColor": SCOPEOUT_COLOR,
-                }
-
-                cbsa_market_profile.housingunitsvshouseholdschange.colors = "Total Housing Units"
-                cbsa_market_profile.housingunitsvshouseholdschange.labels = years[2:]
-                cbsa_market_profile.housingunitsvshouseholdschange.datasets = [housing_unit_added, households_added]
-            else:
-                print("!!! historical years not same between housing units and houshold growth !!!")
-                sys.exit()
 
         cbsa_market_profile.convert_to_dict()
         cbsa_market_profile_list.append(cbsa_market_profile.__dict__)
@@ -175,3 +127,54 @@ def generate_cbsa_market_profiles(prod_env, geoid_field):
     if success:
         print("Successfully stored batch into Mongo. Rows inserted: ", len(cbsa_market_profile_list))
         return success
+
+
+
+# # Housing unit vs Household growth change
+# housing_unit_growth_dict = two_list_to_dict(key_list=census_cbsa_data_match['Housing Unit Growth']['years'],
+#                                             value_list=census_cbsa_data_match['Housing Unit Growth']['Total Housing Units'])
+#
+# household_growth_dict = two_list_to_dict(key_list=census_cbsa_data_match['Total Households']['years'],
+#                                             value_list=census_cbsa_data_match['Total Households']['Total Households'])
+#
+# if housing_unit_growth_dict.keys() == household_growth_dict.keys():
+#     housing_units_add = []
+#     households_add = []
+#
+#     years = list(housing_unit_growth_dict.keys())
+#     for i2, year in enumerate(years):
+#         # skip year 2012, weird anomoly data where huge difference in households/housing units
+#         if i2 == 0 or year == '2013':
+#             continue
+#         prev_year = years[i2-1]
+#
+#         change = calculate_percent_change(housing_unit_growth_dict[prev_year], housing_unit_growth_dict[year])
+#
+#         if change > 3 or change < -3:
+#             print("{}. year: {}. change: {}".format(cbsa_market_profile.cbsaname, year, change))
+#
+#         housing_units_add.append(housing_unit_growth_dict[year]-housing_unit_growth_dict[prev_year])
+#         households_add.append(household_growth_dict[year]-household_growth_dict[prev_year])
+#
+#     housing_unit_added = {
+#         "label": "Housing Units",
+#         "fill": True,
+#         "borderColor": BORDER_COLOR,
+#         "data": housing_units_add,
+#         "backgroundColor": BLUE_COLOR,
+#     }
+#
+#     households_added = {
+#         "label": "Households",
+#         "fill": True,
+#         "data": households_add,
+#         "borderColor": BORDER_COLOR,
+#         "backgroundColor": SCOPEOUT_COLOR,
+#     }
+#
+#     cbsa_market_profile.housingunitsvshouseholdschange.colors = "Total Housing Units"
+#     cbsa_market_profile.housingunitsvshouseholdschange.labels = years[2:]
+#     cbsa_market_profile.housingunitsvshouseholdschange.datasets = [housing_unit_added, households_added]
+# else:
+#     print("!!! historical years not same between housing units and houshold growth !!!")
+#     sys.exit()

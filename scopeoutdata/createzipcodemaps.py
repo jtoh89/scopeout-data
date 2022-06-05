@@ -4,8 +4,8 @@ from models import marketmap
 from models import tractmarketmaps, zipcodemarketmap
 from models import geojson as modelGeoJson
 from enums import ProductionEnvironment, GeoLevels
-from utils.utils import isNaN,  number_to_string, calculate_percent_change
-from utils.production import create_url_slug, calculate_percentiles_from_list, assign_color, COLOR_LEVEL_NA, assign_legend_details, calculate_percentiles_by_median_value
+from utils.utils import isNaN,  number_to_string, calculate_percent_change, float_to_percent
+from utils.production import create_url_slug, calculate_percentiles_from_list, assign_color, COLOR_LEVEL_NA, assign_legend_details, calculate_percentiles_by_median_value, calculate_percentiles_from_percent_list
 from dateutil.relativedelta import relativedelta
 from lookups import INDEX_TO_MONTH
 import datetime
@@ -81,6 +81,7 @@ def generate_zipcode_maps():
             median_sale_price = matching_zip_data['realestatetrends']['mediansaleprice'][-1]
             median_sale_price_mom = matching_zip_data['realestatetrends']['mediansalepricemom'][-1]
             dom = matching_zip_data['realestatetrends']['mediandom'][-1]
+
             if median_sale_price_mom == None:
                 prev_datetime = latest_update_date['lastupdatedate'] - relativedelta(months=1)
                 prev_month = INDEX_TO_MONTH[prev_datetime.month-1] + " " + str(prev_datetime.year)
@@ -89,11 +90,17 @@ def generate_zipcode_maps():
                     prev_year_median_sale_price = matching_zip_data['realestatetrends']['mediansaleprice'][-2]
 
                     if prev_year_median_sale_price != None:
-                        median_sale_price_yoy = calculate_percent_change(prev_year_median_sale_price, median_sale_price, move_decimal=False)
+                        median_sale_price_mom = calculate_percent_change(prev_year_median_sale_price, median_sale_price, move_decimal=False)
+
 
             # build list of all metrics
             all_zip_median_sale_price.append(median_sale_price)
-            all_zip_median_sale_price_mom.append(median_sale_price_mom)
+            if median_sale_price_mom == None:
+                all_zip_median_sale_price_mom.append(None)
+            else:
+                median_sale_price_mom = float_to_percent(median_sale_price_mom, 1)
+                all_zip_median_sale_price_mom.append(median_sale_price_mom)
+
             all_zip_dom.append(dom)
 
             # assign item to geojson property
@@ -111,7 +118,7 @@ def generate_zipcode_maps():
         # calculate percentiles
         # median_sale_price_percentiles = calculate_percentiles_from_list(all_zip_median_sale_price)
         median_sale_price_percentiles = calculate_percentiles_by_median_value(median_sale_price)
-        median_sale_price_mom_percentiles = calculate_percentiles_from_list(all_zip_median_sale_price_mom)
+        median_sale_price_mom_percentiles = calculate_percentiles_from_percent_list(all_zip_median_sale_price_mom)
         dom_percentiles = calculate_percentiles_from_list(all_zip_dom)
 
         #iterate again to assign colors
@@ -133,17 +140,17 @@ def generate_zipcode_maps():
             median_sale_price_mom_color = assign_color(median_sale_price_mom, median_sale_price_mom_percentiles, 'ascending')
             zipcode_market_map.mediansalepricemomcolors.extend([zipcode, median_sale_price_mom_color])
 
-            zip_geojson_feature['properties'].mediansaleprice = number_to_string('dollar', median_sale_price)
+            # zip_geojson_feature['properties'].mediansaleprice = number_to_string('dollar', median_sale_price)
 
-            if dom:
-                zip_geojson_feature['properties'].dom = int(dom)
-            else:
-                zip_geojson_feature['properties'].dom = None
+            # if dom:
+            #     zip_geojson_feature['properties'].dom = int(dom)
+            # else:
+            #     zip_geojson_feature['properties'].dom = None
 
-            if median_sale_price_mom:
-                zip_geojson_feature['properties'].mediansalepricemom = number_to_string('dollar', median_sale_price_mom)
-            else:
-                zip_geojson_feature['properties'].mediansalepricemom = None
+            # if median_sale_price_mom:
+            #     zip_geojson_feature['properties'].mediansalepricemom = number_to_string('dollar', median_sale_price_mom)
+            # else:
+            #     zip_geojson_feature['properties'].mediansalepricemom = None
 
 
             zip_geojson_feature['properties'] = zip_geojson_feature['properties'].__dict__
@@ -191,4 +198,5 @@ def calculate_percentiles_from_all_tracts(tracts_data_df):
         "unemployment_rate_percentiles": unemployment_rate_percentiles,
         "owner_occupancy_rate_percentiles": owner_occupancy_rate_percentiles,
     }
+
 

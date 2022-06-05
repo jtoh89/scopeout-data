@@ -5,9 +5,9 @@ from globals import COLOR_LEVEL_NA
 class ZipcodeGeoJsonProperties:
     def __init__(self):
         self.geoid = ""
-        self.mediansaleprice = None
-        self.mediansalepricemom = None
-        self.dom = None
+        # self.mediansaleprice = None
+        # self.mediansalepricemom = None
+        # self.dom = None
 
 class ZipcodeMarketMap:
     def __init__(self):

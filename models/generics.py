@@ -20,6 +20,7 @@ class TwoLineChart():
         self.data1 = []
         self.data2Name = ""
         self.data2 = []
+        self.hasData = True
 
 
 class ComparisonBarChart():
@@ -30,3 +31,4 @@ class ComparisonBarChart():
         self.colors: []
         self.labels = []
         self.datasets = []
+        self.hasData = True

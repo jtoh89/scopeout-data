@@ -1,43 +1,15 @@
 from database import mongoclient
 from enums import GeoLevels
-
+from resetscripts import reset
 
 ##################################################################
 ### Unemployment Update
 ##################################################################
+reset.reset_unemployment()
 
-## Cbsa
-# mongoclient.delete_finished_run({
-#     'geo_level': GeoLevels.CBSA.value,
-#     'category': 'Unemployment Update'
-# })
-# print('Cbsa delete done')
-
-## County
-# mongoclient.delete_finished_run({
-#     'geo_level': GeoLevels.COUNTY.value,
-#     'category': 'Unemployment Update'
-# })
-# print('County delete done')
-
-## Tract
-mongoclient.delete_finished_run({
-        'geo_level': GeoLevels.TRACT.value,
-        'category': ''
-    })
-print('Tract delete done')
-
-
-
-##################################################################
-### Short/Full Neighborhood Update
-##################################################################
-
-# mongoclient.delete_finished_run({
-#     'geo_level': GeoLevels.TRACT.value,
-#     'category': 'shortneighborhoodprofiles'
-# })
-# print('Tract delete done')
+# reset.reset_census_cbsa_by_state("01")
+# reset.reset_census_county_by_state("01")
+# reset.reset_census_tract_by_state("01")
 
 
 

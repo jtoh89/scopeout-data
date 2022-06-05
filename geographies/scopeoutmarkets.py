@@ -1,7 +1,13 @@
 from database import mongoclient
-from enums import ProductionEnvironment
+from enums import ProductionEnvironment, GeoLevels
 from utils.production import create_url_slug
 
+def store_all_markets():
+    all_markets = mongoclient.query_collection(database_name="CensusData1",
+                                                 collection_name="CensusData",
+                                                 collection_filter={'geolevel': GeoLevels.CBSA.value},
+                                                 prod_env=ProductionEnvironment.CENSUS_DATA1)
+    print('')
 def store_scopeout_markets():
     collection_filter = {
         'cbsacode': {'$in': scopeout_market_list},

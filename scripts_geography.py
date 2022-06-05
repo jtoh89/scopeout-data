@@ -14,14 +14,14 @@ from geographies import geography, scopeoutmarkets, esrigeographies, tractgeojso
 
 # dump scopeout markets
 # scopeoutmarkets.store_scopeout_markets()
-
+scopeoutmarkets.store_all_markets()
 
 # dump tract info by county
 # esrigeographies.DEPECRATED_dump_tract_by_county()
 # geography.store_tract_lookups()
 
 # dump tract geojson
-tractgeojson.store_tract_geojson_for_cbsacode()
+# tractgeojson.store_tract_geojson_for_cbsacode()
 
 # dump county by cbsa lookup
 # geography.dump_county_by_cbsa_lookup()

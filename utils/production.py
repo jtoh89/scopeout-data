@@ -23,6 +23,24 @@ def calculate_percentiles_from_list(list_data):
         "percentile_80": int(round(np.percentile(np_list, 80), 0))
     }
 
+def calculate_percentiles_from_percent_list(list_data):
+    final_list = []
+    for val in list_data:
+        if val != None :
+            if val < 0:
+                continue
+            final_list.append(val)
+
+    np_list = np.array(final_list)
+
+
+    return {
+        "percentile_20": 0,
+        "percentile_40": 3,
+        "percentile_60": 5,
+        "percentile_80": 10
+    }
+
 
 def calculate_percentiles_by_median_value(median_value):
     return {
