@@ -100,15 +100,34 @@ def generate_cbsa_market_profiles(prod_env, geoid_field):
             cbsa_market_profile.unemploymentrate.data = cbsa_profile['historicunemploymentrate']['unemploymentrate']
 
         if census_cbsa_data_match:
-            # Total Population
-            cbsa_market_profile.totalpopulationgrowth.dataName = "Total Population"
-            cbsa_market_profile.totalpopulationgrowth.labels = census_cbsa_data_match['Population Growth']['years']
-            cbsa_market_profile.totalpopulationgrowth.data = census_cbsa_data_match['Population Growth']['Total Population']
-
             # Median Household Income
             cbsa_market_profile.medianhouseholdincome.dataName = "Median Household Income"
             cbsa_market_profile.medianhouseholdincome.labels = census_cbsa_data_match['Median Household Income']['years']
             cbsa_market_profile.medianhouseholdincome.data = census_cbsa_data_match['Median Household Income']['All']
+
+            # Population Change
+            years = census_cbsa_data_match['Population Growth']['years']
+            total_population_dict = two_list_to_dict(key_list=years,
+                                                     value_list=census_cbsa_data_match['Population Growth']['Total Population'])
+
+
+            population_change = []
+            for i, year in enumerate(years):
+                # skip year 2012, weird anomoly data where huge difference in households/housing units
+                if i == 0:
+                    continue
+
+                prev_year = years[i-1]
+                population_change.append(total_population_dict[year] - total_population_dict[prev_year])
+
+            # cbsa_market_profile.totalpopulation.dataName = "Population Change (# of people)"
+            cbsa_market_profile.populationchange.labels = years[1:]
+            cbsa_market_profile.populationchange.data = population_change
+
+            # Total Population
+            # cbsa_market_profile.totalpopulation.dataName = "Total Population"
+            cbsa_market_profile.totalpopulation.labels = years
+            cbsa_market_profile.totalpopulation.data = census_cbsa_data_match['Population Growth']['Total Population']
 
 
         cbsa_market_profile.convert_to_dict()

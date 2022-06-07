@@ -17,7 +17,8 @@ class CbsaMarketProfile:
         self.unemploymentrate = OneLineChart(title="Unemployment Rate", datatype=ModelsDataTypes.PERCENT.value)
         self.buildingpermits = OneLineChart(title="Building Permits (# of Structures)", datatype=ModelsDataTypes.INTEGER.value)
         # self.housingunitsvshouseholdschange = ComparisonBarChart(title="Change in Housing Units and Households", datatype=ModelsDataTypes.INTEGER.value)
-        self.totalpopulationgrowth = OneLineChart(title="Total Population", datatype=ModelsDataTypes.INTEGER.value)
+        self.totalpopulation = OneLineChart(title="Total Population", datatype=ModelsDataTypes.INTEGER.value)
+        self.populationchange = OneLineChart(title="Population Change (# of people)", datatype=ModelsDataTypes.INTEGER.value)
         self.medianhouseholdincome = OneLineChart(title="Median Household Income", datatype=ModelsDataTypes.DOLLAR.value)
 
 
@@ -31,7 +32,8 @@ class CbsaMarketProfile:
         self.rentaltrends = json.loads(json.dumps(self.rentaltrends, default=lambda o: o.__dict__))
         self.unemploymentrate = json.loads(json.dumps(self.unemploymentrate, default=lambda o: o.__dict__))
         self.buildingpermits = json.loads(json.dumps(self.buildingpermits, default=lambda o: o.__dict__))
-        self.totalpopulationgrowth = json.loads(json.dumps(self.totalpopulationgrowth, default=lambda o: o.__dict__))
+        self.totalpopulation = json.loads(json.dumps(self.totalpopulation, default=lambda o: o.__dict__))
+        self.populationchange = json.loads(json.dumps(self.populationchange, default=lambda o: o.__dict__))
         # self.housingunitsvshouseholdschange = json.loads(json.dumps(self.housingunitsvshouseholdschange, default=lambda o: o.__dict__))
         self.medianhouseholdincome = json.loads(json.dumps(self.medianhouseholdincome, default=lambda o: o.__dict__))
 
