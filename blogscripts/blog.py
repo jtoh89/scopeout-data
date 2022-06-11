@@ -1,12 +1,21 @@
 import sys
 from database import mongoclient
-from enums import ProductionEnvironment, GeoLevels, Collections_Historical_Profiles
+from enums import ProductionEnvironment, GeoLevels, Collections_Profiles, Collections_Historical_Profiles
 from utils.utils import calculate_percent_change, float_to_percent
 import pandas as pd
 
 CURRENT_MONTH = "April 2022"
 
-def run_analysis():
+def run_rent_to_price_cbsa():
+    cbsa_historical_profiles = mongoclient.query_collection(database_name="MarketProfiles",
+                                                            collection_name=Collections_Profiles.CBSA.value,
+                                                            collection_filter={'geolevel': GeoLevels.CBSA.value},
+                                                            prod_env=ProductionEnvironment.MARKET_PROFILES)
+
+    for i, row in cbsa_historical_profiles.iterrows():
+        print("")
+
+def run_top_ranks():
     scopeout_markets = mongoclient.query_collection(database_name="ScopeOut",
                                                     collection_name="ScopeOutMarkets",
                                                     collection_filter={},
@@ -129,7 +138,6 @@ def run_analysis():
     collection.insert_many(bottom_price_drops_df.to_dict('records'))
     collection.insert_many(top_rental_list_mom_df.to_dict('records'))
     collection.insert_many(bottom_rental_list_mom_df.to_dict('records'))
-
 
 
 def setup_df(data, cbsacode_list, cbsa_lookup_dict, append_dict=None):
