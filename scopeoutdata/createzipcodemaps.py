@@ -6,6 +6,7 @@ from models import geojson as modelGeoJson
 from enums import ProductionEnvironment, GeoLevels
 from utils.utils import isNaN,  number_to_string, calculate_percent_change, float_to_percent
 from utils.production import create_url_slug, calculate_percentiles_from_list, assign_color, COLOR_LEVEL_NA, assign_legend_details, calculate_percentiles_by_median_value, calculate_percentiles_from_percent_list
+from utils.production import calculate_percentiles_using_dict
 from dateutil.relativedelta import relativedelta
 from lookups import INDEX_TO_MONTH
 import datetime
@@ -119,7 +120,14 @@ def generate_zipcode_maps():
         # median_sale_price_percentiles = calculate_percentiles_from_list(all_zip_median_sale_price)
         median_sale_price_percentiles = calculate_percentiles_by_median_value(median_sale_price)
         median_sale_price_mom_percentiles = calculate_percentiles_from_percent_list(all_zip_median_sale_price_mom)
-        dom_percentiles = calculate_percentiles_from_list(all_zip_dom)
+
+
+        dom_percentiles = calculate_percentiles_using_dict({
+            "percentile_20": 15,
+            "percentile_40": 30,
+            "percentile_60": 45,
+            "percentile_80": 60
+        })
 
         #iterate again to assign colors
         for zip_geojson_feature in scopeout_market.geojson['features']:

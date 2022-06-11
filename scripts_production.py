@@ -27,4 +27,4 @@ createcbsamarketprofiles.generate_cbsa_market_profiles(prod_env=ProductionEnviro
 
 ############# CREATE PRODUCTION MAP DATA ############
 # createtractmaps.generate_tract_maps()
-# createzipcodemaps.generate_zipcode_maps()
+createzipcodemaps.generate_zipcode_maps()

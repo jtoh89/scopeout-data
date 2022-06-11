@@ -42,6 +42,16 @@ def calculate_percentiles_from_percent_list(list_data):
     }
 
 
+def calculate_percentiles_using_dict(label_dict):
+    return {
+        "percentile_20": label_dict['percentile_20'],
+        "percentile_40": label_dict['percentile_40'],
+        "percentile_60": label_dict['percentile_60'],
+        "percentile_80": label_dict['percentile_80']
+    }
+
+
+
 def calculate_percentiles_by_median_value(median_value):
     return {
         "percentile_20":  median_value * .6,
