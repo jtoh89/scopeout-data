@@ -178,8 +178,28 @@ def run_cbsa_building_permit(geo_level, geoid_field, geoname_field):
             'geo_level': GeoLevels.CBSA.value,
         }
 
-        if success and latest_insert_month == '12':
-            mongoclient.update_finished_run(collection_add_finished_run, geo_level=geo_level, category=category_name)
+        if success:
+            if latest_insert_month == '12':
+                mongoclient.update_finished_run(collection_add_finished_run, geo_level=geo_level, category=category_name)
+
+            try:
+                client = mongoclient.connect_to_client(prod_env=ProductionEnvironment.QA)
+                dbname = 'LatestUpdates'
+                db = client[dbname]
+
+                insert = {
+                          'category':'building permits',
+                          'geolevel': geo_level.value,
+                          'lastupdatedate': latest_insert_month + ' ' + BUILDING_PERMIT_YEARS[-1],
+                          }
+
+                collection = db['lastupdates']
+                collection.delete_one({'geolevel': geo_level.value})
+                collection.insert_one(insert)
+            except Exception as e:
+                print("!!! ERROR storing latestupdatedate run to Mongo!!!", e)
+                sys.exit()
+
 
 def store_building_permits(building_permit_dict, geo_level, latest_insert_year, geoid_field, category_name, prod_env=ProductionEnvironment.MARKET_PROFILES):
     client = mongoclient.connect_to_client(prod_env=prod_env)
