@@ -14,13 +14,13 @@ from realestate import redfin, buildingpermits, initialize, zillow
 #                                      geoid_field=GeoIdField.USA.value,
 #                                      geoname_field=GeoNameField.USA.value,
 #                                      collection_name=Collections_Historical_Profiles.USA.value)
-#
-#
-# redfin.import_redfin_historical_data(geo_level=GeoLevels.CBSA,
-#                                      default_geoid=DefaultGeoIds.CBSA.value,
-#                                      geoid_field=GeoIdField.CBSA.value,
-#                                      geoname_field=GeoNameField.CBSA.value,
-#                                      collection_name=Collections_Historical_Profiles.CBSA.value)
+
+
+redfin.import_redfin_historical_data(geo_level=GeoLevels.CBSA,
+                                     default_geoid=DefaultGeoIds.CBSA.value,
+                                     geoid_field=GeoIdField.CBSA.value,
+                                     geoname_field=GeoNameField.CBSA.value,
+                                     collection_name=Collections_Historical_Profiles.CBSA.value)
 
 
 redfin.import_redfin_historical_data(geo_level=GeoLevels.COUNTY,

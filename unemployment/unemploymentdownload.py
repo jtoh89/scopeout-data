@@ -6,10 +6,11 @@ from enums import ProductionEnvironment, GeoLevels, DefaultGeoIds
 import os
 from census.censusdata import STATES
 import copy
-from lookups import MONTH_FORMAT, MONTH_INTEGER
+from lookups import MONTH_FORMAT, MONTH_INTEGER, INDEX_TO_MONTH
 from lookups import OLD_TO_NEW_CBSAID, NECTAMSA_to_CBSA_conversion
 from utils.utils import drop_na_values_from_dict
 from enums import GeoLevels, Collections_Historical_Profiles
+import datetime
 
 # CURRENT_YEAR = '2021'
 # CURRENT_MONTH = 'M01'
@@ -155,6 +156,27 @@ def download_cbsa_historical_unemployment():
 
     if success:
         print('Successfully stored unemployment data')
+        try:
+            client = mongoclient.connect_to_client(prod_env=ProductionEnvironment.QA)
+            dbname = 'LatestUpdates'
+            db = client[dbname]
+
+            latest_update_date = datetime.datetime.now()
+
+            insert = {'geolevel': GeoLevels.CBSA.value,
+                      'lastupdatedate': latest_update_date,
+                      'year': latest_update_date.year,
+                      'month': latest_update_date.month,
+                      'datestring': INDEX_TO_MONTH[latest_update_date.month-1] + ' ' + str(latest_update_date.year)
+                      }
+
+            collection = db['lastupdates']
+            collection.delete_one({'geolevel': GeoLevels.CBSA.value})
+            collection.insert_one(insert)
+        except Exception as e:
+            print("!!! ERROR storing latestupdatedate run to Mongo!!!", e)
+            sys.exit()
+
     else:
         print('ERROR: Failed to store unemployment data')
 

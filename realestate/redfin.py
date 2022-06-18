@@ -243,6 +243,10 @@ def import_redfin_historical_data(geo_level, default_geoid, geoid_field, geoname
     else:
         print("Redfin import finished")
         try:
+            client = mongoclient.connect_to_client(prod_env=ProductionEnvironment.QA)
+            dbname = 'LatestUpdates'
+            db = client[dbname]
+
             insert = {'geolevel': geo_level.value,
                       'lastupdatedate': latest_update_date,
                       'year': latest_update_date.year,
