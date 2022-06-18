@@ -9,7 +9,7 @@ from lookups import REDFIN_MSA_TO_CBSA
 from enums import ProductionEnvironment
 import datetime
 import sys
-from lookups import INDEX_TO_MONTH
+from lookups import INDEX_TO_MONTH, MONTH_STRING_TO_INT
 from utils.utils import drop_na_values_from_dict
 
 ZILLOW_MIN_YEAR = 2018
@@ -81,11 +81,17 @@ def import_zillow_msa_rental_data(geo_level, default_geoid, geoid_field, geoname
                                                                prod_env=ProductionEnvironment.MARKET_PROFILES).drop(columns=["_id"])
 
     insert_list = []
-
+    latest_update_date = datetime.datetime(1900, 1, 1)
     for i, row in existing_historical_profiles.iterrows():
         row_dict = row.to_dict()
         geoid = row_dict[geoid_field]
         if geoid in zillow_rental_dict.keys():
+            latest_update_m_y = zillow_rental_dict[geoid]['dates'][-1].split(' ')
+            update_date = datetime.datetime(year=int(latest_update_m_y[1]), month=MONTH_STRING_TO_INT[latest_update_m_y[0]], day=1)
+
+            if update_date > latest_update_date:
+                latest_update_date = update_date
+
             row_dict['rentaltrends'] = zillow_rental_dict[geoid]
             insert_list.append(row_dict)
 
@@ -101,6 +107,28 @@ def import_zillow_msa_rental_data(geo_level, default_geoid, geoid_field, geoname
     if not success:
         print("!!! zipcodehistorical batch insert failed !!!", len(insert_list))
         return success
+    else:
+        try:
+            client = mongoclient.connect_to_client(prod_env=ProductionEnvironment.QA)
+            dbname = 'LatestUpdates'
+            db = client[dbname]
+
+            insert = {
+                      'category':'redfin',
+                      'geolevel': geo_level.value,
+                      'lastupdatedate': latest_update_date,
+                      'year': latest_update_date.year,
+                      'month': latest_update_date.month,
+                      'datestring': INDEX_TO_MONTH[latest_update_date.month-1] + ' ' + str(latest_update_date.year)
+                      }
+
+            collection = db['lastupdates']
+            collection.delete_one({'geolevel': geo_level.value})
+            collection.insert_one(insert)
+        except Exception as e:
+            print("!!! ERROR storing latestupdatedate run to Mongo!!!", e)
+            sys.exit()
+
 
 
 

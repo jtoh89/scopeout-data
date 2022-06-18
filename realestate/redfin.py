@@ -247,7 +247,9 @@ def import_redfin_historical_data(geo_level, default_geoid, geoid_field, geoname
             dbname = 'LatestUpdates'
             db = client[dbname]
 
-            insert = {'geolevel': geo_level.value,
+            insert = {
+                      'category':'redfin',
+                      'geolevel': geo_level.value,
                       'lastupdatedate': latest_update_date,
                       'year': latest_update_date.year,
                       'month': latest_update_date.month,

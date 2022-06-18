@@ -73,8 +73,12 @@ def market_profile_add_unemployment(geo_level, geoid_field, prod_env=ProductionE
 
         if geo_level == GeoLevels.CBSA:
             try:
-                insert = {'Category': "Unemployment",
+                insert = {'category': "Unemployment",
                           'lastupdatedate': latest_update_date,
+                          'geolevel': geo_level.value,
+                          'year': latest_update_date.year,
+                          'month': latest_update_date.month,
+                          'datestring': INDEX_TO_MONTH[latest_update_date.month-1] + ' ' + str(latest_update_date.year)
                           }
 
                 collection = db['lastupdates']
@@ -156,27 +160,6 @@ def download_cbsa_historical_unemployment():
 
     if success:
         print('Successfully stored unemployment data')
-        try:
-            client = mongoclient.connect_to_client(prod_env=ProductionEnvironment.QA)
-            dbname = 'LatestUpdates'
-            db = client[dbname]
-
-            latest_update_date = datetime.datetime.now()
-
-            insert = {'geolevel': GeoLevels.CBSA.value,
-                      'lastupdatedate': latest_update_date,
-                      'year': latest_update_date.year,
-                      'month': latest_update_date.month,
-                      'datestring': INDEX_TO_MONTH[latest_update_date.month-1] + ' ' + str(latest_update_date.year)
-                      }
-
-            collection = db['lastupdates']
-            collection.delete_one({'geolevel': GeoLevels.CBSA.value})
-            collection.insert_one(insert)
-        except Exception as e:
-            print("!!! ERROR storing latestupdatedate run to Mongo!!!", e)
-            sys.exit()
-
     else:
         print('ERROR: Failed to store unemployment data')
 
