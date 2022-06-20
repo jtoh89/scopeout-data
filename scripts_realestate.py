@@ -30,7 +30,6 @@ redfin.import_redfin_historical_data(geo_level=GeoLevels.COUNTY,
                                      collection_name=Collections_Historical_Profiles.COUNTY.value)
 
 
-#
 redfin.import_redfin_historical_data(geo_level=GeoLevels.ZIPCODE,
                                      default_geoid=DefaultGeoIds.ZIPCODE.value,
                                      geoid_field=GeoIdField.ZIPCODE.value,

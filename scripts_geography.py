@@ -14,7 +14,7 @@ from geographies import geography, scopeoutmarkets, esrigeographies, tractgeojso
 
 # dump scopeout markets
 # scopeoutmarkets.store_scopeout_markets()-
-scopeoutmarkets.store_all_markets(300)
+# scopeoutmarkets.store_all_markets(300)
 
 # dump tract info by county
 # esrigeographies.DEPECRATED_dump_tract_by_county()
@@ -30,7 +30,7 @@ scopeoutmarkets.store_all_markets(300)
 # geography.dump_zillow_cbsa_mapping()
 
 # dump zipcodes by scopeout markets
-# geography.dump_zipcode_geojson_by_scopeout_markets()
+geography.dump_zipcode_geojson_by_scopeout_markets()
 
 ##################################################################
 ##################################################################

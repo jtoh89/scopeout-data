@@ -108,6 +108,7 @@ def import_redfin_historical_data(geo_level, default_geoid, geoid_field, geoname
                 months_of_supply = string_to_float(row_dict['months_of_supply'], 5)
                 price_drops = string_to_float(row_dict['price_drops'], 5)
                 inventory = string_to_float(row_dict['inventory'], 5)
+                homes_sold = string_to_int(row_dict['homes_sold'])
             except Exception as e:
                 print("Parse error")
                 print(e)
@@ -130,7 +131,8 @@ def import_redfin_historical_data(geo_level, default_geoid, geoid_field, geoname
                         'medianlistpricemom': [median_list_price_mom],
                         'monthsofsupply': [months_of_supply],
                         'pricedrops': [price_drops],
-                        'inventory': [inventory]
+                        'inventory': [inventory],
+                        'homessold': [homes_sold]
                     }
                 }
             else:
@@ -150,6 +152,7 @@ def import_redfin_historical_data(geo_level, default_geoid, geoid_field, geoname
                 existing_geo_data['monthsofsupply'].append(months_of_supply)
                 existing_geo_data['pricedrops'].append(price_drops)
                 existing_geo_data['inventory'].append(inventory)
+                existing_geo_data['homessold'].append(homes_sold)
 
     insert_list = []
 
@@ -182,7 +185,8 @@ def import_redfin_historical_data(geo_level, default_geoid, geoid_field, geoname
                 'medianlistpricemom': [],
                 'monthsofsupply': [],
                 'pricedrops': [],
-                'inventory': []
+                'inventory': [],
+                'homessold': []
             }
         }
         temp_df = temp_df.reset_index(drop=True)
@@ -218,6 +222,7 @@ def import_redfin_historical_data(geo_level, default_geoid, geoid_field, geoname
                 temp_dict['realestatetrends']['monthsofsupply'].append(nat_to_none(row.monthsofsupply))
                 temp_dict['realestatetrends']['pricedrops'].append(nat_to_none(row.pricedrops))
                 temp_dict['realestatetrends']['inventory'].append(nat_to_none(row.inventory))
+                temp_dict['realestatetrends']['homessold'].append(nat_to_none(row.homessold))
             except Exception as e:
                 print(e)
                 sys.exit()
@@ -284,6 +289,7 @@ def fill_missing_dates(temp_dict, prev_date, month_diff):
         temp_dict['realestatetrends']['monthsofsupply'].append(None)
         temp_dict['realestatetrends']['pricedrops'].append(None)
         temp_dict['realestatetrends']['inventory'].append(None)
+        temp_dict['realestatetrends']['homessold'].append(None)
         add_date = add_date + relativedelta(months=1)
 
 
