@@ -190,7 +190,7 @@ def run_cbsa_building_permit(geo_level, geoid_field, geoname_field):
                 insert = {
                           'category':'building permits',
                           'geolevel': geo_level.value,
-                          'lastupdatedate': latest_insert_month + ' ' + BUILDING_PERMIT_YEARS[-1],
+                          'lastupdatedate': latest_insert_month + ' ' + str(BUILDING_PERMIT_YEARS[-1],
                           }
 
                 collection = db['lastupdates']
