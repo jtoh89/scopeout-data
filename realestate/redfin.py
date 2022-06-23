@@ -101,14 +101,14 @@ def import_redfin_historical_data(geo_level, default_geoid, geoid_field, geoname
                 median_dom_mom = string_to_float(row_dict['median_dom_mom'], 5)
                 median_dom_yoy = string_to_float(row_dict['median_dom_yoy'], 5)
                 median_ppsf = string_to_int(row_dict['median_ppsf'])
-                median_ppsf_mom = string_to_float(row_dict['median_ppsf_mom'], 5)
-                median_ppsf_yoy = string_to_float(row_dict['median_ppsf_yoy'], 5)
                 median_list_price = string_to_int(row_dict['median_list_price'])
                 median_list_price_mom = string_to_float(row_dict['median_list_price_mom'], 5)
                 months_of_supply = string_to_float(row_dict['months_of_supply'], 5)
                 price_drops = string_to_float(row_dict['price_drops'], 5)
                 inventory = string_to_float(row_dict['inventory'], 5)
+                inventory = string_to_float(row_dict['inventory'], 5)
                 homes_sold = string_to_int(row_dict['homes_sold'])
+                sold_above_list = string_to_float(row_dict['sold_above_list'], 5)
             except Exception as e:
                 print("Parse error")
                 print(e)
@@ -125,14 +125,13 @@ def import_redfin_historical_data(geo_level, default_geoid, geoid_field, geoname
                         'mediandommom': [median_dom_mom],
                         'mediandomyoy': [median_dom_yoy],
                         'medianppsf': [median_ppsf],
-                        'medianppsfmom': [median_ppsf_mom],
-                        'medianppsfyoy': [median_ppsf_yoy],
                         'medianlistprice': [median_list_price],
                         'medianlistpricemom': [median_list_price_mom],
                         'monthsofsupply': [months_of_supply],
                         'pricedrops': [price_drops],
                         'inventory': [inventory],
-                        'homessold': [homes_sold]
+                        'homessold': [homes_sold],
+                        'soldabovelist': [sold_above_list]
                     }
                 }
             else:
@@ -145,14 +144,13 @@ def import_redfin_historical_data(geo_level, default_geoid, geoid_field, geoname
                 existing_geo_data['mediandommom'].append(median_dom_mom)
                 existing_geo_data['mediandomyoy'].append(median_dom_yoy)
                 existing_geo_data['medianppsf'].append(median_ppsf)
-                existing_geo_data['medianppsfmom'].append(median_ppsf_mom)
-                existing_geo_data['medianppsfyoy'].append(median_ppsf_yoy)
                 existing_geo_data['medianlistprice'].append(median_list_price)
                 existing_geo_data['medianlistpricemom'].append(median_list_price_mom)
                 existing_geo_data['monthsofsupply'].append(months_of_supply)
                 existing_geo_data['pricedrops'].append(price_drops)
                 existing_geo_data['inventory'].append(inventory)
                 existing_geo_data['homessold'].append(homes_sold)
+                existing_geo_data['soldabovelist'].append(sold_above_list)
 
     insert_list = []
 
@@ -179,14 +177,13 @@ def import_redfin_historical_data(geo_level, default_geoid, geoid_field, geoname
                 'mediandommom': [],
                 'mediandomyoy': [],
                 'medianppsf': [],
-                'medianppsfmom': [],
-                'medianppsfyoy': [],
                 'medianlistprice': [],
                 'medianlistpricemom': [],
                 'monthsofsupply': [],
                 'pricedrops': [],
                 'inventory': [],
-                'homessold': []
+                'homessold': [],
+                'soldabovelist': []
             }
         }
         temp_df = temp_df.reset_index(drop=True)
@@ -215,14 +212,15 @@ def import_redfin_historical_data(geo_level, default_geoid, geoid_field, geoname
                 temp_dict['realestatetrends']['mediandommom'].append(nat_to_none(row.mediandommom))
                 temp_dict['realestatetrends']['mediandomyoy'].append(nat_to_none(row.mediandomyoy))
                 temp_dict['realestatetrends']['medianppsf'].append(nat_to_none(row.medianppsf))
-                temp_dict['realestatetrends']['medianppsfmom'].append(nat_to_none(row.medianppsfmom))
-                temp_dict['realestatetrends']['medianppsfyoy'].append(nat_to_none(row.medianppsfyoy))
                 temp_dict['realestatetrends']['medianlistprice'].append(nat_to_none(row.medianlistprice))
                 temp_dict['realestatetrends']['medianlistpricemom'].append(nat_to_none(row.medianlistpricemom))
                 temp_dict['realestatetrends']['monthsofsupply'].append(nat_to_none(row.monthsofsupply))
                 temp_dict['realestatetrends']['pricedrops'].append(nat_to_none(row.pricedrops))
                 temp_dict['realestatetrends']['inventory'].append(nat_to_none(row.inventory))
                 temp_dict['realestatetrends']['homessold'].append(nat_to_none(row.homessold))
+                temp_dict['realestatetrends']['soldabovelist'].append(nat_to_none(row.soldabovelist))
+
+
             except Exception as e:
                 print(e)
                 sys.exit()
@@ -282,14 +280,13 @@ def fill_missing_dates(temp_dict, prev_date, month_diff):
         temp_dict['realestatetrends']['mediandommom'].append(None)
         temp_dict['realestatetrends']['mediandomyoy'].append(None)
         temp_dict['realestatetrends']['medianppsf'].append(None)
-        temp_dict['realestatetrends']['medianppsfmom'].append(None)
-        temp_dict['realestatetrends']['medianppsfyoy'].append(None)
         temp_dict['realestatetrends']['medianlistprice'].append(None)
         temp_dict['realestatetrends']['medianlistpricemom'].append(None)
         temp_dict['realestatetrends']['monthsofsupply'].append(None)
         temp_dict['realestatetrends']['pricedrops'].append(None)
         temp_dict['realestatetrends']['inventory'].append(None)
         temp_dict['realestatetrends']['homessold'].append(None)
+        temp_dict['realestatetrends']['soldabovelist'].append(None)
         add_date = add_date + relativedelta(months=1)
 
 
