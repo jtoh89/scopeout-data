@@ -4,7 +4,7 @@ from scopeoutdata import createzipcodemaps, createtractmaps
 from unemployment import unemploymentdownload, unemploymentupdates
 from enums import GeoLevels, DefaultGeoIds, ProductionEnvironment, GeoIdField, GeoNameField, Collections_Historical_Profiles, Collections_Profiles
 from census import censusdata, censuslookups
-from realestate import redfin, buildingpermits, initialize, zillow, DEPRECATED_redfin_zipcodes
+from realestate import redfin, buildingpermits, initialize, zillow
 from geographies import geography, scopeoutmarkets, esrigeographies
 from database import mongoclient
 
