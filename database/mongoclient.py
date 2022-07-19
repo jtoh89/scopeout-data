@@ -7,8 +7,8 @@ import pandas as pd
 import json
 from bson import json_util
 from enums import GeoLevels, GeoNameField, GeoIdField
-from enums import ProductionEnvironment
-from enums import DefaultGeoIds
+from enums import ProductionEnvironment, Database, Collections
+from lookups import INDEX_TO_MONTH
 
 def connect_to_client(prod_env):
     load_dotenv()
@@ -515,3 +515,21 @@ def delete_mongo(dbname, collection_name, prod_env, collection_delete=None):
     except Exception as e:
         print("!!! ERROR could not delete !!!\nError: ", e)
         sys.exit()
+
+
+def update_latest_date(category, latest_update_date):
+    client = connect_to_client(prod_env=ProductionEnvironment.QA)
+    dbname = Database.LATEST_UPDATES.value
+    db = client[dbname]
+
+    insert = {
+        'category': category,
+        'latestdate': latest_update_date,
+        'year': latest_update_date.year,
+        'month': latest_update_date.month,
+        'datestring': INDEX_TO_MONTH[latest_update_date.month - 1] + ' ' + str(latest_update_date.year)
+    }
+
+    collection = db[Collections.LATEST_UPDATES.value]
+    collection.delete_one({'category': category})
+    collection.insert_one(insert)

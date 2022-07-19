@@ -3,7 +3,7 @@ from scopeoutdata import createshortneighborhoodprofiles, createshortzipcodeprof
 from scopeoutdata import createzipcodemaps, createtractmaps
 from unemployment import unemploymentdownload, unemploymentupdates
 from enums import GeoLevels, DefaultGeoIds, ProductionEnvironment, GeoIdField, GeoNameField, Collections_Historical_Profiles, Collections_Profiles
-
+from aws.s3 import upload_s3
 
 ##################################################################
 ###### PRODUCTION MARKET DATA
@@ -22,7 +22,7 @@ from enums import GeoLevels, DefaultGeoIds, ProductionEnvironment, GeoIdField, G
 
 # createneighborhoodprofiles.create_neighborhood_profiles()
 # createshortneighborhoodprofiles.create_short_neighborhood_profiles()
-# createshortzipcodeprofiles.create_short_zipcode_profiles()
+createshortzipcodeprofiles.create_short_zipcode_profiles()
 
 
 ############# CREATE PRODUCTION MAP DATA ############

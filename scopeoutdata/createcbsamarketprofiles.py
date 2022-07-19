@@ -6,6 +6,7 @@ from utils.production import create_url_slug, calculate_percent_change
 from models import cbsamarketprofile
 from globals import SCOPEOUT_COLOR, RED_COLOR, BLUE_COLOR, BORDER_COLOR
 from lookups import SCOPEOUT_MARKET_LIST
+from realestate.redfin import REDFIN_KEY
 
 def generate_cbsa_market_profiles(prod_env, geoid_field):
     # us_historical_profile = mongoclient.query_collection(database_name="MarketProfiles",
@@ -59,30 +60,30 @@ def generate_cbsa_market_profiles(prod_env, geoid_field):
         else:
             census_cbsa_data_match = False
 
-        if cbsa_profile['realestatetrends']:
+        if cbsa_profile[REDFIN_KEY]:
             # Median Sale Price
-            cbsa_market_profile.mediansaleprice.labels = cbsa_profile['realestatetrends']['dates']
-            cbsa_market_profile.mediansaleprice.data = cbsa_profile['realestatetrends']['mediansaleprice']
+            cbsa_market_profile.mediansaleprice.labels = cbsa_profile[REDFIN_KEY]['dates']
+            cbsa_market_profile.mediansaleprice.data = cbsa_profile[REDFIN_KEY]['mediansaleprice']
 
             # Median Sale Price MoM
-            cbsa_market_profile.mediansalepricemom.labels = cbsa_profile['realestatetrends']['dates']
-            cbsa_market_profile.mediansalepricemom.data = list_float_to_percent(cbsa_profile['realestatetrends']['mediansalepricemom'])
+            cbsa_market_profile.mediansalepricemom.labels = cbsa_profile[REDFIN_KEY]['dates']
+            cbsa_market_profile.mediansalepricemom.data = list_float_to_percent(cbsa_profile[REDFIN_KEY]['mediansalepricemom'])
 
             # Median PPSF
-            cbsa_market_profile.medianppsf.data = cbsa_profile['realestatetrends']['medianppsf']
-            cbsa_market_profile.medianppsf.labels = cbsa_profile['realestatetrends']['dates']
+            cbsa_market_profile.medianppsf.data = cbsa_profile[REDFIN_KEY]['medianppsf']
+            cbsa_market_profile.medianppsf.labels = cbsa_profile[REDFIN_KEY]['dates']
 
             # Months of Supply
-            cbsa_market_profile.monthsofsupply.data = cbsa_profile['realestatetrends']['monthsofsupply']
-            cbsa_market_profile.monthsofsupply.labels = cbsa_profile['realestatetrends']['dates']
+            cbsa_market_profile.monthsofsupply.data = cbsa_profile[REDFIN_KEY]['monthsofsupply']
+            cbsa_market_profile.monthsofsupply.labels = cbsa_profile[REDFIN_KEY]['dates']
 
             # Days on Market
-            cbsa_market_profile.mediandom.data = cbsa_profile['realestatetrends']['mediandom']
-            cbsa_market_profile.mediandom.labels = cbsa_profile['realestatetrends']['dates']
+            cbsa_market_profile.mediandom.data = cbsa_profile[REDFIN_KEY]['mediandom']
+            cbsa_market_profile.mediandom.labels = cbsa_profile[REDFIN_KEY]['dates']
 
             # Price Drops
-            cbsa_market_profile.pricedrops.data = list_float_to_percent(cbsa_profile['realestatetrends']['pricedrops'])
-            cbsa_market_profile.pricedrops.labels = cbsa_profile['realestatetrends']['dates']
+            cbsa_market_profile.pricedrops.data = list_float_to_percent(cbsa_profile[REDFIN_KEY]['pricedrops'])
+            cbsa_market_profile.pricedrops.labels = cbsa_profile[REDFIN_KEY]['dates']
 
         if cbsa_profile['rentaltrends']:
             cbsa_market_profile.rentaltrends.dataName = "Median Rent"

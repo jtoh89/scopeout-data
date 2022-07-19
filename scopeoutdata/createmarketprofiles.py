@@ -5,7 +5,7 @@ from utils.utils import set_na_to_false_from_dict
 from utils.production import get_county_cbsa_lookup, check_dataframe_has_one_record
 from math import nan
 import pandas as pd
-from realestate.redfin import REDFIN_PROPERTY_TYPES, REDFIN_DATA_CATEGORIES, REDFIN_PROPERTY_TYPES_LOWERCASE
+from realestate.redfin import REDFIN_KEY, REDFIN_DATA_CATEGORIES, REDFIN_PROPERTY_TYPES_LOWERCASE
 from models import cbsamarketprofile
 
 def create_county_market_profiles(collection_name):
@@ -51,9 +51,9 @@ def aggregate_all_to_county_profile(county_profile, county_cbsa_lookup, cbsa_pro
     # Add countyrealestatetrends. Set False if no data available
     set_na_to_false_from_dict(county_profile)
 
-    if 'realestatetrends' in county_profile.keys() and county_profile['realestatetrends']:
-        county_profile['countyrealestatetrends'] = add_missing_redfin_keys(county_profile['realestatetrends'])
-        county_profile.pop('realestatetrends')
+    if '{}'.format(REDFIN_KEY) in county_profile.keys() and county_profile[REDFIN_KEY]:
+        county_profile['countyrealestatetrends'] = add_missing_redfin_keys(county_profile[REDFIN_KEY])
+        county_profile.pop('{}'.format(REDFIN_KEY))
     else:
         county_profile['countyrealestatetrends'] = False
 
@@ -82,8 +82,8 @@ def add_realestate_rental_to_county_profile(county_profile, cbsa_profiles, cbsa_
         set_na_to_false_from_dict(cbsa_profile_for_county)
 
         # Add cbsarealestatetrends. Set False if no data available
-        if 'realestatetrends' in cbsa_profile_for_county.keys() and cbsa_profile_for_county['realestatetrends']:
-            county_profile['cbsarealestatetrends'] = add_missing_redfin_keys(cbsa_profile_for_county['realestatetrends'])
+        if '{}'.format(REDFIN_KEY) in cbsa_profile_for_county.keys() and cbsa_profile_for_county[REDFIN_KEY]:
+            county_profile['cbsarealestatetrends'] = add_missing_redfin_keys(cbsa_profile_for_county[REDFIN_KEY])
         else:
             county_profile['cbsarealestatetrends'] = False
 
@@ -97,7 +97,7 @@ def add_realestate_rental_to_county_profile(county_profile, cbsa_profiles, cbsa_
         county_profile[GeoNameField.CBSA.value] = 'N/A'
 
     # Add us realestate and rental trends
-    county_profile['usrealestatetrends'] = us_profile['realestatetrends']
+    county_profile['usrealestatetrends'] = us_profile[REDFIN_KEY]
     county_profile['usrentaltrends'] = us_profile['rentaltrends']
 
 def group_geo_market_data(county_profile):

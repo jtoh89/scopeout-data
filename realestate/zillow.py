@@ -217,10 +217,3 @@ def import_zillow_zip_rental_data(collection_name):
     if not success:
         print("!!! zipcodehistorical batch insert failed !!!", len(insert_list))
         return success
-
-def fill_missing_dates(row, temp_dict, prev_month):
-    num_months_between = row['date'].month - prev_month - 1
-
-    for month in range(prev_month+1, num_months_between):
-        temp_dict['date'].append(INDEX_TO_MONTH[month-1] + ' ' + str(row['date'].year))
-        temp_dict['median_sale_price'].append(None)

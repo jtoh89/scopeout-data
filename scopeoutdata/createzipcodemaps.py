@@ -9,7 +9,7 @@ from utils.production import create_url_slug, calculate_percentiles_from_list, a
 from utils.production import calculate_percentiles_using_dict
 from dateutil.relativedelta import relativedelta
 from lookups import INDEX_TO_MONTH
-import datetime
+from realestate.redfin import REDFIN_KEY
 
 
 TEST_CBSAID = "31080"
@@ -19,8 +19,8 @@ def generate_zipcode_maps():
     latest_update_date = mongoclient.query_collection(database_name="MarketProfiles",
                                                collection_name="lastupdates",
                                                collection_filter={'geolevel':GeoLevels.ZIPCODE.value},
-                                               prod_env=ProductionEnvironment.MARKET_PROFILES).iloc[0].to_dict()
-
+                                               prod_env=ProductionEnvironment.MARKET_PROFILES)
+    latest_update_date = latest_update_date.iloc[0].to_dict()
     zip_code_data = mongoclient.query_collection(database_name="MarketProfiles",
                                                  collection_name="zipcodehistoricalprofiles",
                                                  collection_filter={},
@@ -65,11 +65,15 @@ def generate_zipcode_maps():
         zipcode_market_map.urlslug = create_url_slug(cbsacode, cbsaname)
         # iterate through geojson features to add property and build metric lists
         for zip_geojson_feature in scopeout_market.geojson['features']:
+            if zip_geojson_feature['id'] == '92869':
+                print("")
+
             matching_zip_data = zip_code_data[zip_code_data['zipcode'] == zip_geojson_feature['id']].iloc[0].to_dict()
 
             zipcode_geojson_property = zipcodemarketmap.ZipcodeGeoJsonProperties()
 
-            if len(matching_zip_data) == 0 or isNaN(matching_zip_data['realestatetrends']) or matching_zip_data['realestatetrends']['dates'][-1] != latest_update_date['datestring']:
+            # if len(matching_zip_data) == 0 or isNaN(matching_zip_data['realestatetrends']) or matching_zip_data['realestatetrends']['dates'][-1] != latest_update_date['datestring']:
+            if len(matching_zip_data) == 0 or isNaN(matching_zip_data[REDFIN_KEY]):
                 # print('No matching zipcode found')
                 zipcode_geojson_property.mediansaleprice = None
                 zipcode_geojson_property.mediansalepricemom = None
@@ -79,16 +83,16 @@ def generate_zipcode_maps():
                 missing_zipcode_count += 1
                 continue
 
-            median_sale_price = matching_zip_data['realestatetrends']['mediansaleprice'][-1]
-            median_sale_price_mom = matching_zip_data['realestatetrends']['mediansalepricemom'][-1]
-            dom = matching_zip_data['realestatetrends']['mediandom'][-1]
+            median_sale_price = matching_zip_data[REDFIN_KEY]['mediansaleprice'][-1]
+            median_sale_price_mom = matching_zip_data[REDFIN_KEY]['mediansalepricemom'][-1]
+            dom = matching_zip_data[REDFIN_KEY]['mediandom'][-1]
 
             if median_sale_price_mom == None:
                 prev_datetime = latest_update_date['lastupdatedate'] - relativedelta(months=1)
                 prev_month = INDEX_TO_MONTH[prev_datetime.month-1] + " " + str(prev_datetime.year)
 
-                if matching_zip_data['realestatetrends']['dates'][-2] == prev_month:
-                    prev_year_median_sale_price = matching_zip_data['realestatetrends']['mediansaleprice'][-2]
+                if matching_zip_data[REDFIN_KEY]['dates'][-2] == prev_month:
+                    prev_year_median_sale_price = matching_zip_data[REDFIN_KEY]['mediansaleprice'][-2]
 
                     if prev_year_median_sale_price != None:
                         median_sale_price_mom = calculate_percent_change(prev_year_median_sale_price, median_sale_price, move_decimal=False)
@@ -118,8 +122,11 @@ def generate_zipcode_maps():
 
         # calculate percentiles
         # median_sale_price_percentiles = calculate_percentiles_from_list(all_zip_median_sale_price)
-        median_sale_price_percentiles = calculate_percentiles_by_median_value(median_sale_price)
-        median_sale_price_mom_percentiles = calculate_percentiles_from_percent_list(all_zip_median_sale_price_mom)
+        try:
+            median_sale_price_percentiles = calculate_percentiles_by_median_value(median_sale_price)
+            median_sale_price_mom_percentiles = calculate_percentiles_from_percent_list(all_zip_median_sale_price_mom)
+        except Exception as e:
+            print(e)
 
 
         dom_percentiles = calculate_percentiles_using_dict({
@@ -174,6 +181,9 @@ def generate_zipcode_maps():
         zipcode_market_map.domcolors.append(COLOR_LEVEL_NA)
 
         zipcode_market_map.convert_to_dict()
+
+        # tract_map_dict = zipcode_market_map.__dict__
+        # upload_s3(cbsacode, tract_map_dict)
 
         mongoclient.insert_list_mongo(list_data=[zipcode_market_map.__dict__],
                                       dbname='ScopeOutMaps',

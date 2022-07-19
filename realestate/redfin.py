@@ -8,7 +8,7 @@ from lookups import MONTH_FORMAT, INDEX_TO_MONTH, REDFIN_PROPERTY_TYPES_LOWERCAS
 from database import mongoclient
 from copy import deepcopy
 from realestate import initialize
-from enums import GeoLevels, DefaultGeoIds, ProductionEnvironment, GeoIdField, GeoNameField
+from enums import GeoLevels, DefaultGeoIds, ProductionEnvironment, GeoIdField, GeoNameField, Database, Collections
 import datetime
 from utils.utils import string_to_int, nat_to_none, string_to_float
 from models import zipcodemarketmap
@@ -17,7 +17,7 @@ import numpy as np
 from dateutil import relativedelta
 from dateutil.relativedelta import relativedelta
 
-
+REDFIN_KEY = 'redfindata'
 REDFIN_MIN_YEAR = 2016
 REDFIN_MAX_YEAR = 2022
 REDFIN_PROPERTY_TYPES = ['All Residential', 'Single Family Residential', 'Multi-Family (2-4 Unit)']
@@ -25,7 +25,13 @@ REDFIN_PROPERTY_TYPES_LOWERCASE = ['all', 'singlefamily', 'multifamily']
 REDFIN_DATA_CATEGORIES = ['median_sale_price', 'median_ppsf', 'months_of_supply', 'median_dom', 'price_drops']
 
 
-def import_redfin_historical_data(geo_level, default_geoid, geoid_field, geoname_field, collection_name):
+redfin_full_dict = [
+'mediansaleprice','mediansalepricemom','mediansalepriceyoy','mediandom','mediandommom','mediandomyoy','medianppsf',
+'medianlistprice','medianlistpricemom','monthsofsupply','pricedrops','inventory','homessold','soldabovelist'
+]
+
+
+def import_redfin_historical_data(geo_level, default_geoid, geoid_field, collection_name):
     latest_update_date = datetime.datetime(1900, 1, 1)
     initialize_historical_profiles(geo_level, collection_name)
     currpath = os.path.dirname(os.path.abspath(__file__))
@@ -49,10 +55,10 @@ def import_redfin_historical_data(geo_level, default_geoid, geoid_field, geoname
     with open(rootpath + file_dir, 'r') as csvfile:
         datareader = csv.reader(csvfile, delimiter='\t')
         headers = []
-
+        col_names = []
         for i, row in enumerate(datareader):
             if i < 1:
-                headers = row
+                headers, col_names = get_header_column_list_and_names(row)
                 continue
 
             if i % 100000 == 0:
@@ -81,7 +87,6 @@ def import_redfin_historical_data(geo_level, default_geoid, geoid_field, geoname
                 geoid = row_dict['region'].replace('Zip Code: ','')
                 geoid = geoid.zfill(5)
 
-
             if geoid not in geo_list and geo_level != GeoLevels.ZIPCODE:
                 continue
 
@@ -93,22 +98,15 @@ def import_redfin_historical_data(geo_level, default_geoid, geoid_field, geoname
             if int(year) < REDFIN_MIN_YEAR:
                 continue
 
+            col_map_dict = {}
+
             try:
-                median_sale_price = string_to_int(row_dict['median_sale_price'])
-                median_sale_price_mom = string_to_float(row_dict['median_sale_price_mom'], 5)
-                median_sale_price_yoy = string_to_float(row_dict['median_sale_price_yoy'], 5)
-                median_dom = string_to_int(row_dict['median_dom'])
-                median_dom_mom = string_to_float(row_dict['median_dom_mom'], 5)
-                median_dom_yoy = string_to_float(row_dict['median_dom_yoy'], 5)
-                median_ppsf = string_to_int(row_dict['median_ppsf'])
-                median_list_price = string_to_int(row_dict['median_list_price'])
-                median_list_price_mom = string_to_float(row_dict['median_list_price_mom'], 5)
-                months_of_supply = string_to_float(row_dict['months_of_supply'], 5)
-                price_drops = string_to_float(row_dict['price_drops'], 5)
-                inventory = string_to_float(row_dict['inventory'], 5)
-                inventory = string_to_float(row_dict['inventory'], 5)
-                homes_sold = string_to_int(row_dict['homes_sold'])
-                sold_above_list = string_to_float(row_dict['sold_above_list'], 5)
+                for col_name in col_names:
+                    if col_name in ['mediansaleprice','mediandom','medianppsf','medianlistprice','homessold']:
+                        col_map_dict[col_name] = string_to_int(row_dict[col_name])
+                    else:
+                        col_map_dict[col_name] = string_to_float(row_dict[col_name], 5)
+
             except Exception as e:
                 print("Parse error")
                 print(e)
@@ -116,46 +114,26 @@ def import_redfin_historical_data(geo_level, default_geoid, geoid_field, geoname
 
             if geoid not in geo_data_dict.keys():
                 geo_data_dict[geoid] = {
-                    'realestatetrends': {
+                    '{}'.format(REDFIN_KEY): {
                         'dates': [datetime.datetime(int(year), int(month), int(day))],
-                        'mediansaleprice': [median_sale_price],
-                        'mediansalepricemom': [median_sale_price_mom],
-                        'mediansalepriceyoy': [median_sale_price_yoy],
-                        'mediandom': [median_dom],
-                        'mediandommom': [median_dom_mom],
-                        'mediandomyoy': [median_dom_yoy],
-                        'medianppsf': [median_ppsf],
-                        'medianlistprice': [median_list_price],
-                        'medianlistpricemom': [median_list_price_mom],
-                        'monthsofsupply': [months_of_supply],
-                        'pricedrops': [price_drops],
-                        'inventory': [inventory],
-                        'homessold': [homes_sold],
-                        'soldabovelist': [sold_above_list]
                     }
                 }
+
+                for col_name in col_names:
+                    geo_data_dict[geoid][REDFIN_KEY][col_name] = [col_map_dict[col_name]]
+
+
             else:
-                existing_geo_data = geo_data_dict[geoid]['realestatetrends']
+                existing_geo_data = geo_data_dict[geoid][REDFIN_KEY]
                 existing_geo_data['dates'].append(datetime.datetime(int(year), int(month), int(day)))
-                existing_geo_data['mediansaleprice'].append(median_sale_price)
-                existing_geo_data['mediansalepricemom'].append(median_sale_price_mom)
-                existing_geo_data['mediansalepriceyoy'].append(median_sale_price_yoy)
-                existing_geo_data['mediandom'].append(median_dom)
-                existing_geo_data['mediandommom'].append(median_dom_mom)
-                existing_geo_data['mediandomyoy'].append(median_dom_yoy)
-                existing_geo_data['medianppsf'].append(median_ppsf)
-                existing_geo_data['medianlistprice'].append(median_list_price)
-                existing_geo_data['medianlistpricemom'].append(median_list_price_mom)
-                existing_geo_data['monthsofsupply'].append(months_of_supply)
-                existing_geo_data['pricedrops'].append(price_drops)
-                existing_geo_data['inventory'].append(inventory)
-                existing_geo_data['homessold'].append(homes_sold)
-                existing_geo_data['soldabovelist'].append(sold_above_list)
+
+                for col_name in col_names:
+                    existing_geo_data[col_name].append(col_map_dict[col_name])
 
     insert_list = []
 
     for k, zip_data in geo_data_dict.items():
-        temp_df = pd.DataFrame.from_dict(zip_data['realestatetrends']).sort_values(by='dates')
+        temp_df = pd.DataFrame.from_dict(zip_data[REDFIN_KEY]).sort_values(by='dates')
         temp_df = temp_df.replace({np.nan: None})
 
         # check if at least 12 months exists
@@ -168,24 +146,14 @@ def import_redfin_historical_data(geo_level, default_geoid, geoid_field, geoname
 
         temp_dict = {
             '{}'.format(geoid_field): k,
-            'realestatetrends': {
+            '{}'.format(REDFIN_KEY): {
                 'dates': [],
-                'mediansaleprice': [],
-                'mediansalepricemom': [],
-                'mediansalepriceyoy': [],
-                'mediandom': [],
-                'mediandommom': [],
-                'mediandomyoy': [],
-                'medianppsf': [],
-                'medianlistprice': [],
-                'medianlistpricemom': [],
-                'monthsofsupply': [],
-                'pricedrops': [],
-                'inventory': [],
-                'homessold': [],
-                'soldabovelist': []
             }
         }
+
+        for col_name in col_names:
+            temp_dict[REDFIN_KEY][col_name] = []
+
         temp_df = temp_df.reset_index(drop=True)
         prev_date = None
         for i, row in temp_df.iterrows():
@@ -196,30 +164,17 @@ def import_redfin_historical_data(geo_level, default_geoid, geoid_field, geoname
             diff = relativedelta(row['dates'], prev_date)
             month_diff = diff.months
             if month_diff != None and month_diff > 1:
-                fill_missing_dates(temp_dict, prev_date, month_diff-1)
+                fill_missing_dates(temp_dict, prev_date, month_diff-1, col_names)
 
             prev_date = row['dates']
             try:
-                temp_dict['realestatetrends']['dates'].append(INDEX_TO_MONTH[row['dates'].month-1] + ' ' + str(row['dates'].year))
+                temp_dict[REDFIN_KEY]['dates'].append(INDEX_TO_MONTH[row['dates'].month-1] + ' ' + str(row['dates'].year))
             except Exception as e:
                 print(e)
                 sys.exit()
             try:
-                temp_dict['realestatetrends']['mediansaleprice'].append(nat_to_none(row.mediansaleprice))
-                temp_dict['realestatetrends']['mediansalepricemom'].append(nat_to_none(row.mediansalepricemom))
-                temp_dict['realestatetrends']['mediansalepriceyoy'].append(nat_to_none(row.mediansalepriceyoy))
-                temp_dict['realestatetrends']['mediandom'].append(nat_to_none(row.mediandom))
-                temp_dict['realestatetrends']['mediandommom'].append(nat_to_none(row.mediandommom))
-                temp_dict['realestatetrends']['mediandomyoy'].append(nat_to_none(row.mediandomyoy))
-                temp_dict['realestatetrends']['medianppsf'].append(nat_to_none(row.medianppsf))
-                temp_dict['realestatetrends']['medianlistprice'].append(nat_to_none(row.medianlistprice))
-                temp_dict['realestatetrends']['medianlistpricemom'].append(nat_to_none(row.medianlistpricemom))
-                temp_dict['realestatetrends']['monthsofsupply'].append(nat_to_none(row.monthsofsupply))
-                temp_dict['realestatetrends']['pricedrops'].append(nat_to_none(row.pricedrops))
-                temp_dict['realestatetrends']['inventory'].append(nat_to_none(row.inventory))
-                temp_dict['realestatetrends']['homessold'].append(nat_to_none(row.homessold))
-                temp_dict['realestatetrends']['soldabovelist'].append(nat_to_none(row.soldabovelist))
-
+                for col_name in col_names:
+                    temp_dict[REDFIN_KEY][col_name].append(nat_to_none(row[col_name]))
 
             except Exception as e:
                 print(e)
@@ -231,7 +186,7 @@ def import_redfin_historical_data(geo_level, default_geoid, geoid_field, geoname
     new_insert_list = update_existing_historical_profile(insert_list, geoid_field, collection_name, geo_level)
 
     client = mongoclient.connect_to_client(prod_env=ProductionEnvironment.MARKET_PROFILES)
-    dbname = 'MarketProfiles'
+    dbname = Database.MARKET_PROFILES.value
     db = client[dbname]
     collection = db[collection_name]
 
@@ -246,47 +201,22 @@ def import_redfin_historical_data(geo_level, default_geoid, geoid_field, geoname
     else:
         print("Redfin import finished")
         try:
-            client = mongoclient.connect_to_client(prod_env=ProductionEnvironment.QA)
-            dbname = 'LatestUpdates'
-            db = client[dbname]
-
-            insert = {
-                      'category':'redfin',
-                      'geolevel': geo_level.value,
-                      'lastupdatedate': latest_update_date,
-                      'year': latest_update_date.year,
-                      'month': latest_update_date.month,
-                      'datestring': INDEX_TO_MONTH[latest_update_date.month-1] + ' ' + str(latest_update_date.year)
-                      }
-
-            collection = db['lastupdates']
-            collection.delete_one({'geolevel': geo_level.value})
-            collection.insert_one(insert)
+            mongoclient.update_latest_date('redfinziplatest', latest_update_date)
         except Exception as e:
             print("!!! ERROR storing latestupdatedate run to Mongo!!!", e)
             sys.exit()
 
 
-def fill_missing_dates(temp_dict, prev_date, month_diff):
+def fill_missing_dates(temp_dict, prev_date, month_diff, col_names):
 
     add_date = prev_date + relativedelta(months=1)
 
     for month_index in range(month_diff):
-        temp_dict['realestatetrends']['dates'].append(INDEX_TO_MONTH[add_date.month-1] + ' ' + str(add_date.year))
-        temp_dict['realestatetrends']['mediansaleprice'].append(None)
-        temp_dict['realestatetrends']['mediansalepricemom'].append(None)
-        temp_dict['realestatetrends']['mediansalepriceyoy'].append(None)
-        temp_dict['realestatetrends']['mediandom'].append(None)
-        temp_dict['realestatetrends']['mediandommom'].append(None)
-        temp_dict['realestatetrends']['mediandomyoy'].append(None)
-        temp_dict['realestatetrends']['medianppsf'].append(None)
-        temp_dict['realestatetrends']['medianlistprice'].append(None)
-        temp_dict['realestatetrends']['medianlistpricemom'].append(None)
-        temp_dict['realestatetrends']['monthsofsupply'].append(None)
-        temp_dict['realestatetrends']['pricedrops'].append(None)
-        temp_dict['realestatetrends']['inventory'].append(None)
-        temp_dict['realestatetrends']['homessold'].append(None)
-        temp_dict['realestatetrends']['soldabovelist'].append(None)
+        temp_dict[REDFIN_KEY]['dates'].append(INDEX_TO_MONTH[add_date.month-1] + ' ' + str(add_date.year))
+
+        for col_name in col_names:
+            temp_dict[REDFIN_KEY][col_name].append(None)
+
         add_date = add_date + relativedelta(months=1)
 
 
@@ -305,12 +235,12 @@ def update_existing_historical_profile(insert_list, geoid_field, collection_name
                     'zipcode': updated_profile[geoid_field],
                     'geolevel': geo_level.value,
                     'geoname': updated_profile[geoid_field],
-                    'realestatetrends': updated_profile['realestatetrends']
+                    '{}'.format(REDFIN_KEY): updated_profile[REDFIN_KEY]
                 })
             continue
 
         existing_profile = existing_profile.iloc[0].to_dict()
-        existing_profile['realestatetrends'] = updated_profile['realestatetrends']
+        existing_profile[REDFIN_KEY] = updated_profile[REDFIN_KEY]
 
         if 'rentaltrends' in existing_profile.keys() and existing_profile['rentaltrends'] != existing_profile['rentaltrends']:
             del existing_profile['rentaltrends']
@@ -350,3 +280,45 @@ def initialize_historical_profiles(geo_level, collection_name):
                                             collection_name=collection_name
                                             )
 
+def get_header_column_list_and_names(headers):
+    for i in range(len(headers)):
+        if headers[i] == 'median_sale_price':
+            headers[i] = 'mediansaleprice'
+        elif headers[i] == 'median_sale_price_mom':
+            headers[i] = 'mediansalepricemom'
+        elif headers[i] == 'median_sale_price_yoy':
+            headers[i] = 'mediansalepriceyoy'
+        elif headers[i] == 'median_dom':
+            headers[i] = 'mediandom'
+        elif headers[i] == 'median_dom_mom':
+            headers[i] = 'mediandommom'
+        elif headers[i] == 'median_dom_yoy':
+            headers[i] = 'mediandomyoy'
+        elif headers[i] == 'median_ppsf':
+            headers[i] = 'medianppsf'
+        elif headers[i] == 'median_list_price':
+            headers[i] = 'medianlistprice'
+        elif headers[i] == 'median_list_price_mom':
+            headers[i] = 'medianlistpricemom'
+        elif headers[i] == 'months_of_supply':
+            headers[i] = 'monthsofsupply'
+        elif headers[i] == 'price_drops':
+            headers[i] = 'pricedrops'
+        elif headers[i] == 'inventory':
+            headers[i] = 'inventory'
+        elif headers[i] == 'homes_sold':
+            headers[i] = 'homessold'
+        elif headers[i] == 'sold_above_list':
+            headers[i] = 'soldabovelist'
+
+    col_names = ['mediansaleprice','mediansalepricemom',
+    'mediansalepriceyoy','mediandom',
+    'mediandommom','mediandomyoy',
+    'medianppsf','medianlistprice',
+    'medianlistpricemom','monthsofsupply',
+    'pricedrops','inventory',
+    'homessold','soldabovelist']
+
+
+
+    return headers, col_names

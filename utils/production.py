@@ -9,6 +9,7 @@ from utils.utils import number_to_string, calculate_percent_change, month_string
 import copy
 from globals import COLOR_LEVEL_NA, COLOR_LEVEL_1, COLOR_LEVEL_2, COLOR_LEVEL_3, COLOR_LEVEL_4, COLOR_LEVEL_5
 
+
 def calculate_percentiles_from_list(list_data):
     final_list = []
     for val in list_data:
@@ -127,7 +128,6 @@ def get_prod_by_stateid(stateid):
         return ProductionEnvironment.FULL_NEIGHBORHOOD_PROFILES_2
 
 def create_url_slug(cbsacode, marketname):
-    # urlslug = marketname.split(", ")[0].replace('--','-').replace(' ','-').lower() + "-real-estate-market-trends"
     urlslug = marketname.replace(', ','-').replace('--','-').replace(' ','-').lower() + "-real-estate-market-trends"
     if (cbsacode) == "17980":
         urlslug = marketname.split(", ")[0].replace('--','-').replace(' ','-').lower() + "GA-AL-real-estate-market-trends"
@@ -158,91 +158,3 @@ def check_dataframe_has_one_record(df):
         return False
     else:
         return True
-
-def calculate_yoy_from_list(median_sale_price, historical_list, latest_update_date, multiply_100=False):
-    date_minus_year = latest_update_date['lastupdatedate'] - datetime.timedelta(days=(1*365))
-
-    month_minus_year = INDEX_TO_MONTH[date_minus_year.month-1] + " " + str(date_minus_year.year)
-
-    if len(historical_list['realestatetrends']['dates']) < 12:
-        print("Less than a year")
-    else:
-        if historical_list['realestatetrends']['dates'][-13] == month_minus_year:
-            prev_year_median_sale_price = historical_list['realestatetrends']['mediansaleprice'][-13]
-
-            if prev_year_median_sale_price != None:
-                if multiply_100:
-                    return 100 * calculate_percent_change(prev_year_median_sale_price, median_sale_price, move_decimal=False)
-                else:
-                    return calculate_percent_change(prev_year_median_sale_price, median_sale_price, move_decimal=False)
-            else:
-                return None
-        else:
-            return None
-
-def calculate_mom_or_yoy_from_list(latest_month, latest_value, historical_profile, data_type, type):
-    if type == 'mom':
-        months = 1
-    else:
-        months = 12
-
-    index = False
-    max_percent_change = 200
-    yoy_date_list = copy.deepcopy(historical_profile['realestatetrends']['dates'])
-    yoy_date_list.reverse()
-
-    latest_month_datetime = month_string_to_datetime(latest_month)
-    month_comparison = latest_month_datetime - relativedelta(months=months)
-
-    for i, date in enumerate(yoy_date_list):
-        date_datetime = month_string_to_datetime(date)
-        if date_datetime == month_comparison:
-            index = -(i + 1)
-            break
-
-    if not index:
-        return None
-
-    past_month_datetime = month_string_to_datetime(historical_profile['realestatetrends']['dates'][index])
-    past_month_median_sale_price = historical_profile['realestatetrends'][data_type][index]
-
-    if past_month_median_sale_price and month_comparison == past_month_datetime:
-        percent_change = calculate_percent_change(starting_data=past_month_median_sale_price,
-                                                      ending_data=latest_value,
-                                                      move_decimal=True,
-                                                      decimal_places=2)
-        if percent_change < max_percent_change:
-            zip_mediansaleprice_mom = percent_change
-            return zip_mediansaleprice_mom
-
-    return None
-
-
-# skipped_geos = []
-# too_many_missing_dates = False
-# reversed_date_list = list(temp_df['dates'])
-# reversed_date_list.reverse()
-# for i, date in enumerate(reversed_date_list):
-#     if i > 11:
-#         break
-#
-#     prev_index = i + 1
-#
-#     if prev_index < len(reversed_date_list):
-#         prev_date = reversed_date_list[i + 1]
-#
-#         num_months_between = ((date.year - prev_date.year) * 12) + (date.month - prev_date.month) - 1
-#
-#         if num_months_between > 3:
-#             too_many_missing_dates = True
-#             skipped_geos.append(k)
-#             break
-#
-#
-# if too_many_missing_dates:
-#     print("SKIPPING - too many missing dates")
-#     skipped_geos.append(k)
-#     continue
-
-# with open("skippedgeos.txt", "w") as outfile:
-#     outfile.write("\n".join(skipped_geos))

@@ -63,6 +63,12 @@ class ModelsChartTypes(Enum):
     TABLE = 'table'
     VERTICAL_COMPARISON_BAR = 'verticalcomparisonbar'
 
+class Database(Enum):
+    MARKET_PROFILES = 'MarketProfiles'
+    LATEST_UPDATES = 'LatestUpdates'
+
+class Collections(Enum):
+    LATEST_UPDATES = 'latestupdates'
 
 
 class Collections_Historical_Profiles(Enum):

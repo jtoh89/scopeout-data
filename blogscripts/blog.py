@@ -3,6 +3,7 @@ from database import mongoclient
 from enums import ProductionEnvironment, GeoLevels, Collections_Profiles, Collections_Historical_Profiles
 from utils.utils import calculate_percent_change, float_to_percent
 import pandas as pd
+from realestate.redfin import REDFIN_KEY
 
 CURRENT_MONTH = "April 2022"
 
@@ -48,26 +49,26 @@ def run_top_ranks():
         if cbsa_dict['cbsacode'] not in cbsa_lookup_dict.keys():
             cbsa_lookup_dict[cbsa_dict['cbsacode']] = cbsa_dict['geoname']
 
-        if cbsa_dict['realestatetrends'] != cbsa_dict['realestatetrends']:
+        if cbsa_dict[REDFIN_KEY] != cbsa_dict[REDFIN_KEY]:
             continue
 
-        if cbsa_dict['realestatetrends']['dates'][-1] != CURRENT_MONTH:
+        if cbsa_dict[REDFIN_KEY]['dates'][-1] != CURRENT_MONTH:
             print("!!! Why does scopeout market miss latest real estate trends? !!!")
             sys.exit()
 
 
         cbsacode_list.append(cbsa_dict['cbsacode'])
 
-        median_sale_price.append(cbsa_dict['realestatetrends']['mediansaleprice'][-1])
-        median_sale_price_mom.append(float_to_percent(cbsa_dict['realestatetrends']['mediansalepricemom'][-1]))
-        median_list_price.append(cbsa_dict['realestatetrends']['medianlistprice'][-1])
-        dom.append(cbsa_dict['realestatetrends']['mediandom'][-1])
-        price_drops.append(float_to_percent(cbsa_dict['realestatetrends']['pricedrops'][-1]))
+        median_sale_price.append(cbsa_dict[REDFIN_KEY]['mediansaleprice'][-1])
+        median_sale_price_mom.append(float_to_percent(cbsa_dict[REDFIN_KEY]['mediansalepricemom'][-1]))
+        median_list_price.append(cbsa_dict[REDFIN_KEY]['medianlistprice'][-1])
+        dom.append(cbsa_dict[REDFIN_KEY]['mediandom'][-1])
+        price_drops.append(float_to_percent(cbsa_dict[REDFIN_KEY]['pricedrops'][-1]))
 
         if cbsa_dict['rentaltrends'] != cbsa_dict['rentaltrends']:
             continue
 
-        if cbsa_dict['realestatetrends']['dates'][-1] != CURRENT_MONTH:
+        if cbsa_dict[REDFIN_KEY]['dates'][-1] != CURRENT_MONTH:
             if cbsa_dict['cbsacode'] in all_scopeout_markets:
                 print("!!! Why does scopeout market miss latest real estate trends? !!!")
                 sys.exit()

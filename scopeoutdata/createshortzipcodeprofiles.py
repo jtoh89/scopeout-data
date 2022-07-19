@@ -3,8 +3,8 @@ from database import mongoclient
 from models.zipcodemarketprofile import shortzipcodeprofile
 from enums import ProductionEnvironment, GeoLevels
 from utils.utils import drop_na_values_from_dict, truncate_decimals
-from utils.production import calculate_mom_or_yoy_from_list
 from globals import SCOPEOUT_COLOR, CBSA_COLOR
+from realestate.redfin import REDFIN_KEY
 
 def create_short_zipcode_profiles():
     zipcodes_by_scopeout_markets = mongoclient.query_collection(database_name="ScopeOut",
@@ -58,29 +58,29 @@ def create_short_zipcode_profiles():
 
                     zipcode_historical_profile = drop_na_values_from_dict(zipcode_historical_profile)
 
-                    if 'realestatetrends' in zipcode_historical_profile.keys():
-                        zip_latest_month = zipcode_historical_profile['realestatetrends']['dates'][-1]
+                    if '{}'.format(REDFIN_KEY) in zipcode_historical_profile.keys():
+                        zip_latest_month = zipcode_historical_profile[REDFIN_KEY]['dates'][-1]
 
                         found_latest_month_match = True
                         index = 0
 
                         while found_latest_month_match:
                             index -= 1
-                            if cbsa_market_historical['realestatetrends']['dates'][index] == zip_latest_month:
+                            if cbsa_market_historical[REDFIN_KEY]['dates'][index] == zip_latest_month:
                                 found_latest_month_match = False
 
 
                         # assign median sale price
-                        median_sale_price = zipcode_historical_profile['realestatetrends']['mediansaleprice'][-1]
+                        median_sale_price = zipcode_historical_profile[REDFIN_KEY]['mediansaleprice'][-1]
                         zip_short_profile.mediansaleprice.labels = [zipcode, cbsaname]
-                        zip_short_profile.mediansaleprice.data = [median_sale_price, cbsa_market_historical['realestatetrends']['mediansaleprice'][index]]
+                        zip_short_profile.mediansaleprice.data = [median_sale_price, cbsa_market_historical[REDFIN_KEY]['mediansaleprice'][index]]
                         zip_short_profile.mediansaleprice.colors = [SCOPEOUT_COLOR, CBSA_COLOR]
 
 
                         # assign median sale price mom
                         zip_short_profile.mediansalepricemom.labels = [zipcode, cbsaname]
-                        zip_mediansaleprice_mom = zipcode_historical_profile['realestatetrends']['mediansalepricemom'][-1]
-                        cbsa_mediansaleprice_mom = cbsa_market_historical['realestatetrends']['mediansalepricemom'][index]
+                        zip_mediansaleprice_mom = zipcode_historical_profile[REDFIN_KEY]['mediansalepricemom'][-1]
+                        cbsa_mediansaleprice_mom = cbsa_market_historical[REDFIN_KEY]['mediansalepricemom'][index]
                         cbsa_mediansaleprice_mom = truncate_decimals(cbsa_mediansaleprice_mom * 100, 2)
 
                         if zip_mediansaleprice_mom != None:
@@ -97,8 +97,8 @@ def create_short_zipcode_profiles():
 
                         # assign median sale price yoy
                         zip_short_profile.mediansalepriceyoy.labels = [zipcode, cbsaname]
-                        zip_mediansaleprice_yoy = zipcode_historical_profile['realestatetrends']['mediansalepriceyoy'][-1]
-                        cbsa_mediansaleprice_yoy = cbsa_market_historical['realestatetrends']['mediansalepriceyoy'][index]
+                        zip_mediansaleprice_yoy = zipcode_historical_profile[REDFIN_KEY]['mediansalepriceyoy'][-1]
+                        cbsa_mediansaleprice_yoy = cbsa_market_historical[REDFIN_KEY]['mediansalepriceyoy'][index]
                         cbsa_mediansaleprice_yoy = truncate_decimals(cbsa_mediansaleprice_yoy * 100, 2)
 
                         if zip_mediansaleprice_yoy != None:
@@ -115,7 +115,7 @@ def create_short_zipcode_profiles():
 
                         # assign dom
                         zip_short_profile.dom.labels = [zipcode, cbsaname]
-                        zip_short_profile.dom.data = [zipcode_historical_profile['realestatetrends']['mediandom'][-1], cbsa_market_historical['realestatetrends']['mediandom'][index]]
+                        zip_short_profile.dom.data = [zipcode_historical_profile[REDFIN_KEY]['mediandom'][-1], cbsa_market_historical[REDFIN_KEY]['mediandom'][index]]
                         zip_short_profile.dom.colors = [SCOPEOUT_COLOR, CBSA_COLOR]
 
                         zip_short_profile.redfinupdatedate = zip_latest_month
@@ -127,7 +127,11 @@ def create_short_zipcode_profiles():
                             if cbsa_market_historical['rentaltrends']['dates'][-1] != zip_rental_latest_month:
                                 if cbsa_market_historical['rentaltrends']['dates'][-2] != zip_rental_latest_month:
                                     print("!!! ERROR - why do cbsa and zip rental months not match? !!!")
-                                    sys.exit()
+                                    zip_short_profile.rentaltrends.data2Name = cbsaname
+                                    zip_short_profile.rentaltrends.labels = cbsa_market_historical['rentaltrends']['dates'][-13:-1]
+                                    zip_short_profile.rentaltrends.data2 = cbsa_market_historical['rentaltrends']['median_rent'][-13:-1]
+                                    continue
+                                    # sys.exit()
                                 else:
                                     zip_short_profile.rentaltrends.data2 = cbsa_market_historical['rentaltrends']['median_rent'][-13:-1]
                             else:
@@ -181,4 +185,42 @@ def create_short_zipcode_profiles():
             sys.exit()
         else:
             print("Successfully inserted zip short profile for", cbsaname)
+
+
+def calculate_mom_or_yoy_from_list(latest_month, latest_value, historical_profile, data_type, type):
+    if type == 'mom':
+        months = 1
+    else:
+        months = 12
+
+    index = False
+    max_percent_change = 200
+    yoy_date_list = copy.deepcopy(historical_profile[REDFIN_KEY]['dates'])
+    yoy_date_list.reverse()
+
+    latest_month_datetime = month_string_to_datetime(latest_month)
+    month_comparison = latest_month_datetime - relativedelta(months=months)
+
+    for i, date in enumerate(yoy_date_list):
+        date_datetime = month_string_to_datetime(date)
+        if date_datetime == month_comparison:
+            index = -(i + 1)
+            break
+
+    if not index:
+        return None
+
+    past_month_datetime = month_string_to_datetime(historical_profile[REDFIN_KEY]['dates'][index])
+    past_month_median_sale_price = historical_profile[REDFIN_KEY][data_type][index]
+
+    if past_month_median_sale_price and month_comparison == past_month_datetime:
+        percent_change = calculate_percent_change(starting_data=past_month_median_sale_price,
+                                                      ending_data=latest_value,
+                                                      move_decimal=True,
+                                                      decimal_places=2)
+        if percent_change < max_percent_change:
+            zip_mediansaleprice_mom = percent_change
+            return zip_mediansaleprice_mom
+
+    return None
 
